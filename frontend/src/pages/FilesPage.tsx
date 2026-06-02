@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { FileUpload } from '../components/files/FileUpload'
 import { FileList } from '../components/files/FileList'
 import { DataPreviewModal } from '../components/files/DataPreviewModal'
-import { AraQuickTrigger } from '../components/ara/AraQuickTrigger'
 import { fileService } from '../services/fileService'
 
 export function FilesPage() {
@@ -75,34 +74,6 @@ export function FilesPage() {
           </div>
         </div>
       </div>
-
-      {/* AI Analysis Section */}
-      {totalFiles > 0 && (
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-xl font-semibold text-gray-900">AI Analysis</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Get instant insights from your uploaded files using AI agents
-            </p>
-          </div>
-          <div className="card-content">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <AraQuickTrigger 
-                message="Analyze my recently uploaded files and provide key insights"
-                buttonText="Analyze Recent Files"
-              />
-              <AraQuickTrigger 
-                message="Compare patterns across all my datasets"
-                buttonText="Compare All Data"
-              />
-              <AraQuickTrigger 
-                message="Summarize findings from my literature and data"
-                buttonText="Literature + Data Summary"
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Files List Section */}
       <div className="card">

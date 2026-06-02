@@ -16,8 +16,6 @@ if not os.environ.get('UVICORN_RELOADING'):
     print("🚀 Starting Research Workspace Backend...")
     print("📍 Backend will be available at: http://localhost:8000")
     print("📊 API docs available at: http://localhost:8000/docs")
-    print("🤖 Ara integration available at: http://localhost:8000/api/ara/status")
-    print()
 
 # Import and run uvicorn
 import uvicorn

@@ -9,7 +9,7 @@ import logging
 
 from backend.config import settings
 from backend.database import init_db
-from backend.api import health, files, rag, query, refinement, notes, annotations, document_suggestions, export, ara
+from backend.api import health, files, rag, query, refinement, notes, annotations, document_suggestions, export, ara_mock
 from backend.utils.logger import setup_logging
 
 # Setup logging
@@ -86,7 +86,7 @@ app.include_router(notes.router, prefix=settings.API_V1_PREFIX, tags=["notes"])
 app.include_router(annotations.router, prefix=settings.API_V1_PREFIX, tags=["annotations"])
 app.include_router(document_suggestions.router, prefix=settings.API_V1_PREFIX, tags=["suggestions"])
 app.include_router(export.router, prefix=settings.API_V1_PREFIX, tags=["export"])
-app.include_router(ara.router, tags=["ara"])
+app.include_router(ara_mock.router, tags=["ara"])
 
 
 # Root endpoint

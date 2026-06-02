@@ -50,11 +50,6 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 200
     CHROMA_COLLECTION: str = "research_literature"
     
-    # Ara Integration Settings
-    ARA_API_KEY: Optional[str] = None  # For Ara cloud services
-    ARA_RUNTIME_KEY: Optional[str] = None  # For Ara runtime authentication
-    ARA_APP_HEADER_KEY: Optional[str] = None  # For Ara app-specific authentication
-    
     class Config:
         env_file = ".env"
         case_sensitive = True

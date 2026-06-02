@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatDuration } from '@/lib/utils'
-import { AraAnalysisPanel } from '@/components/ara/AraAnalysisPanel'
 import type { FileListResponse, RAGStatsResponse, QueryHistoryResponse } from '@/types'
 
 export function HomePage() {
@@ -98,13 +97,8 @@ export function HomePage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Ara Analysis Panel */}
-        <div className="lg:col-span-1">
-          <AraAnalysisPanel />
-        </div>
-
         {/* Recent Activity */}
-        <div className="card lg:col-span-2">
+        <div className="card">
           <div className="card-header">
             <div className="flex items-center space-x-2">
               <Clock className="h-5 w-5 text-gray-400" />
