@@ -1,0 +1,130 @@
+import { Database, FileText, TrendingUp, Code } from 'lucide-react'
+import type { QueryResult } from '../../services/queryService'
+
+interface QueryResultsProps {
+  result: QueryResult
+}
+
+export function QueryResults({ result }: QueryResultsProps) {
+  return (
+    <div className="space-y-6">
+      {/* Question */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="text-lg font-semibold text-gray-900">Question</h3>
+        </div>
+        <div className="card-content">
+          <p className="text-gray-700">{result.question}</p>
+        </div>
+      </div>
+
+      {/* AI Synthesis */}
+      <div className="card">
+        <div className="card-header flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-primary-600" />
+          <h3 className="text-lg font-semibold text-gray-900">AI Analysis</h3>
+        </div>
+        <div className="card-content">
+          <div className="prose prose-sm max-w-none">
+            <p className="text-gray-700 whitespace-pre-wrap">{result.synthesis}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Results */}
+      {result.data_results && result.data_results.row_count > 0 && (
+        <div className="card">
+          <div className="card-header flex items-center gap-2">
+            <Database className="w-5 h-5 text-primary-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Data Results ({result.data_results.row_count} rows)
+            </h3>
+          </div>
+          <div className="card-content">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {result.data_results.columns.map((column, index) => (
+                      <th
+                        key={index}
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        {column}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {result.data_results.rows.slice(0, 10).map((row, rowIndex) => (
+                    <tr key={rowIndex} className="hover:bg-gray-50">
+                      {row.map((cell, cellIndex) => (
+                        <td key={cellIndex} className="px-4 py-3 text-sm text-gray-900">
+                          {cell !== null && cell !== undefined ? String(cell) : '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {result.data_results.row_count > 10 && (
+              <p className="mt-3 text-sm text-gray-500 text-center">
+                Showing first 10 of {result.data_results.row_count} rows
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Literature Context */}
+      {result.literature_context && result.literature_context.length > 0 && (
+        <div className="card">
+          <div className="card-header flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Related Literature ({result.literature_context.length})
+            </h3>
+          </div>
+          <div className="card-content space-y-4">
+            {result.literature_context.map((lit, index) => (
+              <div
+                key={index}
+                className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+              >
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h4 className="font-medium text-gray-900">{lit.title}</h4>
+                  <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full whitespace-nowrap">
+                    {Math.round(lit.relevance_score * 100)}% relevant
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 italic">"{lit.excerpt}"</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SQL Query */}
+      <div className="card">
+        <div className="card-header flex items-center gap-2">
+          <Code className="w-5 h-5 text-primary-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Generated SQL</h3>
+          <span className="ml-auto px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+            {Math.round(result.sql_confidence * 100)}% confidence
+          </span>
+        </div>
+        <div className="card-content">
+          <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-sm">
+            <code>{result.sql_query}</code>
+          </pre>
+        </div>
+      </div>
+
+      {/* Metadata */}
+      <div className="text-sm text-gray-500 text-center">
+        Query executed at {new Date(result.created_at).toLocaleString()}
+      </div>
+    </div>
+  )
+}
