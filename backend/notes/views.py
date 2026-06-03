@@ -1,0 +1,72 @@
+from rest_framework import viewsets, views, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from notes.models import Note, NoteRelationship
+from notes.serializers import NoteSerializer, NoteRelationshipSerializer
+from services.notes_service import NotesService
+
+class NoteViewSet(viewsets.ModelViewSet):
+    queryset = Note.objects.all().order_by('-created_at')
+    serializer_class = NoteSerializer
+
+    def perform_create(self, serializer):
+        data = self.request.data
+        tags = data.get('tags', [])
+        if isinstance(tags, str):
+            tags = tags.split(',')
+        note = NotesService.create_note(
+            content=data.get('content'),
+            tags=tags,
+            dataset_id=data.get('dataset_id'),
+            literature_id=data.get('literature_id'),
+            query_id=data.get('query_id')
+        )
+
+    def perform_update(self, serializer):
+        data = self.request.data
+        tags = data.get('tags', None)
+        if isinstance(tags, str):
+            tags = tags.split(',')
+        NotesService.update_note(
+            note_id=self.get_object().id,
+            content=data.get('content'),
+            tags=tags
+        )
+
+    def perform_destroy(self, instance):
+        NotesService.delete_note(instance.id)
+
+    @action(detail=True, methods=['get'])
+    def graph(self, request, pk=None):
+        depth = int(request.query_params.get('depth', 2))
+        graph_data = NotesService.get_note_graph(int(pk), depth)
+        return Response(graph_data)
+
+    @action(detail=True, methods=['get'])
+    def relationships(self, request, pk=None):
+        relationships = NoteRelationship.objects.filter(note_id=pk)
+        serializer = NoteRelationshipSerializer(relationships, many=True)
+        return Response(serializer.data)
+
+class NoteRelationshipViewSet(viewsets.ModelViewSet):
+    queryset = NoteRelationship.objects.all()
+    serializer_class = NoteRelationshipSerializer
+
+    def perform_create(self, serializer):
+        data = self.request.data
+        NotesService.create_relationship(
+            note_id=data.get('note_id'),
+            target_type=data.get('target_type'),
+            target_id=data.get('target_id'),
+            relationship_type=data.get('relationship_type'),
+            description=data.get('description')
+        )
+
+    def perform_destroy(self, instance):
+        NotesService.delete_relationship(instance.id)
+
+class RelatedNotesView(views.APIView):
+    def get(self, request, target_type, target_id):
+        notes = Note.objects.filter(**{f"{target_type}_id": target_id})
+        serializer = NoteSerializer(notes, many=True)
+        return Response(serializer.data)

@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText, MessageSquare, List } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { annotationsService, type Annotation, type AnnotationCreate } from '../../services/annotationsService'
 import { AnnotationsList } from './AnnotationsList'
 import { AnnotationForm } from './AnnotationForm'
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
-import 'react-pdf/dist/esm/Page/TextLayer.css'
+import 'react-pdf/dist/Page/AnnotationLayer.css'
+import 'react-pdf/dist/Page/TextLayer.css'
 
 // Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
 interface PDFViewerProps {
   fileUrl: string
@@ -23,7 +24,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
   const [showAnnotations, setShowAnnotations] = useState(true)
   const [showAnnotationForm, setShowAnnotationForm] = useState(false)
   const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(null)
-  
+
   const queryClient = useQueryClient()
 
   // Fetch annotations for current page
@@ -130,79 +131,78 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
         <div className="flex items-center justify-between p-4 bg-gray-100 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">
-            Page {pageNumber} of {numPages}
-          </span>
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">
+              Page {pageNumber} of {numPages}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Navigation */}
+            <button
+              onClick={previousPage}
+              disabled={pageNumber <= 1}
+              className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Previous page"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={nextPage}
+              disabled={pageNumber >= numPages}
+              className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Next page"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            {/* Zoom */}
+            <div className="w-px h-6 bg-gray-300 mx-2"></div>
+            <button
+              onClick={zoomOut}
+              disabled={scale <= 0.5}
+              className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Zoom out"
+            >
+              <ZoomOut className="w-5 h-5" />
+            </button>
+            <span className="text-sm text-gray-600 min-w-[4rem] text-center">
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              onClick={zoomIn}
+              disabled={scale >= 3.0}
+              className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Zoom in"
+            >
+              <ZoomIn className="w-5 h-5" />
+            </button>
+
+            {/* Annotate */}
+            <div className="w-px h-6 bg-gray-300 mx-2"></div>
+            <button
+              onClick={handleAnnotate}
+              className="px-3 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors flex items-center gap-2"
+              title="Add annotation"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Annotate
+            </button>
+
+            {/* Toggle Annotations Panel */}
+            <button
+              onClick={() => setShowAnnotations(!showAnnotations)}
+              className={`p-2 rounded-md transition-colors ${showAnnotations
+                  ? 'bg-primary-100 text-primary-700'
+                  : 'text-gray-700 hover:bg-gray-200'
+                }`}
+              title={showAnnotations ? 'Hide annotations' : 'Show annotations'}
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {/* Navigation */}
-          <button
-            onClick={previousPage}
-            disabled={pageNumber <= 1}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Previous page"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={nextPage}
-            disabled={pageNumber >= numPages}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Next page"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-
-          {/* Zoom */}
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
-          <button
-            onClick={zoomOut}
-            disabled={scale <= 0.5}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Zoom out"
-          >
-            <ZoomOut className="w-5 h-5" />
-          </button>
-          <span className="text-sm text-gray-600 min-w-[4rem] text-center">
-            {Math.round(scale * 100)}%
-          </span>
-          <button
-            onClick={zoomIn}
-            disabled={scale >= 3.0}
-            className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Zoom in"
-          >
-            <ZoomIn className="w-5 h-5" />
-          </button>
-
-          {/* Annotate */}
-          <div className="w-px h-6 bg-gray-300 mx-2"></div>
-          <button
-            onClick={handleAnnotate}
-            className="px-3 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors flex items-center gap-2"
-            title="Add annotation"
-          >
-            <MessageSquare className="w-4 h-4" />
-            Annotate
-          </button>
-
-          {/* Toggle Annotations Panel */}
-          <button
-            onClick={() => setShowAnnotations(!showAnnotations)}
-            className={`p-2 rounded-md transition-colors ${
-              showAnnotations
-                ? 'bg-primary-100 text-primary-700'
-                : 'text-gray-700 hover:bg-gray-200'
-            }`}
-            title={showAnnotations ? 'Hide annotations' : 'Show annotations'}
-          >
-            <List className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
 
         {/* PDF Document */}
         <div className="flex-1 overflow-auto bg-gray-200 p-4">

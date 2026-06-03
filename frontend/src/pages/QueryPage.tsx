@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QueryInput } from '../components/query/QueryInput'
 import { QueryResults } from '../components/query/QueryResults'
 import { QueryHistory } from '../components/query/QueryHistory'
@@ -26,6 +26,8 @@ export function QueryPage() {
   // Extract queries array from response
   const history: QueryHistoryItem[] = historyData?.queries || []
 
+  const queryClient = useQueryClient()
+  
   // Execute query mutation
   const executeMutation = useMutation({
     mutationFn: queryService.executeQuery,
@@ -34,7 +36,7 @@ export function QueryPage() {
       setError(null)
       setShowVisualization(false) // Reset visualization on new query
       setShowSpatialViz(false) // Reset spatial viz on new query
-      refetchHistory()
+      queryClient.invalidateQueries({ queryKey: ['queryHistory'] })
     },
     onError: (error: any) => {
       console.error('Query execution failed:', error)

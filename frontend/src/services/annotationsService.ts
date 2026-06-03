@@ -41,7 +41,7 @@ export const annotationsService = {
    * Create a new annotation
    */
   async createAnnotation(annotation: AnnotationCreate): Promise<Annotation> {
-    const response = await api.post('/annotations', annotation)
+    const response = await api.post('/annotations/', annotation)
     return response.data
   },
 
@@ -52,13 +52,10 @@ export const annotationsService = {
     literatureId: number,
     pageNumber?: number
   ): Promise<Annotation[]> {
-    const params: any = {}
+    const params: any = { literature_id: literatureId }
     if (pageNumber !== undefined) params.page_number = pageNumber
     
-    const response = await api.get(
-      `/annotations/literature/${literatureId}`,
-      { params }
-    )
+    const response = await api.get('/annotations/', { params })
     return response.data
   },
 
@@ -66,7 +63,7 @@ export const annotationsService = {
    * Get a specific annotation
    */
   async getAnnotation(annotationId: number): Promise<Annotation> {
-    const response = await api.get(`/annotations/${annotationId}`)
+    const response = await api.get(`/annotations/${annotationId}/`)
     return response.data
   },
 
@@ -78,7 +75,7 @@ export const annotationsService = {
     update: AnnotationUpdate
   ): Promise<Annotation> {
     const response = await api.put(
-      `/annotations/${annotationId}`,
+      `/annotations/${annotationId}/`,
       update
     )
     return response.data
@@ -88,6 +85,6 @@ export const annotationsService = {
    * Delete an annotation
    */
   async deleteAnnotation(annotationId: number): Promise<void> {
-    await api.delete(`/annotations/${annotationId}`)
+    await api.delete(`/annotations/${annotationId}/`)
   }
 }

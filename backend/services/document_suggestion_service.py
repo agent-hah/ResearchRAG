@@ -6,11 +6,11 @@ Analyzes datasets and suggests relevant research articles using Google Scholar/S
 import re
 import logging
 from typing import List, Dict, Any, Optional
-from sqlalchemy.orm import Session
+
 import google.generativeai as genai
 from backend.config import get_settings
-from backend.models.dataset import Dataset
-from backend.models.document_suggestion import DocumentSuggestion
+from rag.models import Dataset
+from query.models import DocumentSuggestion
 from backend.services.search_api_service import SearchAPIService
 from backend.utils.logger import get_logger
 
@@ -26,9 +26,9 @@ class DocumentSuggestionService:
     Service for generating and managing document suggestions
     """
     
-    def __init__(self, db: Session):
+    def __init__(self):
         self.db = db
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemma-4-26b-a4b-it')
         self.search_api = SearchAPIService()
     
     async def analyze_dataset_for_keywords(self, dataset_id: int) -> List[str]:
@@ -43,7 +43,7 @@ class DocumentSuggestionService:
         """
         try:
             # Get dataset
-            dataset = self.db.query(Dataset).filter(Dataset.id == dataset_id).first()
+            dataset = self.Dataset.objects.filter(id=dataset_id).first()
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
@@ -234,10 +234,10 @@ Return ONLY valid JSON, no additional text."""
                         citation_count=article.get('citation_count')
                     )
                     
-                    self.db.add(suggestion)
+                    self.suggestion.save()
                     all_suggestions.append(suggestion)
             
-            self.db.commit()
+            self.
             
             logger.info(f"Generated {len(all_suggestions)} suggestions for dataset {dataset_id}")
             return all_suggestions
@@ -306,8 +306,8 @@ Return ONLY valid JSON, no additional text."""
         if is_imported is not None:
             suggestion.is_imported = is_imported
         
-        self.db.commit()
-        self.db.refresh(suggestion)
+        self.
+        self.
         
         logger.info(f"Updated feedback for suggestion {suggestion_id}")
         return suggestion
@@ -326,7 +326,7 @@ Return ONLY valid JSON, no additional text."""
             DocumentSuggestion.dataset_id == dataset_id
         ).delete()
         
-        self.db.commit()
+        self.
         
         logger.info(f"Deleted {count} suggestions for dataset {dataset_id}")
         return count

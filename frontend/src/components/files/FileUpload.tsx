@@ -39,6 +39,8 @@ export function FileUpload({ type, onUploadComplete }: FileUploadProps) {
         )
       )
       queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['rag-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['queryHistory'] })
       toast.success(`${file.name} uploaded successfully`)
       onUploadComplete?.()
     },

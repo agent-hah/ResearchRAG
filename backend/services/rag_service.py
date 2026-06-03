@@ -1,39 +1,33 @@
 """
-RAG service for literature indexing and retrieval using LangChain and ChromaDB.
+RAG service for literature indexing and retrieval using LangChain and ChromaDB (Django ORM).
 """
 import time
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
+from tenacity import retry, wait_exponential, stop_after_attempt
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from sqlalchemy.orm import Session
 
-from backend.config import get_settings
-from backend.models.literature import Literature, ProcessingStatus
-from backend.services.pdf_processor import PDFProcessor
-from backend.utils.logger import get_logger
+from django.conf import settings
+from literature.models import Literature, ProcessingStatus
+from services.pdf_processor import PDFProcessor
 
-logger = get_logger(__name__)
-settings = get_settings()
-
+import logging
+logger = logging.getLogger(__name__)
 
 class RAGService:
     """Service for RAG operations using LangChain and ChromaDB."""
     
     def __init__(self):
-        """Initialize RAG service with embeddings and vector store."""
-        self.settings = settings
-        
-        # Initialize embeddings
         self.embeddings = GoogleGenerativeAIEmbeddings(
             model=settings.EMBEDDING_MODEL,
-            google_api_key=settings.GEMINI_API_KEY
+            google_api_key=settings.GOOGLE_API_KEY
         )
         
-        # Initialize text splitter
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=settings.CHUNK_SIZE,
             chunk_overlap=settings.CHUNK_OVERLAP,
@@ -41,36 +35,15 @@ class RAGService:
             separators=["\n\n", "\n", ". ", " ", ""]
         )
         
-        # Initialize ChromaDB
         self.vector_store = Chroma(
             collection_name=settings.CHROMA_COLLECTION,
             embedding_function=self.embeddings,
             persist_directory=str(settings.CHROMA_DB_DIR)
         )
-        
         logger.info("RAG service initialized")
     
-    def index_literature(
-        self,
-        literature: Literature,
-        text_content: str,
-        db: Session,
-        force_reindex: bool = False
-    ) -> Dict[str, Any]:
-        """
-        Index literature document in vector store.
-        
-        Args:
-            literature: Literature instance
-            text_content: Extracted text content
-            db: Database session
-            force_reindex: Force reindexing if already indexed
-            
-        Returns:
-            Dictionary with indexing results
-        """
+    def index_literature(self, literature: Literature, text_content: str, force_reindex: bool = False) -> Dict[str, Any]:
         try:
-            # Check if already indexed
             if literature.processing_status == ProcessingStatus.INDEXED and not force_reindex:
                 logger.info(f"Literature {literature.id} already indexed")
                 return {
@@ -81,15 +54,12 @@ class RAGService:
                     "message": "Literature already indexed. Use force_reindex=True to reindex."
                 }
             
-            # Delete existing chunks if reindexing
             if force_reindex:
                 self._delete_literature_chunks(literature.id)
             
-            # Split text into chunks
             chunks = self.text_splitter.split_text(text_content)
             logger.info(f"Split text into {len(chunks)} chunks")
             
-            # Prepare metadata for each chunk
             metadatas = []
             texts = []
             ids = []
@@ -104,26 +74,36 @@ class RAGService:
                     "source": literature.file_path,
                     "indexed_at": datetime.utcnow().isoformat()
                 }
-                
                 texts.append(chunk)
                 metadatas.append(metadata)
                 ids.append(chunk_id)
             
-            # Add to vector store
-            self.vector_store.add_texts(
-                texts=texts,
-                metadatas=metadatas,
-                ids=ids
-            )
+            # Use batching and exponential backoff to avoid hitting API rate limits
+            batch_size = 10  # Process in smaller batches
             
-            # Update literature status
+            @retry(
+                wait=wait_exponential(multiplier=1, min=10, max=60),
+                stop=stop_after_attempt(5),
+                reraise=True
+            )
+            def add_batch(b_texts, b_metadatas, b_ids):
+                self.vector_store.add_texts(texts=b_texts, metadatas=b_metadatas, ids=b_ids)
+
+            for i in range(0, len(texts), batch_size):
+                b_texts = texts[i:i + batch_size]
+                b_metadatas = metadatas[i:i + batch_size]
+                b_ids = ids[i:i + batch_size]
+                logger.info(f"Indexing batch {i // batch_size + 1}/{(len(texts) + batch_size - 1) // batch_size} for literature {literature.id}")
+                add_batch(b_texts, b_metadatas, b_ids)
+                time.sleep(1.0)  # Delay between batches to prevent bursting
+            
+            self.vector_store.persist()
+            
             literature.processing_status = ProcessingStatus.INDEXED
             literature.indexed_at = datetime.utcnow()
-            db.commit()
-            db.refresh(literature)
+            literature.save()
             
             logger.info(f"Indexed literature {literature.id}: {len(chunks)} chunks")
-            
             return {
                 "literature_id": literature.id,
                 "filename": literature.filename,
@@ -132,85 +112,64 @@ class RAGService:
                 "message": f"Successfully indexed {len(chunks)} chunks",
                 "indexed_at": literature.indexed_at
             }
-            
         except Exception as e:
             logger.error(f"Error indexing literature {literature.id}: {str(e)}")
             literature.processing_status = ProcessingStatus.FAILED
-            db.commit()
+            literature.save()
             raise
     
-    def search_literature(
-        self,
-        query: str,
-        top_k: int = 5,
-        literature_ids: Optional[List[int]] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Search literature using semantic similarity.
-        
-        Args:
-            query: Search query
-            top_k: Number of results to return
-            literature_ids: Optional filter by literature IDs
-            
-        Returns:
-            List of search results with metadata
-        """
+    def search_literature(self, query: str, top_k: int = 5, literature_ids: Optional[List[int]] = None, max_chunks_per_doc: int = 3) -> List[Dict[str, Any]]:
         try:
             start_time = time.time()
-            
-            # Build filter if literature_ids provided
             filter_dict = None
             if literature_ids:
                 filter_dict = {"literature_id": {"$in": literature_ids}}
             
-            # Perform similarity search
-            results = self.vector_store.similarity_search_with_score(
-                query=query,
-                k=top_k,
-                filter=filter_dict
-            )
+            fetch_k = top_k * 5
+            results = self.vector_store.similarity_search_with_score(query=query, k=fetch_k, filter=filter_dict)
             
-            # Format results
             formatted_results = []
+            reserve = []
+            doc_counts = {}
+            
             for doc, score in results:
+                lit_id = doc.metadata.get("literature_id")
+                
                 result = {
-                    "literature_id": doc.metadata.get("literature_id"),
+                    "literature_id": lit_id,
                     "filename": doc.metadata.get("filename"),
                     "text": doc.page_content,
                     "page": doc.metadata.get("page"),
                     "score": float(score),
                     "metadata": doc.metadata
                 }
-                formatted_results.append(result)
+                
+                if lit_id is not None:
+                    if doc_counts.get(lit_id, 0) < max_chunks_per_doc:
+                        formatted_results.append(result)
+                        doc_counts[lit_id] = doc_counts.get(lit_id, 0) + 1
+                    else:
+                        reserve.append(result)
+                else:
+                    formatted_results.append(result)
+                    
+                if len(formatted_results) >= top_k:
+                    break
+                    
+            if len(formatted_results) < top_k and reserve:
+                needed = top_k - len(formatted_results)
+                formatted_results.extend(reserve[:needed])
             
-            search_time = (time.time() - start_time) * 1000  # Convert to ms
-            
+            search_time = (time.time() - start_time) * 1000
             logger.info(f"Search completed: {len(formatted_results)} results in {search_time:.2f}ms")
-            
             return formatted_results
-            
         except Exception as e:
             logger.error(f"Error searching literature: {str(e)}")
             raise
     
-    def get_stats(self, db: Session) -> Dict[str, Any]:
-        """
-        Get RAG system statistics.
-        
-        Args:
-            db: Database session
-            
-        Returns:
-            Dictionary with statistics
-        """
+    def get_stats(self) -> Dict[str, Any]:
         try:
-            # Count indexed literature
-            indexed_count = db.query(Literature).filter(
-                Literature.processing_status == ProcessingStatus.INDEXED
-            ).count()
-            
-            # Get collection stats
+            indexed_count = Literature.objects.filter(processing_status=ProcessingStatus.INDEXED).count()
             collection = self.vector_store._collection
             total_chunks = collection.count()
             
@@ -222,77 +181,41 @@ class RAGService:
                 "chunk_size": settings.CHUNK_SIZE,
                 "chunk_overlap": settings.CHUNK_OVERLAP
             }
-            
         except Exception as e:
             logger.error(f"Error getting RAG stats: {str(e)}")
             raise
     
     def _delete_literature_chunks(self, literature_id: int):
-        """
-        Delete all chunks for a literature document.
-        
-        Args:
-            literature_id: Literature ID
-        """
         try:
-            # Get all chunk IDs for this literature
             collection = self.vector_store._collection
-            results = collection.get(
-                where={"literature_id": literature_id}
-            )
-            
+            results = collection.get(where={"literature_id": literature_id})
             if results and results["ids"]:
-                # Delete chunks
                 collection.delete(ids=results["ids"])
+                self.vector_store.persist()
                 logger.info(f"Deleted {len(results['ids'])} chunks for literature {literature_id}")
-            
         except Exception as e:
             logger.error(f"Error deleting chunks for literature {literature_id}: {str(e)}")
             raise
     
-    def delete_literature_index(self, literature_id: int, db: Session):
-        """
-        Delete literature from index and update status.
-        
-        Args:
-            literature_id: Literature ID
-            db: Database session
-        """
+    def delete_literature_index(self, literature_id: int):
         try:
-            # Delete chunks
             self._delete_literature_chunks(literature_id)
-            
-            # Update literature status
-            literature = db.query(Literature).filter(Literature.id == literature_id).first()
+            literature = Literature.objects.filter(id=literature_id).first()
             if literature:
                 literature.processing_status = ProcessingStatus.COMPLETED
                 literature.indexed_at = None
-                db.commit()
-            
+                literature.save()
             logger.info(f"Deleted index for literature {literature_id}")
-            
         except Exception as e:
             logger.error(f"Error deleting literature index: {str(e)}")
             raise
     
-    def reindex_all(self, db: Session) -> Dict[str, Any]:
-        """
-        Reindex all literature documents.
-        
-        Args:
-            db: Database session
-            
-        Returns:
-            Dictionary with reindexing results
-        """
+    def reindex_all(self) -> Dict[str, Any]:
         try:
-            # Get all completed literature
-            literature_list = db.query(Literature).filter(
-                Literature.processing_status.in_([ProcessingStatus.COMPLETED, ProcessingStatus.INDEXED])
-            ).all()
+            literature_list = Literature.objects.all()
             
             results = {
-                "total": len(literature_list),
+                "total": literature_list.count(),
                 "success": 0,
                 "failed": 0,
                 "errors": []
@@ -300,15 +223,18 @@ class RAGService:
             
             for literature in literature_list:
                 try:
-                    # Extract text
+                    literature.processing_status = ProcessingStatus.PROCESSING
+                    literature.save()
+                    
                     text_content = PDFProcessor.extract_text(Path(literature.file_path))
-                    
-                    # Index
-                    self.index_literature(literature, text_content, db, force_reindex=True)
+                    self.index_literature(literature, text_content, force_reindex=True)
                     results["success"] += 1
-                    
                 except Exception as e:
                     results["failed"] += 1
+                    literature.processing_status = ProcessingStatus.FAILED
+                    literature.error_message = str(e)
+                    literature.save()
+                    
                     results["errors"].append({
                         "literature_id": literature.id,
                         "filename": literature.filename,
@@ -318,18 +244,13 @@ class RAGService:
             
             logger.info(f"Reindexing complete: {results['success']} success, {results['failed']} failed")
             return results
-            
         except Exception as e:
             logger.error(f"Error during reindex all: {str(e)}")
             raise
 
-
-# Singleton instance
 _rag_service_instance = None
 
-
 def get_rag_service() -> RAGService:
-    """Get or create RAG service singleton."""
     global _rag_service_instance
     if _rag_service_instance is None:
         _rag_service_instance = RAGService()

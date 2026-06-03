@@ -21,7 +21,7 @@ class RefinementService:
     """Service for processing visualization refinement commands"""
     
     def __init__(self):
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemma-4-26b-a4b-it')
     
     def parse_refinement_command(
         self,

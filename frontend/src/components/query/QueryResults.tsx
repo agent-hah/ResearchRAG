@@ -25,8 +25,63 @@ export function QueryResults({ result }: QueryResultsProps) {
           <h3 className="text-lg font-semibold text-gray-900">AI Analysis</h3>
         </div>
         <div className="card-content">
-          <div className="prose prose-sm max-w-none">
-            <p className="text-gray-700 whitespace-pre-wrap">{result.synthesis}</p>
+          <div className="prose prose-sm max-w-none space-y-4">
+            {/* Summary */}
+            {result.synthesis?.summary && (
+              <p className="text-gray-700">{result.synthesis.summary}</p>
+            )}
+
+            {/* Key Findings */}
+            {result.synthesis?.key_findings?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Key Findings</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {result.synthesis.key_findings.map((finding, i) => (
+                    <li key={i} className="text-sm text-gray-700">{finding}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Data Insights */}
+            {result.synthesis?.data_insights?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Data Insights</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {result.synthesis.data_insights.map((insight, i) => (
+                    <li key={i} className="text-sm text-gray-700">{insight}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Literature Insights */}
+            {result.synthesis?.literature_insights?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Literature Insights</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {result.synthesis.literature_insights.map((insight, i) => (
+                    <li key={i} className="text-sm text-gray-700">{insight}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Methodology Notes */}
+            {result.synthesis?.methodology_notes && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Methodology</h4>
+                <p className="text-sm text-gray-600">{result.synthesis.methodology_notes}</p>
+              </div>
+            )}
+
+            {/* Limitations */}
+            {result.synthesis?.limitations && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">Limitations</h4>
+                <p className="text-sm text-gray-600">{result.synthesis.limitations}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -106,20 +161,22 @@ export function QueryResults({ result }: QueryResultsProps) {
       )}
 
       {/* SQL Query */}
-      <div className="card">
-        <div className="card-header flex items-center gap-2">
-          <Code className="w-5 h-5 text-primary-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Generated SQL</h3>
-          <span className="ml-auto px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
-            {Math.round(result.sql_confidence * 100)}% confidence
-          </span>
+      {result.sql_query && result.sql_query.trim().length > 0 && (
+        <div className="card">
+          <div className="card-header flex items-center gap-2">
+            <Code className="w-5 h-5 text-primary-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Generated SQL</h3>
+            <span className="ml-auto px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+              {Math.round(result.sql_confidence * 100)}% confidence
+            </span>
+          </div>
+          <div className="card-content">
+            <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-sm">
+              <code>{result.sql_query}</code>
+            </pre>
+          </div>
         </div>
-        <div className="card-content">
-          <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-sm">
-            <code>{result.sql_query}</code>
-          </pre>
-        </div>
-      </div>
+      )}
 
       {/* Metadata */}
       <div className="text-sm text-gray-500 text-center">

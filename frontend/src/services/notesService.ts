@@ -64,7 +64,7 @@ export const notesService = {
    * Create a new note
    */
   async createNote(note: NoteCreate): Promise<Note> {
-    const response = await api.post('/notes', note)
+    const response = await api.post('/notes/notes/', note)
     return response.data
   },
 
@@ -81,7 +81,7 @@ export const notesService = {
     if (tags) params.tags = tags
     if (search) params.search = search
     
-    const response = await api.get('/notes', { params })
+    const response = await api.get('/notes/notes/', { params })
     return response.data
   },
 
@@ -89,7 +89,7 @@ export const notesService = {
    * Get a specific note
    */
   async getNote(noteId: number): Promise<Note> {
-    const response = await api.get(`/notes/${noteId}`)
+    const response = await api.get(`/notes/notes/${noteId}/`)
     return response.data
   },
 
@@ -97,7 +97,7 @@ export const notesService = {
    * Update a note
    */
   async updateNote(noteId: number, update: NoteUpdate): Promise<Note> {
-    const response = await api.put(`/notes/${noteId}`, update)
+    const response = await api.put(`/notes/notes/${noteId}/`, update)
     return response.data
   },
 
@@ -105,7 +105,7 @@ export const notesService = {
    * Delete a note
    */
   async deleteNote(noteId: number): Promise<void> {
-    await api.delete(`/notes/${noteId}`)
+    await api.delete(`/notes/notes/${noteId}/`)
   },
 
   /**
@@ -116,8 +116,8 @@ export const notesService = {
     relationship: RelationshipCreate
   ): Promise<Relationship> {
     const response = await api.post(
-      `/notes/${noteId}/relationships`,
-      relationship
+      `/notes/relationships/`,
+      { note_id: noteId, ...relationship }
     )
     return response.data
   },
@@ -126,7 +126,7 @@ export const notesService = {
    * Get note relationships
    */
   async getRelationships(noteId: number): Promise<Relationship[]> {
-    const response = await api.get(`/notes/${noteId}/relationships`)
+    const response = await api.get(`/notes/notes/${noteId}/relationships/`)
     return response.data
   },
 
@@ -134,7 +134,7 @@ export const notesService = {
    * Get note graph
    */
   async getNoteGraph(noteId: number, depth: number = 2): Promise<NoteGraph> {
-    const response = await api.get(`/notes/${noteId}/graph`, {
+    const response = await api.get(`/notes/notes/${noteId}/graph/`, {
       params: { depth }
     })
     return response.data
@@ -145,7 +145,7 @@ export const notesService = {
    */
   async getRelatedNotes(targetType: EntityType, targetId: number): Promise<Note[]> {
     const response = await api.get(
-      `/notes/related/${targetType}/${targetId}`
+      `/notes/related/${targetType}/${targetId}/`
     )
     return response.data
   }

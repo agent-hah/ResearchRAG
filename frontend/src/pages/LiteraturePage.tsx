@@ -24,7 +24,7 @@ export function LiteraturePage() {
 
   // If a literature is selected, show the PDF viewer
   if (selectedLiterature) {
-    const fileUrl = `http://localhost:8000/api/v1/files/${selectedLiterature.id}/download`
+    const fileUrl = `/api/v1/literature/${selectedLiterature.id}/download/`
     
     return (
       <div className="h-full flex flex-col">

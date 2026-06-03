@@ -109,7 +109,7 @@ export function HomePage() {
             </p>
           </div>
           <div className="card-content">
-            {queryHistory?.queries.length ? (
+            {queryHistory?.queries?.length ? (
               <div className="space-y-4">
                 {queryHistory.queries.map((query) => (
                   <div key={query.id} className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50">

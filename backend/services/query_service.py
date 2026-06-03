@@ -1,59 +1,90 @@
 """
-Query processing service for natural language to SQL conversion and execution.
+Query processing service for natural language to SQL conversion and execution (Django ORM).
 """
 import time
 import json
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
-from sqlalchemy import text, inspect
-from sqlalchemy.orm import Session
 
 import google.generativeai as genai
-from backend.config import get_settings
-from backend.models.dataset import Dataset
-from backend.models.query_history import QueryHistory
-from backend.services.csv_processor import CSVProcessor
-from backend.services.rag_service import get_rag_service
-from backend.utils.logger import get_logger
+from django.conf import settings
+from django.db import connection
 
-logger = get_logger(__name__)
-settings = get_settings()
+from rag.models import Dataset
+from query.models import QueryHistory
+from services.csv_processor import CSVProcessor
+from services.rag_service import get_rag_service
 
+import logging
+logger = logging.getLogger(__name__)
+
+
+def _extract_response_text(response) -> str:
+    """Extract text from a Gemini/Gemma response, handling multi-part responses and CoT."""
+    try:
+        text = response.text
+    except ValueError:
+        # Multi-part response (often happens with CoT reasoning)
+        parts = response.candidates[0].content.parts
+        text = "".join(part.text for part in parts if hasattr(part, 'text'))
+    
+    import re
+    import json
+    
+    # Sanitize invalid escape sequences (common LLM artifact)
+    def sanitize(s: str) -> str:
+        return re.sub(r'\\(?![\"\\/bfnrtu])', r'\\\\', s)
+    
+    text = sanitize(text)
+    
+    # 1. Try to find a markdown JSON code block
+    matches = re.findall(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
+    if matches:
+        return matches[-1].strip()
+        
+    # 2. Try to find the outermost valid JSON object in the text
+    # This handles cases where reasoning is mixed with JSON without code blocks
+    start_indices = [i for i, char in enumerate(text) if char == '{']
+    end_idx = text.rfind('}')
+    
+    if end_idx != -1:
+        for start_idx in start_indices:
+            if start_idx > end_idx:
+                break
+            candidate = text[start_idx:end_idx+1]
+            try:
+                json.loads(candidate)
+                return candidate
+            except json.JSONDecodeError:
+                continue
+                
+    return text.strip()
 
 class QueryService:
     """Service for processing natural language queries."""
     
     def __init__(self):
-        """Initialize query service."""
-        self.settings = settings
-        
-        # Configure Gemini
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        
+        genai.configure(api_key=settings.GOOGLE_API_KEY)
+        self.model = genai.GenerativeModel(
+            model_name=settings.GEMINI_MODEL
+        )
+        self.safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+        ]
         logger.info("Query service initialized")
     
-    def get_database_schema(self, db: Session) -> List[Dict[str, Any]]:
-        """
-        Get database schema information for all dataset tables.
-        
-        Args:
-            db: Database session
-            
-        Returns:
-            List of schema information dictionaries
-        """
+    def get_database_schema(self) -> List[Dict[str, Any]]:
         try:
             schemas = []
-            datasets = db.query(Dataset).filter(Dataset.table_name.isnot(None)).all()
+            datasets = Dataset.objects.exclude(table_name__isnull=True).exclude(table_name__exact='')
             
             for dataset in datasets:
                 try:
-                    # Get schema
-                    schema = CSVProcessor.get_table_schema(dataset.table_name, db)
-                    
-                    # Get sample data
-                    sample_data = CSVProcessor.get_table_preview(dataset.table_name, db, limit=3)
+                    schema = CSVProcessor.get_table_schema(dataset.table_name)
+                    sample_data = CSVProcessor.get_table_preview(dataset.table_name, limit=3)
                     
                     schemas.append({
                         "table_name": dataset.table_name,
@@ -62,42 +93,21 @@ class QueryService:
                         "row_count": dataset.row_count or 0,
                         "sample_data": sample_data
                     })
-                    
                 except Exception as e:
                     logger.error(f"Error getting schema for table {dataset.table_name}: {str(e)}")
                     continue
             
             return schemas
-            
         except Exception as e:
             logger.error(f"Error getting database schema: {str(e)}")
             raise
     
-    def generate_sql(
-        self,
-        query: str,
-        schemas: List[Dict[str, Any]],
-        dataset_ids: Optional[List[int]] = None
-    ) -> Dict[str, Any]:
-        """
-        Generate SQL query from natural language using Gemini.
-        
-        Args:
-            query: Natural language query
-            schemas: Database schema information
-            dataset_ids: Optional filter by dataset IDs
-            
-        Returns:
-            Dictionary with SQL generation results
-        """
+    def generate_sql(self, query: str, schemas: List[Dict[str, Any]], dataset_ids: Optional[List[int]] = None) -> Dict[str, Any]:
         try:
-            # Filter schemas if dataset_ids provided
             if dataset_ids:
                 filtered_schemas = []
                 for schema in schemas:
-                    # Find dataset by table name
                     table_name = schema["table_name"]
-                    # Extract dataset ID from table name (format: dataset_{id}_{name})
                     try:
                         dataset_id = int(table_name.split('_')[1])
                         if dataset_id in dataset_ids:
@@ -115,10 +125,8 @@ class QueryService:
                     "confidence": 0.0
                 }
             
-            # Build schema context
             schema_context = self._build_schema_context(schemas)
             
-            # Create prompt
             prompt = f"""
 You are an expert SQL query generator. Convert the natural language query to SQL based on the provided database schema.
 
@@ -148,25 +156,20 @@ RESPONSE FORMAT (JSON):
 
 Respond with valid JSON only:
 """
+            response = self.model.generate_content(
+                prompt,
+                safety_settings=self.safety_settings
+            )
             
-            # Generate SQL
-            response = self.model.generate_content(prompt)
-            
-            # Parse response
             try:
-                result = json.loads(response.text)
-                
-                # Validate required fields
+                result = json.loads(_extract_response_text(response))
                 required_fields = ["sql_query", "explanation", "tables_used", "columns_used", "confidence"]
                 for field in required_fields:
                     if field not in result:
                         result[field] = "" if field != "confidence" else 0.0
                 
-                # Ensure confidence is between 0 and 1
                 result["confidence"] = max(0.0, min(1.0, float(result.get("confidence", 0.0))))
-                
                 return result
-                
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse SQL generation response: {str(e)}")
                 return {
@@ -176,7 +179,6 @@ Respond with valid JSON only:
                     "columns_used": [],
                     "confidence": 0.0
                 }
-            
         except Exception as e:
             logger.error(f"Error generating SQL: {str(e)}")
             return {
@@ -187,35 +189,19 @@ Respond with valid JSON only:
                 "confidence": 0.0
             }
     
-    def execute_sql(self, sql_query: str, db: Session) -> Dict[str, Any]:
-        """
-        Execute SQL query and return results.
-        
-        Args:
-            sql_query: SQL query to execute
-            db: Database session
-            
-        Returns:
-            Dictionary with query results
-        """
+    def execute_sql(self, sql_query: str) -> Dict[str, Any]:
         try:
             start_time = time.time()
-            
-            # Execute query
-            result = db.execute(text(sql_query))
-            
-            # Get column names
-            columns = list(result.keys()) if result.keys() else []
-            
-            # Fetch all rows
-            rows = []
-            for row in result.fetchall():
-                row_dict = dict(zip(columns, row))
-                # Convert any non-serializable types
-                for key, value in row_dict.items():
-                    if isinstance(value, (datetime,)):
-                        row_dict[key] = value.isoformat()
-                rows.append(row_dict)
+            with connection.cursor() as cursor:
+                cursor.execute(sql_query)
+                columns = [col[0] for col in cursor.description] if cursor.description else []
+                rows = []
+                for row in cursor.fetchall():
+                    row_dict = dict(zip(columns, row))
+                    for key, value in row_dict.items():
+                        if isinstance(value, datetime):
+                            row_dict[key] = value.isoformat()
+                    rows.append(row_dict)
             
             execution_time = (time.time() - start_time) * 1000
             
@@ -225,7 +211,6 @@ Respond with valid JSON only:
                 "columns": columns,
                 "execution_time_ms": execution_time
             }
-            
         except Exception as e:
             logger.error(f"Error executing SQL: {str(e)}")
             return {
@@ -236,72 +221,30 @@ Respond with valid JSON only:
                 "error": str(e)
             }
     
-    def get_literature_context(
-        self,
-        query: str,
-        max_results: int = 3,
-        literature_ids: Optional[List[int]] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Get relevant literature context using RAG.
-        
-        Args:
-            query: Natural language query
-            max_results: Maximum number of literature results
-            literature_ids: Optional filter by literature IDs
-            
-        Returns:
-            List of literature context dictionaries
-        """
+    def get_literature_context(self, query: str, max_results: int = 10000, literature_ids: Optional[List[int]] = None) -> List[Dict[str, Any]]:
         try:
             if max_results <= 0:
                 return []
             
             rag_service = get_rag_service()
+            results = rag_service.search_literature(query=query, top_k=max_results, literature_ids=literature_ids)
             
-            # Search literature
-            results = rag_service.search_literature(
-                query=query,
-                top_k=max_results,
-                literature_ids=literature_ids
-            )
-            
-            # Format results
             context = []
             for result in results:
                 context.append({
                     "literature_id": result["literature_id"],
-                    "filename": result["filename"],
-                    "text": result["text"],
-                    "relevance_score": result["score"],
-                    "metadata": result["metadata"]
+                    "title": result.get("title") or result.get("filename") or "Unknown Document",
+                    "excerpt": (result.get("text") or "")[:300] + "...",
+                    "relevance_score": result.get("score", 0.0),
+                    "metadata": result.get("metadata", {})
                 })
-            
             return context
-            
         except Exception as e:
             logger.error(f"Error getting literature context: {str(e)}")
             return []
     
-    def synthesize_results(
-        self,
-        query: str,
-        sql_result: Dict[str, Any],
-        literature_context: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Synthesize data results with literature context using Gemini.
-        
-        Args:
-            query: Original natural language query
-            sql_result: SQL execution results
-            literature_context: Literature context from RAG
-            
-        Returns:
-            Dictionary with synthesis results
-        """
+    def synthesize_results(self, query: str, sql_result: Dict[str, Any], literature_context: List[Dict[str, Any]]) -> Dict[str, Any]:
         try:
-            # Prepare data summary
             data_summary = f"Query returned {sql_result['row_count']} rows"
             if sql_result['row_count'] > 0:
                 data_summary += f" with columns: {', '.join(sql_result['columns'])}"
@@ -310,55 +253,52 @@ Respond with valid JSON only:
                 else:
                     data_summary += f"\nFirst 3 rows: {json.dumps(sql_result['rows'][:3], indent=2)}"
             
-            # Prepare literature summary
             literature_summary = ""
             if literature_context:
                 literature_summary = f"Found {len(literature_context)} relevant literature sources:\n"
                 for i, lit in enumerate(literature_context, 1):
-                    literature_summary += f"{i}. {lit['filename']}: {lit['text'][:200]}...\n"
+                    literature_summary += f"{i}. {lit.get('title', 'Unknown')}: {lit.get('excerpt', '')[:200]}...\n"
             
-            # Create synthesis prompt
             prompt = f"""
-You are a research analyst. Synthesize the data query results with relevant literature context to provide comprehensive insights.
+You are a research analyst. Synthesize the provided information to answer the original query.
 
 ORIGINAL QUERY:
 {query}
 
-DATA RESULTS:
+DATA RESULTS (Structured data from databases, may be empty):
 {data_summary}
 
-LITERATURE CONTEXT:
+LITERATURE CONTEXT (Unstructured data from uploaded documents, may be empty):
 {literature_summary}
 
 INSTRUCTIONS:
-1. Provide a clear summary of what the data shows
-2. Identify key findings from the data
-3. Extract insights from the literature that relate to the query
-4. Note any methodology considerations
-5. Identify limitations or caveats
-6. Be objective and evidence-based
+1. Provide a clear summary that answers the user's query using the available information.
+2. If DATA RESULTS are empty, DO NOT mention the lack of data or treat it as an error or limitation. Simply synthesize the LITERATURE CONTEXT.
+3. If LITERATURE CONTEXT is empty, DO NOT mention the lack of literature. Simply synthesize the DATA RESULTS.
+4. Extract key findings, data insights, and literature insights based on what is available.
+5. Identify any methodology considerations if applicable.
+6. Do NOT mention that the snippets are fragmented or incomplete. Treat the provided text as the full truth.
+7. Be objective and evidence-based.
+8. Format all mathematical expressions and equations using plain text or standard Markdown. Do NOT output raw LaTeX macros unless wrapped in $ or $$ for proper rendering.
 
 RESPONSE FORMAT (JSON):
 {{
-    "summary": "Brief overview of findings...",
-    "key_findings": ["Finding 1", "Finding 2", "Finding 3"],
+    "summary": "Brief overview of findings answering the query...",
+    "key_findings": ["Finding 1", "Finding 2"],
     "data_insights": ["Data insight 1", "Data insight 2"],
     "literature_insights": ["Literature insight 1", "Literature insight 2"],
-    "methodology_notes": "Notes about methodology or approach...",
-    "limitations": "Limitations or caveats to consider..."
+    "methodology_notes": "Notes about methodology or approach..."
 }}
 
 Respond with valid JSON only:
 """
+            response = self.model.generate_content(
+                prompt,
+                safety_settings=self.safety_settings
+            )
             
-            # Generate synthesis
-            response = self.model.generate_content(prompt)
-            
-            # Parse response
             try:
-                result = json.loads(response.text)
-                
-                # Ensure all fields exist
+                result = json.loads(_extract_response_text(response))
                 default_result = {
                     "summary": "Analysis completed",
                     "key_findings": [],
@@ -367,13 +307,10 @@ Respond with valid JSON only:
                     "methodology_notes": None,
                     "limitations": None
                 }
-                
                 for key, default_value in default_result.items():
                     if key not in result:
                         result[key] = default_value
-                
                 return result
-                
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse synthesis response: {str(e)}")
                 return {
@@ -384,7 +321,6 @@ Respond with valid JSON only:
                     "methodology_notes": None,
                     "limitations": None
                 }
-            
         except Exception as e:
             logger.error(f"Error synthesizing results: {str(e)}")
             return {
@@ -396,118 +332,47 @@ Respond with valid JSON only:
                 "limitations": None
             }
     
-    def save_query_history(
-        self,
-        db: Session,
-        query: str,
-        sql_query: str,
-        row_count: int,
-        literature_count: int,
-        processing_time_ms: float
-    ) -> QueryHistory:
-        """
-        Save query to history.
-        
-        Args:
-            db: Database session
-            query: Original natural language query
-            sql_query: Generated SQL query
-            row_count: Number of rows returned
-            literature_count: Number of literature results
-            processing_time_ms: Total processing time
-            
-        Returns:
-            Created QueryHistory instance
-        """
+    def save_query_history(self, query: str, sql_query: str, row_count: int, processing_time_ms: float) -> QueryHistory:
         try:
-            history = QueryHistory(
-                query=query,
+            history = QueryHistory.objects.create(
+                query_text=query,
                 sql_query=sql_query,
-                row_count=row_count,
-                literature_count=literature_count,
-                processing_time_ms=processing_time_ms
+                result_count=row_count,
+                execution_time_ms=processing_time_ms
             )
-            
-            db.add(history)
-            db.commit()
-            db.refresh(history)
-            
             return history
-            
         except Exception as e:
             logger.error(f"Error saving query history: {str(e)}")
             raise
     
-    def get_query_history(
-        self,
-        db: Session,
-        page: int = 1,
-        page_size: int = 20
-    ) -> Tuple[List[QueryHistory], int]:
-        """
-        Get query history with pagination.
-        
-        Args:
-            db: Database session
-            page: Page number (1-based)
-            page_size: Number of items per page
-            
-        Returns:
-            Tuple of (query list, total count)
-        """
+    def get_query_history(self, page: int = 1, page_size: int = 20) -> Tuple[List[QueryHistory], int]:
         try:
             offset = (page - 1) * page_size
-            
-            queries = db.query(QueryHistory)\
-                .order_by(QueryHistory.created_at.desc())\
-                .offset(offset)\
-                .limit(page_size)\
-                .all()
-            
-            total_count = db.query(QueryHistory).count()
-            
+            queries = list(QueryHistory.objects.order_by('-created_at')[offset:offset+page_size])
+            total_count = QueryHistory.objects.count()
             return queries, total_count
-            
         except Exception as e:
             logger.error(f"Error getting query history: {str(e)}")
             raise
     
     def _build_schema_context(self, schemas: List[Dict[str, Any]]) -> str:
-        """
-        Build schema context string for LLM prompt.
-        
-        Args:
-            schemas: List of schema dictionaries
-            
-        Returns:
-            Formatted schema context string
-        """
         context = ""
-        
         for schema in schemas:
             context += f"\nTable: {schema['table_name']} (from file: {schema['original_filename']})\n"
             context += f"Rows: {schema['row_count']}\n"
             context += "Columns:\n"
-            
             for col in schema['columns']:
                 context += f"  - {col['name']} ({col['type']})\n"
-            
             if schema['sample_data']:
                 context += "Sample data:\n"
                 for i, row in enumerate(schema['sample_data'][:2], 1):
                     context += f"  Row {i}: {json.dumps(row)}\n"
-            
             context += "\n"
-        
         return context
 
-
-# Singleton instance
 _query_service_instance = None
 
-
 def get_query_service() -> QueryService:
-    """Get or create query service singleton."""
     global _query_service_instance
     if _query_service_instance is None:
         _query_service_instance = QueryService()

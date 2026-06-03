@@ -1,7 +1,8 @@
 import { api } from '@/lib/api'
 import type { QueryHistoryResponse } from '@/types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+
 
 export interface QueryRequest {
   query: string
@@ -22,8 +23,17 @@ export interface QueryResult {
     row_count: number
   }
   literature_context: LiteratureContext[]
-  synthesis: string
+  synthesis: SynthesisResult
   created_at: string
+}
+
+export interface SynthesisResult {
+  summary: string
+  key_findings: string[]
+  data_insights: string[]
+  literature_insights: string[]
+  methodology_notes: string | null
+  limitations: string | null
 }
 
 export interface LiteratureContext {
@@ -62,7 +72,7 @@ export const queryService = {
    * Execute a natural language query
    */
   async executeQuery(request: QueryRequest): Promise<QueryResult> {
-    const response = await api.post('/query/process', request)
+    const response = await api.post('/query/execute/', request)
     return response.data
   },
 
@@ -70,7 +80,7 @@ export const queryService = {
    * Get query history with pagination
    */
   async getQueryHistory(skip: number = 0, limit: number = 20): Promise<QueryHistoryResponse> {
-    const response = await api.get('/query/history', {
+    const response = await api.get('/query/history/', {
       params: { skip, limit }
     })
     return response.data
@@ -80,7 +90,7 @@ export const queryService = {
    * Get database schema information
    */
   async getDatabaseSchema(): Promise<DatabaseSchema> {
-    const response = await api.get('/query/schema')
+    const response = await api.get('/query/schema/')
     return response.data
   },
 
@@ -92,7 +102,7 @@ export const queryService = {
     rows: any[][]
     row_count: number
   }> {
-    const response = await api.post('/query/sql/execute', { sql })
+    const response = await api.post('/query/sql/execute/', { sql })
     return response.data
   }
 }

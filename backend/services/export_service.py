@@ -11,11 +11,11 @@ import os
 import shutil
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from sqlalchemy.orm import Session
-from backend.models.dataset import Dataset
-from backend.models.note import Note
-from backend.models.query_history import QueryHistory
-from backend.models.literature import Literature
+
+from rag.models import Dataset
+from notes.models import Note
+from query.models import QueryHistory
+from literature.models import Literature
 from backend.models.annotation import Annotation
 from backend.utils.logger import get_logger
 
@@ -27,7 +27,7 @@ class ExportService:
     Service for exporting data in various formats
     """
     
-    def __init__(self, db: Session):
+    def __init__(self):
         self.db = db
     
     def export_dataset_csv(self, dataset_id: int) -> str:
@@ -41,7 +41,7 @@ class ExportService:
             CSV string
         """
         try:
-            dataset = self.db.query(Dataset).filter(Dataset.id == dataset_id).first()
+            dataset = self.Dataset.objects.filter(id=dataset_id).first()
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
@@ -83,7 +83,7 @@ class ExportService:
             JSON string
         """
         try:
-            dataset = self.db.query(Dataset).filter(Dataset.id == dataset_id).first()
+            dataset = self.Dataset.objects.filter(id=dataset_id).first()
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
@@ -327,7 +327,7 @@ class ExportService:
             Tuple of (PDF bytes, filename)
         """
         try:
-            literature = self.db.query(Literature).filter(Literature.id == literature_id).first()
+            literature = self.Literature.objects.filter(id=literature_id).first()
             if not literature:
                 raise ValueError(f"Literature {literature_id} not found")
             
