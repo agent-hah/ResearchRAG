@@ -20,7 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Initialize environment variables
 env = environ.Env(
     # Set default values and casting
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    SECRET_KEY=(str, "")
 )
 
 # Tell environ where your .env file is located
