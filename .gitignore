@@ -23,6 +23,7 @@ frontend/node_modules/
 dist
 dist-ssr
 *.local
+data/*
 
 # Tests
 tests/
