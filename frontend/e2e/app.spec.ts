@@ -1,6 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { mockAllApiRoutes } from './api-mocks';
 
 test.describe('Research Workspace', () => {
+  test.beforeEach(async ({ page }) => {
+    // Intercept all API calls before navigating so the Vite proxy
+    // never attempts to reach the backend (which isn't running in CI).
+    await mockAllApiRoutes(page);
+  });
+
   test('should load the homepage and display navigation', async ({ page }) => {
     await page.goto('/');
     
