@@ -25,14 +25,6 @@ dist-ssr
 *.local
 data/*
 
-# Tests
-tests/
-test/
-*.test.js
-*.test.ts
-*.spec.js
-*.spec.ts
-
 # Screenshots and media
 screenshots/
 *.png
