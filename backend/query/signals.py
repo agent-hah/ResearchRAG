@@ -31,20 +31,13 @@ def trigger_global_suggestion_generation():
     logger.info("Automated conditions met. Triggering global suggestion generation.")
     
     def run_generation():
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         try:
             service = DocumentSuggestionService()
-            loop.run_until_complete(
-                service.generate_suggestions_for_dataset(
-                    dataset_id=None,
-                )
+            service.generate_suggestions_for_dataset(
+                dataset_id=None,
             )
         except Exception as e:
             logger.error(f"Error in automated suggestion generation: {e}")
-        finally:
-            loop.close()
 
     thread = threading.Thread(target=run_generation)
     thread.start()

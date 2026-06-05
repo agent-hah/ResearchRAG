@@ -136,7 +136,11 @@ class RAGService:
             if literature_ids:
                 filter_dict = {"literature_id": {"$in": literature_ids}}
             
-            fetch_k = top_k * 5
+            collection_size = self.vector_store._collection.count()
+            if collection_size == 0:
+                return []
+                
+            fetch_k = min(top_k * 5, collection_size)
             results = self.vector_store.similarity_search_with_score(query=query, k=fetch_k, filter=filter_dict)
             
             formatted_results = []

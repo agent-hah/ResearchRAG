@@ -23,8 +23,7 @@ class DocumentSuggestionService:
     
     def __init__(self):
         self.client = genai.Client(
-            api_key=settings.GOOGLE_API_KEY,
-            http_options={'timeout': 120.0}
+            api_key=settings.GOOGLE_API_KEY
         )
         self.system_instruction = "You are a helpful research assistant. Respond safely and accurately without generating harmful content."
         self.safety_settings = [
