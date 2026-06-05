@@ -10,6 +10,11 @@ export default defineConfig({
     setupFiles: './src/tests/setup.ts',
     css: true,
     exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/*'],
+    coverage: {
+      all: true,
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/tests/**/*'],
+    }
   },
   resolve: {
     alias: {
