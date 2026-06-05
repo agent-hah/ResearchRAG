@@ -11,5 +11,6 @@ urlpatterns = [
     path('execute/', QueryExecutionView.as_view(), name='query-execute'),
     path('schema/', DatabaseSchemaView.as_view(), name='database-schema'),
     path('sql/execute/', ExecuteSQLView.as_view(), name='sql-execute'),
+    path('suggestions/', include('query.suggestion_urls')),
     path('', include(router.urls)),
 ]

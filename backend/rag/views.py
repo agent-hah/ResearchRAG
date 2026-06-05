@@ -1,8 +1,8 @@
 from rest_framework import views, status
 from rest_framework.response import Response
 from django.conf import settings
-from services.rag_service import get_rag_service
-from services.file_service import FileService
+from rag.services.rag_service import get_rag_service
+from files.services.file_service import FileService
 from literature.models import Literature, ProcessingStatus
 import threading
 
@@ -12,10 +12,10 @@ def index_literature_background(literature_id):
         rag_service = get_rag_service()
         # Ensure we have text content
         if literature.processing_status == ProcessingStatus.PENDING:
-            from services.pdf_processor import PDFProcessor
+            from literature.services.pdf_processor import PDFProcessor
             _, text_content = PDFProcessor.process_pdf_file(literature.file_path, literature)
         else:
-            from services.pdf_processor import PDFProcessor
+            from literature.services.pdf_processor import PDFProcessor
             text_content = PDFProcessor.extract_text(literature.file_path)
             
         rag_service.index_literature(literature, text_content)

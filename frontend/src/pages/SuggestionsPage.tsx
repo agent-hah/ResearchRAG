@@ -5,7 +5,7 @@ import { fileService } from '../services/fileService'
 import { SuggestionsPanel } from '../components/suggestions/SuggestionsPanel'
 
 export function SuggestionsPage() {
-  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(null)
+  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null | 'global'>('global')
 
   // Fetch datasets
   const { data: datasets = [], isLoading, error } = useQuery({
@@ -30,9 +30,9 @@ export function SuggestionsPage() {
       {/* Dataset Selection */}
       <div className="card">
         <div className="card-header">
-          <h2 className="text-xl font-semibold text-gray-900">Select Dataset</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Select Scope</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Choose a dataset to find relevant research articles
+            Choose global context or a specific dataset to find relevant research articles
           </p>
         </div>
         <div className="card-content">
@@ -53,11 +53,41 @@ export function SuggestionsPage() {
               <Database className="w-16 h-16 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600 text-lg">No datasets uploaded yet</p>
               <p className="text-gray-500 text-sm mt-2">
-                Upload CSV datasets from the Files page to get started
+                Upload CSV datasets from the Files page to get started with dataset-specific suggestions
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <button
+                onClick={() => setSelectedDatasetId('global')}
+                className={`p-4 border-2 rounded-lg text-left transition-all ${
+                  selectedDatasetId === 'global'
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    selectedDatasetId === 'global'
+                      ? 'bg-primary-100'
+                      : 'bg-gray-100'
+                  }`}>
+                    <Sparkles className={`w-5 h-5 ${
+                      selectedDatasetId === 'global'
+                        ? 'text-primary-600'
+                        : 'text-gray-600'
+                    }`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      Global Context
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Based on uploads & notes
+                    </p>
+                  </div>
+                </div>
+              </button>
               {datasets.map((dataset) => (
                 <button
                   key={dataset.id}
@@ -100,7 +130,13 @@ export function SuggestionsPage() {
       </div>
 
       {/* Suggestions Panel */}
-      {selectedDataset && (
+      {selectedDatasetId === 'global' ? (
+        <div className="card">
+          <div className="card-content">
+            <SuggestionsPanel />
+          </div>
+        </div>
+      ) : selectedDataset ? (
         <div className="card">
           <div className="card-content">
             <SuggestionsPanel
@@ -109,7 +145,7 @@ export function SuggestionsPage() {
             />
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Help Text */}
       {!selectedDatasetId && datasets.length > 0 && (

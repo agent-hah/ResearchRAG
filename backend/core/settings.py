@@ -27,7 +27,7 @@ env = environ.Env(
 # Tell environ where your .env file is located
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# --- REplace your old hardcoded variables with these ---
+# --- Replace your old hardcoded variables with these ---
 
 # Raises an ImproperlyConfigured exception if SECRET_KEY is missing
 SECRET_KEY = env('SECRET_KEY')
@@ -52,10 +52,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "files",
     "literature",
     "notes",
     "rag",
     "query",
+    "refinement",
 ]
 
 MIDDLEWARE = [
@@ -179,7 +181,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 GEMINI_MODEL = "gemma-4-26b-a4b-it"
 EMBEDDING_MODEL = "models/gemini-embedding-2"
 LLM_TEMPERATURE = 0.1
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 200
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
 CHROMA_COLLECTION = "research_literature"
-SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+OPENALEX_API_KEY = os.getenv("OPENALEX_API_KEY")

@@ -6,16 +6,16 @@ from django.http import FileResponse
 
 from literature.models import Literature, Annotation, ProcessingStatus
 from literature.serializers import LiteratureSerializer, AnnotationSerializer
-from services.file_service import FileService
+from files.services.file_service import FileService
 import threading
-from services.pdf_processor import PDFProcessor
+from literature.services.pdf_processor import PDFProcessor
 
 def process_pdf_background(literature_id, file_path):
     from literature.models import Literature
     literature = Literature.objects.get(id=literature_id)
     try:
-        from services.pdf_processor import PDFProcessor
-        from services.rag_service import get_rag_service
+        from literature.services.pdf_processor import PDFProcessor
+        from rag.services.rag_service import get_rag_service
         
         literature, text_content = PDFProcessor.process_pdf_file(file_path, literature)
         
@@ -43,11 +43,20 @@ class LiteratureViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         try:
-            from services.rag_service import get_rag_service
+            from rag.services.rag_service import get_rag_service
             # Delete associated vector embeddings from Chroma DB
             get_rag_service().delete_literature_index(instance.id)
         except Exception as e:
             print(f"Error deleting embeddings for literature {instance.id}: {e}")
+            
+        try:
+            from pathlib import Path
+            file_path = Path(instance.file_path)
+            if file_path.exists():
+                file_path.unlink()
+        except Exception as e:
+            print(f"Error deleting file for literature {instance.id}: {e}")
+            
         instance.delete()
 
     @action(detail=True, methods=['get'])
@@ -78,11 +87,12 @@ class FileUploadView(views.APIView):
             if not is_valid:
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
             
-            file_path = settings.UPLOAD_DIR / file.name
+            unique_filename = FileService.get_unique_filename(settings.UPLOAD_DIR, file.name)
+            file_path = settings.UPLOAD_DIR / unique_filename
             file_size = FileService.save_uploaded_file(file, file_path)
             
             literature = FileService.create_literature_record(
-                filename=file.name,
+                filename=unique_filename,
                 file_path=str(file_path),
                 file_size=file_size
             )

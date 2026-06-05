@@ -43,6 +43,24 @@ class FileService:
         return True, None
     
     @staticmethod
+    def get_unique_filename(directory: Path, filename: str) -> str:
+        """
+        Generate a unique filename by appending (1), (2), etc. if the file already exists.
+        """
+        base_name = filename.rsplit('.', 1)[0]
+        extension = ""
+        if '.' in filename:
+            extension = "." + filename.rsplit('.', 1)[1]
+            
+        counter = 1
+        unique_filename = filename
+        while (directory / unique_filename).exists():
+            unique_filename = f"{base_name}({counter}){extension}"
+            counter += 1
+            
+        return unique_filename
+    
+    @staticmethod
     def save_uploaded_file(file: UploadedFile, destination: Path) -> int:
         """
         Save uploaded file to disk.

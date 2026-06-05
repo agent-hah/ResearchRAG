@@ -43,6 +43,9 @@ screenshots/
 *.svg
 *.ico
 
+# agent customization artificats
+.agent
+
 # MCP and Playwright artifacts
 .playwright-mcp/
 

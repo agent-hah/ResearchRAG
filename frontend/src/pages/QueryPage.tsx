@@ -18,7 +18,7 @@ export function QueryPage() {
   const [showSpatialViz, setShowSpatialViz] = useState(false)
 
   // Fetch query history
-  const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
+  const { data: historyData, isLoading: historyLoading } = useQuery({
     queryKey: ['queryHistory'],
     queryFn: () => queryService.getQueryHistory(0, 20),
   })
@@ -81,11 +81,28 @@ export function QueryPage() {
   const handleSelectHistory = (queryId: string) => {
     // Find the query in history
     const query = history.find(q => q.id.toString() === queryId)
-    if (query && query.query && query.query.trim()) {
-      // Re-execute the query instead of trying to load cached results
-      executeMutation.mutate({ query: query.query })
-    } else {
-      setError('Cannot load this query - query text is missing')
+    if (query) {
+      if (query.data_results && query.synthesis) {
+        // Load the cached results directly
+        setCurrentResult({
+          query_id: query.id.toString(),
+          question: query.query,
+          sql_query: query.sql_query,
+          sql_confidence: query.sql_confidence || 0,
+          data_results: query.data_results as any,
+          literature_context: query.literature_context as any || [],
+          synthesis: query.synthesis as any,
+          created_at: query.created_at,
+        })
+        setError(null)
+        setShowVisualization(false)
+        setShowSpatialViz(false)
+      } else if (query.query && query.query.trim()) {
+        // Fallback: Re-execute the query if cached results are not fully available (old queries)
+        executeMutation.mutate({ query: query.query })
+      } else {
+        setError('Cannot load this query - query text is missing')
+      }
     }
   }
 

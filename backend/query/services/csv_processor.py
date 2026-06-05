@@ -117,3 +117,15 @@ class CSVProcessor:
         except Exception as e:
             logger.error(f"Error getting table schema: {str(e)}")
             raise ValueError(f"Failed to get table schema: {str(e)}")
+
+    @staticmethod
+    def drop_table(table_name: str) -> None:
+        try:
+            with connection.cursor() as cursor:
+                if not table_name.isidentifier():
+                    raise ValueError("Invalid table name")
+                cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+            logger.info(f"Dropped table: {table_name}")
+        except Exception as e:
+            logger.error(f"Error dropping table {table_name}: {str(e)}")
+            raise

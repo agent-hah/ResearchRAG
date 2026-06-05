@@ -64,7 +64,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     const badges = {
       pending: { class: 'badge-warning', icon: Clock, text: 'Pending' },
       processing: { class: 'badge-warning', icon: RefreshCw, text: 'Processing' },
-      completed: { class: 'badge-success', icon: CheckCircle, text: 'Completed' },
+      completed: { class: 'badge-success', icon: CheckCircle, text: 'Upload Complete' },
       indexed: { class: 'badge-success', icon: CheckCircle, text: 'Indexed' },
       failed: { class: 'badge-error', icon: AlertCircle, text: 'Failed' },
     }
@@ -236,6 +236,21 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                             </span>
                           )}
                         </div>
+                        
+                        {lit.processing_status === 'processing' && lit.indexing_progress !== undefined && (
+                          <div className="mt-3 max-w-md">
+                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                              <span>Indexing...</span>
+                              <span>{Math.round(lit.indexing_progress * 100)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div
+                                className="bg-primary-600 h-1.5 rounded-full transition-all duration-500"
+                                style={{ width: `${Math.max(0, Math.min(100, lit.indexing_progress * 100))}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     

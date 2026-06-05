@@ -3,14 +3,14 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from notes.models import Note, NoteRelationship
 from notes.serializers import NoteSerializer, NoteRelationshipSerializer
-from services.notes_service import NotesService
+from notes.services.notes_service import NotesService
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all().order_by('-created_at')
     serializer_class = NoteSerializer
 
-    def perform_create(self, serializer):
-        data = self.request.data
+    def create(self, request, *args, **kwargs):
+        data = request.data
         tags = data.get('tags', [])
         if isinstance(tags, str):
             tags = tags.split(',')
@@ -21,17 +21,22 @@ class NoteViewSet(viewsets.ModelViewSet):
             literature_id=data.get('literature_id'),
             query_id=data.get('query_id')
         )
+        serializer = self.get_serializer(note)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def perform_update(self, serializer):
-        data = self.request.data
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data
         tags = data.get('tags', None)
         if isinstance(tags, str):
             tags = tags.split(',')
-        NotesService.update_note(
-            note_id=self.get_object().id,
+        note = NotesService.update_note(
+            note_id=instance.id,
             content=data.get('content'),
             tags=tags
         )
+        serializer = self.get_serializer(note)
+        return Response(serializer.data)
 
     def perform_destroy(self, instance):
         NotesService.delete_note(instance.id)
@@ -52,15 +57,17 @@ class NoteRelationshipViewSet(viewsets.ModelViewSet):
     queryset = NoteRelationship.objects.all()
     serializer_class = NoteRelationshipSerializer
 
-    def perform_create(self, serializer):
-        data = self.request.data
-        NotesService.create_relationship(
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        relationship = NotesService.create_relationship(
             note_id=data.get('note_id'),
             target_type=data.get('target_type'),
             target_id=data.get('target_id'),
             relationship_type=data.get('relationship_type'),
             description=data.get('description')
         )
+        serializer = self.get_serializer(relationship)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_destroy(self, instance):
         NotesService.delete_relationship(instance.id)

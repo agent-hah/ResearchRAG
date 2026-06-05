@@ -15,20 +15,15 @@ from datetime import datetime
 from rag.models import Dataset
 from notes.models import Note
 from query.models import QueryHistory
-from literature.models import Literature
-from backend.models.annotation import Annotation
-from backend.utils.logger import get_logger
+from literature.models import Literature, Annotation
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ExportService:
     """
     Service for exporting data in various formats
     """
-    
-    def __init__(self):
-        self.db = db
     
     def export_dataset_csv(self, dataset_id: int) -> str:
         """
@@ -41,7 +36,7 @@ class ExportService:
             CSV string
         """
         try:
-            dataset = self.Dataset.objects.filter(id=dataset_id).first()
+            dataset = Dataset.objects.filter(id=dataset_id).first()
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
@@ -51,19 +46,21 @@ class ExportService:
                 raise ValueError("Dataset table name not found")
             
             # Query data from dynamic table
-            from sqlalchemy import text
-            query = text(f"SELECT * FROM {table_name}")
-            result = self.db.execute(query)
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT * FROM {table_name}")
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
             
             # Convert to CSV
             output = io.StringIO()
             writer = csv.writer(output)
             
             # Write header
-            writer.writerow(result.keys())
+            writer.writerow(columns)
             
             # Write rows
-            for row in result:
+            for row in rows:
                 writer.writerow(row)
             
             return output.getvalue()
@@ -83,7 +80,7 @@ class ExportService:
             JSON string
         """
         try:
-            dataset = self.Dataset.objects.filter(id=dataset_id).first()
+            dataset = Dataset.objects.filter(id=dataset_id).first()
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
@@ -93,12 +90,14 @@ class ExportService:
                 raise ValueError("Dataset table name not found")
             
             # Query data from dynamic table
-            from sqlalchemy import text
-            query = text(f"SELECT * FROM {table_name}")
-            result = self.db.execute(query)
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT * FROM {table_name}")
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
             
             # Convert to list of dicts
-            data = [dict(row._mapping) for row in result]
+            data = [dict(zip(columns, row)) for row in rows]
             
             # Create export object
             export_data = {
@@ -129,9 +128,7 @@ class ExportService:
             CSV string
         """
         try:
-            query_history = self.db.query(QueryHistory).filter(
-                QueryHistory.id == query_id
-            ).first()
+            query_history = QueryHistory.objects.filter(id=query_id).first()
             
             if not query_history:
                 raise ValueError(f"Query {query_id} not found")
@@ -166,9 +163,7 @@ class ExportService:
             JSON string
         """
         try:
-            query_history = self.db.query(QueryHistory).filter(
-                QueryHistory.id == query_id
-            ).first()
+            query_history = QueryHistory.objects.filter(id=query_id).first()
             
             if not query_history:
                 raise ValueError(f"Query {query_id} not found")
@@ -202,12 +197,12 @@ class ExportService:
             Markdown string
         """
         try:
-            query = self.db.query(Note)
+            query = Note.objects.all()
             
             if note_ids:
-                query = query.filter(Note.id.in_(note_ids))
+                query = query.filter(id__in=note_ids)
             
-            notes = query.order_by(Note.created_at.desc()).all()
+            notes = query.order_by('-created_at')
             
             # Build markdown
             output = io.StringIO()
@@ -258,12 +253,12 @@ class ExportService:
             JSON string
         """
         try:
-            query = self.db.query(Note)
+            query = Note.objects.all()
             
             if note_ids:
-                query = query.filter(Note.id.in_(note_ids))
+                query = query.filter(id__in=note_ids)
             
-            notes = query.order_by(Note.created_at.desc()).all()
+            notes = query.order_by('-created_at')
             
             # Convert to list of dicts
             notes_data = [
@@ -327,7 +322,7 @@ class ExportService:
             Tuple of (PDF bytes, filename)
         """
         try:
-            literature = self.Literature.objects.filter(id=literature_id).first()
+            literature = Literature.objects.filter(id=literature_id).first()
             if not literature:
                 raise ValueError(f"Literature {literature_id} not found")
             
@@ -345,9 +340,9 @@ class ExportService:
                 return pdf_bytes, literature.filename
             
             # Get annotations for this literature
-            annotations = self.db.query(Annotation).filter(
-                Annotation.literature_id == literature_id
-            ).order_by(Annotation.page_number, Annotation.y_position).all()
+            annotations = Annotation.objects.filter(
+                literature_id=literature_id
+            ).order_by('page_number', 'y_position')
             
             if not annotations:
                 # No annotations, return original PDF

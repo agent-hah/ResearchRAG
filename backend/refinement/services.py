@@ -6,22 +6,26 @@ Processes natural language commands to modify chart configurations.
 
 import json
 from typing import Dict, Any, List, Optional
-import google.generativeai as genai
-from backend.config import get_settings
-from backend.utils.logger import get_logger
+from google import genai
+from google.genai import types
+from django.conf import settings
+import logging
 
-settings = get_settings()
-logger = get_logger(__name__)
-
-# Configure Gemini
-genai.configure(api_key=settings.GEMINI_API_KEY)
-
+logger = logging.getLogger(__name__)
 
 class RefinementService:
     """Service for processing visualization refinement commands"""
     
     def __init__(self):
-        self.model = genai.GenerativeModel('gemma-4-26b-a4b-it')
+        self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+        self.system_instruction = "You are a helpful research assistant. Respond safely and accurately without generating harmful content."
+        self.safety_settings = [
+            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE")
+        ]
+        self.model_name = 'gemma-4-26b-a4b-it'
     
     def parse_refinement_command(
         self,
@@ -40,7 +44,14 @@ class RefinementService:
         """
         try:
             prompt = self._build_refinement_prompt(command, current_config)
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.system_instruction,
+                    safety_settings=self.safety_settings,
+                )
+            )
             
             # Extract JSON from response
             response_text = response.text.strip()
@@ -69,7 +80,9 @@ class RefinementService:
     ) -> str:
         """Build prompt for refinement command parsing"""
         
-        return f"""You are a visualization refinement assistant. Parse the user's natural language command and generate JSON configuration updates.
+        return f"""{self.system_instruction}
+
+You are a visualization refinement assistant. Parse the user's natural language command and generate JSON configuration updates.
 
 Current Chart Configuration:
 {json.dumps(current_config, indent=2)}

@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from unittest.mock import patch, MagicMock
 from literature.models import Literature, ProcessingStatus, Annotation, AnnotationType
 from rag.models import Dataset
-from services.file_service import FileService
+from files.services.file_service import FileService
 
 class LiteraturePipelineTests(APITestCase):
     def setUp(self):

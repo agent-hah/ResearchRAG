@@ -1,7 +1,7 @@
 from django.test import TestCase
 from query.models import QueryHistory
 from rag.models import Dataset
-from services.query_service import get_query_service
+from query.services.query_service import get_query_service
 
 class QueryServiceTest(TestCase):
     def setUp(self):

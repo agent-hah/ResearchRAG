@@ -26,6 +26,7 @@ class Literature(TimeStampedModel):
         db_index=True
     )
     indexed_at = models.DateTimeField(null=True, blank=True)
+    indexing_progress = models.FloatField(default=0.0)
     error_message = models.TextField(null=True, blank=True)
 
     def __str__(self):

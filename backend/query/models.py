@@ -8,6 +8,10 @@ class QueryHistory(TimeStampedModel):
     dataset = models.ForeignKey('rag.Dataset', on_delete=models.SET_NULL, null=True, blank=True, related_name='queries')
     execution_time_ms = models.IntegerField(null=True, blank=True)
     error_message = models.TextField(null=True, blank=True)
+    sql_confidence = models.FloatField(null=True, blank=True)
+    data_results = models.JSONField(null=True, blank=True)
+    literature_context = models.JSONField(null=True, blank=True)
+    synthesis = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f"<QueryHistory(id={self.id}, query='{self.query_text[:50]}...')>"

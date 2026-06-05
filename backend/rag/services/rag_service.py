@@ -14,7 +14,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from django.conf import settings
 from literature.models import Literature, ProcessingStatus
-from services.pdf_processor import PDFProcessor
+from literature.services.pdf_processor import PDFProcessor
 
 import logging
 logger = logging.getLogger(__name__)
@@ -79,8 +79,12 @@ class RAGService:
                 ids.append(chunk_id)
             
             # Use batching and exponential backoff to avoid hitting API rate limits
-            batch_size = 10  # Process in smaller batches
+            batch_size = 20  # Process in smaller batches
             
+            literature.processing_status = ProcessingStatus.PROCESSING
+            literature.indexing_progress = 0.0
+            literature.save(update_fields=['processing_status', 'indexing_progress'])
+
             @retry(
                 wait=wait_exponential(multiplier=1, min=10, max=60),
                 stop=stop_after_attempt(5),
@@ -95,11 +99,18 @@ class RAGService:
                 b_ids = ids[i:i + batch_size]
                 logger.info(f"Indexing batch {i // batch_size + 1}/{(len(texts) + batch_size - 1) // batch_size} for literature {literature.id}")
                 add_batch(b_texts, b_metadatas, b_ids)
-                time.sleep(1.0)  # Delay between batches to prevent bursting
+                
+                # Update progress
+                literature.indexing_progress = min(1.0, (i + len(b_texts)) / len(texts))
+                literature.save(update_fields=['indexing_progress'])
+                
+                # Delay between batches to stretch out quota usage over the day
+                time.sleep(15.0)
             
             self.vector_store.persist()
             
             literature.processing_status = ProcessingStatus.INDEXED
+            literature.indexing_progress = 1.0
             literature.indexed_at = datetime.utcnow()
             literature.save()
             
@@ -204,6 +215,7 @@ class RAGService:
             if literature:
                 literature.processing_status = ProcessingStatus.COMPLETED
                 literature.indexed_at = None
+                literature.indexing_progress = 0.0
                 literature.save()
             logger.info(f"Deleted index for literature {literature_id}")
         except Exception as e:
@@ -229,6 +241,9 @@ class RAGService:
                     text_content = PDFProcessor.extract_text(Path(literature.file_path))
                     self.index_literature(literature, text_content, force_reindex=True)
                     results["success"] += 1
+                    
+                    # Delay between full documents to preserve daily quota rate
+                    time.sleep(30.0)
                 except Exception as e:
                     results["failed"] += 1
                     literature.processing_status = ProcessingStatus.FAILED

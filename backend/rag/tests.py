@@ -1,6 +1,6 @@
 from django.test import TestCase
 from literature.models import Literature, ProcessingStatus
-from services.rag_service import get_rag_service
+from rag.services.rag_service import get_rag_service
 
 class RAGServiceTest(TestCase):
     def setUp(self):

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { ChartRenderer } from './ChartRenderer'
 import { ChartControls } from './ChartControls'
 import { RefinementPanel } from './RefinementPanel'
-import { BarChart3, X, Sparkles } from 'lucide-react'
+import { BarChart3, X, Sparkles, Maximize2, Minimize2 } from 'lucide-react'
 import {
   detectChartType,
   transformToChartData,
@@ -23,6 +23,7 @@ interface VisualizationPanelProps {
 export function VisualizationPanel({ columns, rows, question, onClose }: VisualizationPanelProps) {
   const chartRef = useRef<HTMLDivElement>(null)
   const [showRefinement, setShowRefinement] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   
   // Auto-detect chart type and generate initial config
   const initialChartType = detectChartType(columns, rows, rows.length)
@@ -30,8 +31,8 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
     generateChartConfig(columns, initialChartType, question)
   )
   
-  // Transform data based on current chart type
-  const chartData = transformToChartData(columns, rows, config.type)
+  // Transform data based on current chart config
+  const chartData = transformToChartData(columns, rows, config)
 
   const handleConfigChange = (updates: Partial<ChartConfig> | ChartConfig) => {
     // Check if it's a complete config or just updates
@@ -125,26 +126,35 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
   }
 
   return (
-    <div className="space-y-6">
+    <div className={isFullscreen ? "fixed inset-0 z-50 bg-gray-100 p-6 overflow-auto space-y-6" : "space-y-6"}>
       {/* Chart Display */}
-      <div className="card">
+      <div className={isFullscreen ? "card shadow-2xl h-full flex flex-col" : "card"}>
         <div className="card-header flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary-600" />
             <h3 className="text-lg font-semibold text-gray-900">Visualization</h3>
-          </div>
-          {onClose && (
             <button
-              onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600 rounded-md"
-              title="Close visualization"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-1 ml-1 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+              title={isFullscreen ? "Exit full screen" : "Full screen"}
             >
-              <X className="w-5 h-5" />
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-          )}
+          </div>
+          <div className="flex items-center gap-2">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-md"
+                title="Close visualization"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
-        <div className="card-content">
-          <div ref={chartRef} className="bg-white p-4 rounded-lg">
+        <div className={isFullscreen ? "card-content flex-grow flex flex-col min-h-0 pt-2" : "card-content pt-2"}>
+          <div ref={chartRef} className={isFullscreen ? "bg-white p-2 rounded-lg flex-grow overflow-auto" : "bg-white p-2 rounded-lg"}>
             <ChartRenderer data={chartData} config={config} />
           </div>
         </div>
@@ -180,6 +190,7 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
           ) : (
             <ChartControls
               config={config}
+              columns={columns}
               onConfigChange={handleConfigChange}
               onExport={handleExport}
             />

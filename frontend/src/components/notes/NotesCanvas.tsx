@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, ZoomIn, ZoomOut, Maximize2, Grid } from 'lucide-react'
-import Draggable from 'react-draggable'
+import _Draggable from 'react-draggable'
+const Draggable = _Draggable as any
 import { NoteEditor } from './NoteEditor'
 import { CanvasNoteCard } from './CanvasNoteCard'
 import { notesService, type Note, type NoteCreate, type NoteUpdate } from '../../services/notesService'
@@ -15,6 +16,38 @@ interface NotesPanelProps {
   queryId?: number
   datasetId?: number
   literatureId?: number
+}
+
+interface DraggableNoteWrapperProps {
+  note: Note
+  position: NotePosition
+  zoom: number
+  onDragStop: (noteId: number, data: { x: number; y: number }) => void
+  onEdit: (note: Note) => void
+  onDelete: (noteId: number) => void
+}
+
+function DraggableNoteWrapper({ note, position, zoom, onDragStop, onEdit, onDelete }: DraggableNoteWrapperProps) {
+  const nodeRef = useRef<HTMLDivElement>(null)
+  
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      position={position}
+      onStop={(_: any, data: any) => onDragStop(note.id, data)}
+      handle=".drag-handle"
+      bounds="parent"
+      scale={zoom}
+    >
+      <div ref={nodeRef} style={{ position: 'absolute' }}>
+        <CanvasNoteCard
+          note={note}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      </div>
+    </Draggable>
+  )
 }
 
 export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProps) {
@@ -267,22 +300,15 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
               notes.map((note, index) => {
                 const position = getInitialPosition(note.id, index)
                 return (
-                  <Draggable
+                  <DraggableNoteWrapper
                     key={note.id}
+                    note={note}
                     position={position}
-                    onStop={(_, data) => handleDragStop(note.id, data)}
-                    handle=".drag-handle"
-                    bounds="parent"
-                    scale={zoom}
-                  >
-                    <div style={{ position: 'absolute' }}>
-                      <CanvasNoteCard
-                        note={note}
-                        onEdit={handleEditNote}
-                        onDelete={handleDeleteNote}
-                      />
-                    </div>
-                  </Draggable>
+                    zoom={zoom}
+                    onDragStop={handleDragStop}
+                    onEdit={handleEditNote}
+                    onDelete={handleDeleteNote}
+                  />
                 )
               })
             )}

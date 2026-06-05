@@ -2,16 +2,14 @@
 Search API Service
 
 Integrates with external search APIs to find academic articles.
-Supports multiple providers: SerpAPI (Google Scholar), Semantic Scholar, CrossRef.
+Supports multiple providers: OpenAlex, Semantic Scholar, CrossRef.
 """
 import logging
 import requests
 from typing import List, Dict, Any, Optional
-from backend.config import get_settings
-from backend.utils.logger import get_logger
+from django.conf import settings
 
-logger = get_logger(__name__)
-settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 class SearchAPIService:
@@ -20,19 +18,18 @@ class SearchAPIService:
     """
     
     def __init__(self):
-        self.serpapi_key = getattr(settings, 'SERPAPI_KEY', None)
-        self.use_serpapi = bool(self.serpapi_key)
+        self.openalex_api_key = getattr(settings, 'OPENALEX_API_KEY', None)
     
-    async def search_google_scholar_serpapi(
+    async def search_openalex(
         self, 
         query: str, 
         max_results: int = 10
     ) -> List[Dict[str, Any]]:
         """
-        Search Google Scholar using SerpAPI
+        Search OpenAlex API (free, open catalog of the global research system)
         
-        SerpAPI provides access to Google Scholar results without rate limits.
-        Get API key from: https://serpapi.com/
+        OpenAlex provides access to academic papers without strict rate limits.
+        API docs: https://docs.openalex.org/
         
         Args:
             query: Search query
@@ -41,53 +38,77 @@ class SearchAPIService:
         Returns:
             List of article metadata dictionaries
         """
-        if not self.serpapi_key:
-            logger.warning("SerpAPI key not configured, falling back to mock results")
-            return []
-        
         try:
-            url = "https://serpapi.com/search"
+            url = "https://api.openalex.org/works"
             params = {
-                "engine": "google_scholar",
-                "q": query,
-                "api_key": self.serpapi_key,
-                "num": min(max_results, 20),  # SerpAPI limit
-                "hl": "en"
+                "search": query,
+                "per-page": min(max_results, 50),
             }
-            
-            response = requests.get(url, params=params, timeout=10)
+                
+            headers = {}
+            if self.openalex_api_key:
+                headers["Authorization"] = f"Bearer {self.openalex_api_key}"
+                
+            response = requests.get(url, params=params, headers=headers, timeout=10)
             response.raise_for_status()
             
             data = response.json()
-            organic_results = data.get("organic_results", [])
+            works = data.get("results", [])
             
             # Transform to our format
             articles = []
-            for result in organic_results[:max_results]:
-                publication_info = result.get("publication_info", {})
-                
+            for work in works[:max_results]:
+                authorships = work.get("authorships", [])
+                authors_str = ", ".join([
+                    a.get("author", {}).get("display_name", "") 
+                    for a in authorships[:3]
+                ])
+                if len(authorships) > 3:
+                    authors_str += " et al."
+                    
+                # Handle venue which can be None
+                venue = ""
+                primary_location = work.get("primary_location")
+                if primary_location:
+                    source = primary_location.get("source")
+                    if source:
+                        venue = source.get("display_name", "")
+                    
                 article = {
-                    "title": result.get("title", ""),
-                    "authors": publication_info.get("authors", [{}])[0].get("name", "Unknown") if publication_info.get("authors") else "Unknown",
-                    "year": self._extract_year(publication_info.get("summary", "")),
-                    "venue": publication_info.get("summary", "").split("-")[0].strip() if publication_info.get("summary") else "",
-                    "abstract": result.get("snippet", ""),
-                    "url": result.get("link", ""),
-                    "citation_count": result.get("inline_links", {}).get("cited_by", {}).get("total", 0),
-                    "relevance_score": self._calculate_relevance(result, query),
-                    "doi": None  # SerpAPI doesn't always provide DOI
+                    "title": work.get("title", ""),
+                    "authors": authors_str or "Unknown",
+                    "year": work.get("publication_year"),
+                    "venue": venue,
+                    "abstract": self._parse_openalex_abstract(work.get("abstract_inverted_index")),
+                    "url": work.get("id", ""),
+                    "citation_count": work.get("cited_by_count", 0),
+                    "doi": work.get("doi")
                 }
+                article["relevance_score"] = self._calculate_relevance(article, query)
                 articles.append(article)
             
-            logger.info(f"Found {len(articles)} articles via SerpAPI for query: {query}")
+            logger.info(f"Found {len(articles)} articles via OpenAlex for query: {query}")
             return articles
             
         except requests.exceptions.RequestException as e:
-            logger.error(f"SerpAPI request failed: {e}")
+            logger.error(f"OpenAlex request failed: {e}")
             return []
         except Exception as e:
-            logger.error(f"Failed to parse SerpAPI response: {e}")
+            logger.error(f"Failed to parse OpenAlex response: {e}")
             return []
+            
+    def _parse_openalex_abstract(self, inverted_index: Optional[Dict]) -> str:
+        """Parse OpenAlex's abstract inverted index into a string"""
+        if not inverted_index:
+            return ""
+        
+        word_index = []
+        for word, positions in inverted_index.items():
+            for pos in positions:
+                word_index.append((pos, word))
+                
+        word_index.sort(key=lambda x: x[0])
+        return " ".join([word for _, word in word_index])
     
     async def search_semantic_scholar(
         self, 
@@ -144,9 +165,9 @@ class SearchAPIService:
                     "abstract": paper.get("abstract", ""),
                     "url": paper.get("url", f"https://www.semanticscholar.org/paper/{paper.get('paperId', '')}"),
                     "citation_count": paper.get("citationCount", 0),
-                    "relevance_score": 0.7,  # Semantic Scholar doesn't provide relevance scores
                     "doi": doi
                 }
+                article["relevance_score"] = self._calculate_relevance(article, query)
                 articles.append(article)
             
             logger.info(f"Found {len(articles)} articles via Semantic Scholar for query: {query}")
@@ -227,9 +248,9 @@ class SearchAPIService:
                     "abstract": item.get("abstract", ""),
                     "url": item.get("URL", ""),
                     "citation_count": item.get("is-referenced-by-count", 0),
-                    "relevance_score": 0.6,  # CrossRef doesn't provide relevance scores
                     "doi": item.get("DOI")
                 }
+                article["relevance_score"] = self._calculate_relevance(article, query)
                 articles.append(article)
             
             logger.info(f"Found {len(articles)} articles via CrossRef for query: {query}")
@@ -254,14 +275,14 @@ class SearchAPIService:
         Args:
             query: Search query
             max_results: Maximum number of results
-            provider: Provider to use ("serpapi", "semantic_scholar", "crossref", "auto")
+            provider: Provider to use ("openalex", "semantic_scholar", "crossref", "auto")
             
         Returns:
             List of article metadata dictionaries
         """
         # Try providers in order of preference
-        if provider == "serpapi" or (provider == "auto" and self.use_serpapi):
-            results = await self.search_google_scholar_serpapi(query, max_results)
+        if provider == "openalex" or provider == "auto":
+            results = await self.search_openalex(query, max_results)
             if results:
                 return results
         
@@ -286,21 +307,25 @@ class SearchAPIService:
     
     def _calculate_relevance(self, result: Dict, query: str) -> float:
         """Calculate relevance score based on result data"""
-        # Simple relevance calculation
-        # In production, use more sophisticated methods
         score = 0.5
         
         # Boost if query terms in title
-        title = result.get("title", "").lower()
-        query_terms = query.lower().split()
-        matching_terms = sum(1 for term in query_terms if term in title)
-        score += (matching_terms / len(query_terms)) * 0.3
+        title = result.get("title", "")
+        if title:
+            title = title.lower()
+            query_terms = query.lower().split()
+            if query_terms:
+                matching_terms = sum(1 for term in query_terms if term in title)
+                score += (matching_terms / len(query_terms)) * 0.3
         
         # Boost if highly cited
-        citations = result.get("inline_links", {}).get("cited_by", {}).get("total", 0)
-        if citations > 100:
-            score += 0.2
-        elif citations > 50:
-            score += 0.1
+        citations = result.get("citation_count", 0)
+        if isinstance(citations, int):
+            if citations > 100:
+                score += 0.2
+            elif citations > 50:
+                score += 0.1
+            elif citations > 10:
+                score += 0.05
         
-        return min(score, 1.0)
+        return min(round(score, 2), 1.0)

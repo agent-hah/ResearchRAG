@@ -42,7 +42,7 @@ An AI-driven data engineering platform for researchers to analyze datasets along
 - Python 3.9+
 - Node.js 16+
 - Google API key (for Gemini Pro)
-- SerpAPI key (optional, for real Google Scholar results)
+- OpenAlex API key (optional, for higher rate limits)
 
 ### Installation
 
@@ -56,7 +56,7 @@ cd research-workspace
 ```bash
 cp .env.example .env
 # Edit .env and add your GOOGLE_API_KEY
-# Optionally add SERPAPI_KEY for real Google Scholar results
+# Optionally add OPENALEX_API_KEY for premium access
 ```
 
 3. **Quick setup with script** (recommended)
@@ -152,11 +152,12 @@ The application supports multiple search APIs for finding academic articles:
 
 ### Supported Providers
 
-1. **SerpAPI (Google Scholar)** - Recommended
-   - Real Google Scholar results
-   - Requires API key from https://serpapi.com/
-   - Best quality and coverage
-   - Free tier: 100 searches/month
+1. **OpenAlex** - Recommended
+   - Free, open catalog of the global research system
+   - No API key required
+   - Supports optional OPENALEX_API_KEY for Premium subscribers
+   - Excellent metadata and coverage
+   - Generous rate limits
 
 2. **Semantic Scholar** - Free
    - No API key required
@@ -182,8 +183,8 @@ Add to `.env` file:
 # Required for AI features
 GOOGLE_API_KEY=your_google_api_key
 
-# Optional: For real Google Scholar results
-SERPAPI_KEY=your_serpapi_key
+# Optional: OpenAlex API key for premium subscriptions
+OPENALEX_API_KEY=your_openalex_api_key
 ```
 
 The app automatically uses the best available provider with graceful fallback.

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from pathlib import Path
-from services.file_service import FileService
+from files.services.file_service import FileService
 from literature.models import Literature, ProcessingStatus
 from rag.models import Dataset
 import os

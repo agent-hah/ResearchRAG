@@ -1,39 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sparkles, RefreshCw, Lightbulb, Filter } from 'lucide-react'
 import { suggestionsService } from '../../services/suggestionsService'
 import { SuggestionCard } from './SuggestionCard'
 
 interface SuggestionsPanelProps {
-  datasetId: number
-  datasetName: string
+  datasetId?: number
+  datasetName?: string
 }
 
 export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelProps) {
   const [includeDismissed, setIncludeDismissed] = useState(false)
   const [showKeywords, setShowKeywords] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const queryClient = useQueryClient()
 
   // Fetch suggestions
   const { data: suggestions = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['suggestions', datasetId, includeDismissed],
+    queryKey: ['suggestions', datasetId || 'global', includeDismissed],
     queryFn: () => suggestionsService.getDatasetSuggestions(datasetId, includeDismissed),
   })
 
   // Fetch keywords
   const { data: keywordsData } = useQuery({
-    queryKey: ['keywords', datasetId],
+    queryKey: ['keywords', datasetId || 'global'],
     queryFn: () => suggestionsService.getDatasetKeywords(datasetId),
     enabled: showKeywords,
   })
+  
+  // Fetch generation status
+  const { data: statusData, refetch: refetchStatus } = useQuery({
+    queryKey: ['suggestionStatus', datasetId || 'global'],
+    queryFn: () => suggestionsService.getGenerationStatus(datasetId),
+    refetchInterval: isGenerating ? 1000 : false,
+  })
+
+  useEffect(() => {
+    if (statusData) {
+      if (statusData.progress > 0 && statusData.progress < 100) {
+        setIsGenerating(true);
+      } else if (statusData.progress === 100 && isGenerating) {
+        setIsGenerating(false);
+        refetch(); // Refetch suggestions list once complete
+      } else if (statusData.progress === 0 && isGenerating) {
+        setIsGenerating(false); // Reset on failure
+      }
+    }
+  }, [statusData, isGenerating, refetch]);
 
   // Generate suggestions mutation
   const generateMutation = useMutation({
-    mutationFn: () => suggestionsService.generateSuggestions({ dataset_id: datasetId }),
+    mutationFn: () => suggestionsService.generateSuggestions({ dataset_id: datasetId || 'global' }),
     onSuccess: () => {
-      setTimeout(() => {
-        refetch()
-      }, 2000) // Refetch after 2 seconds to allow background processing
+      setIsGenerating(true)
+      setTimeout(() => refetchStatus(), 500)
     },
   })
 
@@ -42,7 +62,7 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
     mutationFn: ({ id, feedback }: { id: number; feedback: any }) =>
       suggestionsService.updateFeedback(id, feedback),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['suggestions', datasetId] })
+      queryClient.invalidateQueries({ queryKey: ['suggestions', datasetId || 'global'] })
     },
   })
 
@@ -81,7 +101,7 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
             Suggested Articles
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            For dataset: {datasetName}
+            {datasetId ? `For dataset: ${datasetName}` : 'Based on your recent uploads, notes, and queries'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -94,14 +114,30 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
           </button>
           <button
             onClick={handleGenerate}
-            disabled={generateMutation.isPending}
+            disabled={isGenerating || generateMutation.isPending}
             className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            <RefreshCw className={`w-4 h-4 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
-            {generateMutation.isPending ? 'Generating...' : 'Generate Suggestions'}
+            <RefreshCw className={`w-4 h-4 ${(isGenerating || generateMutation.isPending) ? 'animate-spin' : ''}`} />
+            {(isGenerating || generateMutation.isPending) ? 'Generating...' : 'Generate Suggestions'}
           </button>
         </div>
       </div>
+
+      {/* Progress Bar */}
+      {isGenerating && statusData && (
+        <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="font-medium text-gray-700">{statusData.status}</span>
+            <span className="text-gray-500 font-medium">{statusData.progress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+            <div 
+              className="bg-primary-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+              style={{ width: `${statusData.progress}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
 
       {/* Keywords Display */}
       {showKeywords && keywordsData && (
@@ -167,10 +203,10 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
           </p>
           <button
             onClick={handleGenerate}
-            disabled={generateMutation.isPending}
+            disabled={isGenerating || generateMutation.isPending}
             className="px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
           >
-            Generate Suggestions
+            {(isGenerating || generateMutation.isPending) ? 'Generating...' : 'Generate Suggestions'}
           </button>
         </div>
       )}
@@ -195,10 +231,10 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
       )}
 
       {/* Success Message */}
-      {generateMutation.isSuccess && (
+      {generateMutation.isSuccess && !isGenerating && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
           <p className="text-green-800 text-sm">
-            ✓ Suggestion generation started! Results will appear shortly.
+            ✓ Suggestion generation complete!
           </p>
         </div>
       )}

@@ -6,14 +6,15 @@ import json
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from django.conf import settings
 from django.db import connection
 
 from rag.models import Dataset
 from query.models import QueryHistory
-from services.csv_processor import CSVProcessor
-from services.rag_service import get_rag_service
+from query.services.csv_processor import CSVProcessor
+from rag.services.rag_service import get_rag_service
 
 import logging
 logger = logging.getLogger(__name__)
@@ -64,16 +65,15 @@ class QueryService:
     """Service for processing natural language queries."""
     
     def __init__(self):
-        genai.configure(api_key=settings.GOOGLE_API_KEY)
-        self.model = genai.GenerativeModel(
-            model_name=settings.GEMINI_MODEL
-        )
+        self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+        self.system_instruction = "You are a helpful research assistant. Respond safely and accurately without generating harmful content."
         self.safety_settings = [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE")
         ]
+        self.model_name = settings.GEMINI_MODEL
         logger.info("Query service initialized")
     
     def get_database_schema(self) -> List[Dict[str, Any]]:
@@ -127,7 +127,8 @@ class QueryService:
             
             schema_context = self._build_schema_context(schemas)
             
-            prompt = f"""
+            prompt = f"""{self.system_instruction}
+
 You are an expert SQL query generator. Convert the natural language query to SQL based on the provided database schema.
 
 DATABASE SCHEMA:
@@ -156,9 +157,13 @@ RESPONSE FORMAT (JSON):
 
 Respond with valid JSON only:
 """
-            response = self.model.generate_content(
-                prompt,
-                safety_settings=self.safety_settings
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.system_instruction,
+                    safety_settings=self.safety_settings,
+                )
             )
             
             try:
@@ -259,7 +264,8 @@ Respond with valid JSON only:
                 for i, lit in enumerate(literature_context, 1):
                     literature_summary += f"{i}. {lit.get('title', 'Unknown')}: {lit.get('excerpt', '')[:200]}...\n"
             
-            prompt = f"""
+            prompt = f"""{self.system_instruction}
+
 You are a research analyst. Synthesize the provided information to answer the original query.
 
 ORIGINAL QUERY:
@@ -292,9 +298,13 @@ RESPONSE FORMAT (JSON):
 
 Respond with valid JSON only:
 """
-            response = self.model.generate_content(
-                prompt,
-                safety_settings=self.safety_settings
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.system_instruction,
+                    safety_settings=self.safety_settings,
+                )
             )
             
             try:
@@ -332,13 +342,17 @@ Respond with valid JSON only:
                 "limitations": None
             }
     
-    def save_query_history(self, query: str, sql_query: str, row_count: int, processing_time_ms: float) -> QueryHistory:
+    def save_query_history(self, query: str, sql_query: str, row_count: int, processing_time_ms: float, sql_confidence: float = None, data_results: dict = None, literature_context: list = None, synthesis: dict = None) -> QueryHistory:
         try:
             history = QueryHistory.objects.create(
                 query_text=query,
                 sql_query=sql_query,
                 result_count=row_count,
-                execution_time_ms=processing_time_ms
+                execution_time_ms=processing_time_ms,
+                sql_confidence=sql_confidence,
+                data_results=data_results,
+                literature_context=literature_context,
+                synthesis=synthesis
             )
             return history
         except Exception as e:

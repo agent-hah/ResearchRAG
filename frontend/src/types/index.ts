@@ -31,6 +31,7 @@ export interface Literature extends BaseEntity {
   file_size: number
   page_count?: number
   processing_status: ProcessingStatus
+  indexing_progress?: number
   indexed_at?: string
   metadata?: {
     page_count?: number
@@ -143,6 +144,10 @@ export interface QueryHistoryItem extends BaseEntity {
   row_count: number
   literature_count: number
   processing_time_ms: number
+  sql_confidence?: number
+  data_results?: DataResult
+  literature_context?: LiteratureContext[]
+  synthesis?: QuerySynthesis
 }
 
 export interface QueryHistoryResponse {

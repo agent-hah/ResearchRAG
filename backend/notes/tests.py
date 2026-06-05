@@ -1,6 +1,6 @@
 from django.test import TestCase
 from notes.models import Note, NoteRelationship, EntityType, RelationshipType
-from services.notes_service import NotesService
+from notes.services.notes_service import NotesService
 
 class NotesServiceTest(TestCase):
     def test_create_note(self):

@@ -24,7 +24,7 @@ export interface DocumentSuggestion {
 }
 
 export interface GenerateSuggestionsRequest {
-  dataset_id: number
+  dataset_id?: number | 'global'
   max_per_keyword?: number
 }
 
@@ -35,16 +35,34 @@ export interface UpdateFeedbackRequest {
 }
 
 export interface KeywordsResponse {
-  dataset_id: number
+  dataset_id: number | 'global'
   keywords: string[]
+}
+
+export interface GenerationStatus {
+  status: string
+  progress: number
 }
 
 export const suggestionsService = {
   /**
+   * Get suggestion generation status
+   */
+  async getGenerationStatus(datasetId?: number | 'global'): Promise<GenerationStatus> {
+    const idParam = datasetId || 'global'
+    const response = await axios.get(`${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/status`)
+    return response.data
+  },
+
+  /**
    * Generate suggestions for a dataset
    */
   async generateSuggestions(request: GenerateSuggestionsRequest): Promise<{ success: boolean; message: string }> {
-    const response = await axios.post(`${API_BASE_URL}/api/suggestions/generate`, request)
+    const payload = {
+      ...request,
+      dataset_id: request.dataset_id || 'global'
+    }
+    const response = await axios.post(`${API_BASE_URL}/api/v1/query/suggestions/generate`, payload)
     return response.data
   },
 
@@ -52,12 +70,16 @@ export const suggestionsService = {
    * Get suggestions for a dataset
    */
   async getDatasetSuggestions(
-    datasetId: number,
+    datasetId?: number,
     includeDismissed: boolean = false
   ): Promise<DocumentSuggestion[]> {
     const response = await axios.get(
-      `${API_BASE_URL}/api/suggestions/dataset/${datasetId}`,
-      { params: { include_dismissed: includeDismissed } }
+      `${API_BASE_URL}/api/v1/query/suggestions/`,
+      { params: { 
+          dataset_id: datasetId || 'global',
+          include_dismissed: includeDismissed 
+        } 
+      }
     )
     return response.data
   },
@@ -65,9 +87,10 @@ export const suggestionsService = {
   /**
    * Get keywords for a dataset
    */
-  async getDatasetKeywords(datasetId: number): Promise<KeywordsResponse> {
+  async getDatasetKeywords(datasetId?: number): Promise<KeywordsResponse> {
+    const idParam = datasetId || 'global'
     const response = await axios.get(
-      `${API_BASE_URL}/api/suggestions/dataset/${datasetId}/keywords`
+      `${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/keywords`
     )
     return response.data
   },
@@ -80,7 +103,7 @@ export const suggestionsService = {
     feedback: UpdateFeedbackRequest
   ): Promise<DocumentSuggestion> {
     const response = await axios.put(
-      `${API_BASE_URL}/api/suggestions/${suggestionId}/feedback`,
+      `${API_BASE_URL}/api/v1/query/suggestions/${suggestionId}/feedback/`,
       feedback
     )
     return response.data
@@ -89,15 +112,20 @@ export const suggestionsService = {
   /**
    * Delete all suggestions for a dataset
    */
-  async deleteDatasetSuggestions(datasetId: number): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/api/suggestions/dataset/${datasetId}`)
+  async deleteDatasetSuggestions(datasetId?: number): Promise<void> {
+    const idParam = datasetId || 'global'
+    if (idParam === 'global') {
+      await axios.delete(`${API_BASE_URL}/api/v1/query/suggestions/global/`)
+    } else {
+      await axios.delete(`${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/`)
+    }
   },
 
   /**
    * Get a specific suggestion
    */
   async getSuggestion(suggestionId: number): Promise<DocumentSuggestion> {
-    const response = await axios.get(`${API_BASE_URL}/api/suggestions/${suggestionId}`)
+    const response = await axios.get(`${API_BASE_URL}/api/v1/query/suggestions/${suggestionId}/`)
     return response.data
   }
 }

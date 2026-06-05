@@ -5,9 +5,9 @@ from django.conf import settings
 from rag.models import Dataset
 from query.models import QueryHistory, DocumentSuggestion
 from query.serializers import QueryHistorySerializer, DocumentSuggestionSerializer
-from services.query_service import get_query_service
-from services.file_service import FileService
-from services.csv_processor import CSVProcessor
+from query.services.query_service import get_query_service
+from files.services.file_service import FileService
+from query.services.csv_processor import CSVProcessor
 import threading
 
 def process_csv_background(dataset_id, file_path):
@@ -27,11 +27,12 @@ class DatasetUploadView(views.APIView):
         if not is_valid:
             return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         
-        file_path = settings.UPLOAD_DIR / file.name
+        unique_filename = FileService.get_unique_filename(settings.UPLOAD_DIR, file.name)
+        file_path = settings.UPLOAD_DIR / unique_filename
         file_size = FileService.save_uploaded_file(file, file_path)
         
         dataset = FileService.create_dataset_record(
-            filename=file.name,
+            filename=unique_filename,
             file_path=str(file_path),
             file_size=file_size
         )
@@ -46,6 +47,24 @@ from rag.serializers import DatasetSerializer
 class DatasetViewSet(viewsets.ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
+
+    def perform_destroy(self, instance):
+        try:
+            from query.services.csv_processor import CSVProcessor
+            if instance.table_name:
+                CSVProcessor.drop_table(instance.table_name)
+        except Exception as e:
+            print(f"Error dropping table for dataset {instance.id}: {e}")
+            
+        try:
+            from pathlib import Path
+            file_path = Path(instance.file_path)
+            if file_path.exists():
+                file_path.unlink()
+        except Exception as e:
+            print(f"Error deleting file for dataset {instance.id}: {e}")
+            
+        instance.delete()
 
     @action(detail=True, methods=['get'])
     def preview(self, request, pk=None):
@@ -72,6 +91,28 @@ class DatasetViewSet(viewsets.ModelViewSet):
         thread.start()
         return Response({"status": "processing_started"})
 
+    @action(detail=True, methods=['get'])
+    def viz_data(self, request, pk=None):
+        dataset = self.get_object()
+        try:
+            from query.services.viz_service import VizService
+            limit = int(request.query_params.get('limit', 1000))
+            data = VizService.get_viz_data(dataset.id, limit)
+            return Response(data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def spatial_data(self, request, pk=None):
+        dataset = self.get_object()
+        try:
+            from query.services.viz_service import VizService
+            limit = int(request.query_params.get('limit', 1000))
+            data = VizService.get_spatial_data(dataset.id, limit)
+            return Response(data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 class DatabaseSchemaView(views.APIView):
     def get(self, request):
         query_service = get_query_service()
@@ -91,6 +132,23 @@ class ExecuteSQLView(views.APIView):
 class QueryHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = QueryHistory.objects.all().order_by('-created_at')
     serializer_class = QueryHistorySerializer
+
+    def list(self, request, *args, **kwargs):
+        skip = int(request.query_params.get('skip', 0))
+        limit = int(request.query_params.get('limit', 20))
+        
+        queryset = self.get_queryset()
+        total_count = queryset.count()
+        
+        queries = queryset[skip:skip+limit]
+        serializer = self.get_serializer(queries, many=True)
+        
+        return Response({
+            "queries": serializer.data,
+            "total_count": total_count,
+            "page": (skip // limit) + 1 if limit > 0 else 1,
+            "page_size": limit
+        })
 
 class QueryExecutionView(views.APIView):
     def post(self, request):
@@ -117,7 +175,11 @@ class QueryExecutionView(views.APIView):
             query=query,
             sql_query=sql_query,
             row_count=sql_result.get("row_count", 0),
-            processing_time_ms=sql_result.get("execution_time_ms", 0)
+            processing_time_ms=sql_result.get("execution_time_ms", 0),
+            sql_confidence=sql_generation.get("confidence", 0.0),
+            data_results=sql_result,
+            literature_context=literature_context,
+            synthesis=synthesis
         )
         
         return Response({
