@@ -24,7 +24,7 @@ class DocumentSuggestionService:
     def __init__(self):
         self.client = genai.Client(
             api_key=settings.GOOGLE_API_KEY,
-            http_options={'timeout': 120.0}
+            http_options={'timeout': 120000.0}
         )
         self.system_instruction = "You are a helpful research assistant. Respond safely and accurately without generating harmful content."
         self.safety_settings = [
@@ -68,7 +68,7 @@ class DocumentSuggestionService:
                 )
             except Exception as e:
                 error_msg = str(e).lower()
-                if "504" in error_msg or "deadline" in error_msg or "503" in error_msg or "timeout" in error_msg:
+                if "504" in error_msg or "deadline" in error_msg or "503" in error_msg or "timeout" in error_msg or "429" in error_msg or "resource_exhausted" in error_msg:
                     if attempt == max_retries - 1:
                         raise e
                     logger.warning(f"Gemini API timeout/error (attempt {attempt+1}): {e}. Retrying...")

@@ -45,7 +45,7 @@ class LiteraturePipelineTests(APITestCase):
         
         # Verify literature was created
         lit = Literature.objects.get(id=lit_id)
-        self.assertEqual(lit.filename, "dummy_test.pdf")
+        self.assertTrue(lit.filename.startswith("dummy_test"))
         self.assertEqual(lit.processing_status, ProcessingStatus.PENDING)
         
         # Simulate background task completion

@@ -137,7 +137,16 @@ class RAGService:
                 filter_dict = {"literature_id": {"$in": literature_ids}}
             
             fetch_k = top_k * 5
-            results = self.vector_store.similarity_search_with_score(query=query, k=fetch_k, filter=filter_dict)
+            
+            @retry(
+                wait=wait_exponential(multiplier=1, min=2, max=20),
+                stop=stop_after_attempt(4),
+                reraise=True
+            )
+            def do_search():
+                return self.vector_store.similarity_search_with_score(query=query, k=fetch_k, filter=filter_dict)
+                
+            results = do_search()
             
             formatted_results = []
             reserve = []

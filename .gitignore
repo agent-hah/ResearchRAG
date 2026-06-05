@@ -65,3 +65,13 @@ screenshots/
 *.sln
 *.sw?
 .kiro/
+
+# testing
+backend/.coverage
+backend/test_output.txt
+backend/export_test_output.txt
+backend/run_tmp.py
+
+frontend/playwright-report/
+frontend/test-results/
+test_genai.py

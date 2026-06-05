@@ -40,8 +40,8 @@ class ExportService:
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
-            # Get table name from metadata
-            table_name = dataset.metadata.get('table_name') if dataset.metadata else None
+            # Get table name from model
+            table_name = dataset.table_name
             if not table_name:
                 raise ValueError("Dataset table name not found")
             
@@ -84,8 +84,8 @@ class ExportService:
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
-            # Get table name from metadata
-            table_name = dataset.metadata.get('table_name') if dataset.metadata else None
+            # Get table name from model
+            table_name = dataset.table_name
             if not table_name:
                 raise ValueError("Dataset table name not found")
             
@@ -104,8 +104,7 @@ class ExportService:
                 "dataset": {
                     "id": dataset.id,
                     "filename": dataset.filename,
-                    "created_at": dataset.created_at.isoformat(),
-                    "metadata": dataset.metadata
+                    "created_at": dataset.created_at.isoformat()
                 },
                 "data": data,
                 "exported_at": datetime.utcnow().isoformat()
@@ -133,10 +132,10 @@ class ExportService:
             if not query_history:
                 raise ValueError(f"Query {query_id} not found")
             
-            if not query_history.results:
+            if not query_history.data_results:
                 raise ValueError("Query has no results")
             
-            results = query_history.results.get('data', [])
+            results = query_history.data_results.get('data', [])
             if not results:
                 raise ValueError("Query results are empty")
             
@@ -172,11 +171,11 @@ class ExportService:
             export_data = {
                 "query": {
                     "id": query_history.id,
-                    "question": query_history.question,
+                    "question": query_history.query_text,
                     "sql_query": query_history.sql_query,
                     "created_at": query_history.created_at.isoformat()
                 },
-                "results": query_history.results,
+                "results": query_history.data_results,
                 "exported_at": datetime.utcnow().isoformat()
             }
             
