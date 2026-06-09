@@ -28,6 +28,7 @@ def dataset(db):
 @pytest.fixture
 def note_fixture(db, dataset, lit_fixture, query_history):
     return Note.objects.create(
+        title="Test note",
         content="Test note\nLine 2",
         tags="tag1, tag2",
         dataset=dataset,

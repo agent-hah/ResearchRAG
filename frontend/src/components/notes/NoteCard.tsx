@@ -26,6 +26,11 @@ export function NoteCard({ note, onEdit, onDelete, onViewRelationships }: NoteCa
   return (
     <div className="card hover:shadow-md transition-shadow">
       <div className="card-content">
+        {/* Title */}
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          {note.title || 'Untitled Note'}
+        </h3>
+
         {/* Content */}
         <div className="prose prose-sm max-w-none mb-4">
           <ReactMarkdown>

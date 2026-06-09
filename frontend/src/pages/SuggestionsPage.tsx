@@ -115,7 +115,7 @@ export function SuggestionsPage() {
                         {dataset.filename}
                       </h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        {dataset.metadata?.row_count?.toLocaleString() || 0} rows
+                        {(dataset.row_count ?? dataset.metadata?.row_count ?? 0).toLocaleString()} rows
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         {new Date(dataset.created_at).toLocaleDateString()}

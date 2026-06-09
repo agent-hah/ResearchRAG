@@ -64,6 +64,11 @@ export function CanvasNoteCard({ note, onEdit, onDelete }: CanvasNoteCardProps) 
 
       {/* Content */}
       <div className="p-4">
+        {/* Title */}
+        <h3 className="text-base font-bold text-gray-900 mb-2 pb-2 border-b border-gray-300 border-opacity-50">
+          {note.title || 'Untitled Note'}
+        </h3>
+
         <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800 prose-strong:text-gray-900 prose-em:text-gray-700">
           <ReactMarkdown
             components={{

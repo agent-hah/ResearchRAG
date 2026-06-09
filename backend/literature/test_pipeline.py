@@ -64,7 +64,7 @@ class LiteraturePipelineTests(APITestCase):
         # 3. Test Annotate
         annotations_url = reverse('annotation-list')
         annotation_data = {
-            'literature': lit_id,
+            'literature_id': lit_id,
             'annotation_type': AnnotationType.HIGHLIGHT,
             'content': 'Important finding here.',
             'page_number': 1,

@@ -57,16 +57,17 @@ export function NotesPanel({ queryId, datasetId, literatureId }: NotesPanelProps
     }
   })
 
-  const handleSaveNote = (content: string, tags: string[]) => {
+  const handleSaveNote = (title: string, content: string, tags: string[]) => {
     if (editingNote) {
       // Update existing note
       updateMutation.mutate({
         id: editingNote.id,
-        update: { content, tags }
+        update: { title, content, tags }
       })
     } else {
       // Create new note
       const noteData: NoteCreate = {
+        title,
         content,
         tags,
         query_id: queryId,
@@ -176,6 +177,7 @@ export function NotesPanel({ queryId, datasetId, literatureId }: NotesPanelProps
           </div>
           <div className="card-content">
             <NoteEditor
+              initialTitle={editingNote?.title}
               initialContent={editingNote?.content}
               initialTags={editingNote?.tags || []}
               onSave={handleSaveNote}

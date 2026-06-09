@@ -36,6 +36,7 @@ export function AnnotationForm({
   const [content, setContent] = useState('')
   const [highlightedText, setHighlightedText] = useState('')
   const [color, setColor] = useState('yellow')
+  const [rects, setRects] = useState<{x: number, y: number, width: number, height: number}[]>([])
 
   useEffect(() => {
     if (editingAnnotation) {
@@ -43,11 +44,34 @@ export function AnnotationForm({
       setContent(editingAnnotation.content || '')
       setHighlightedText(editingAnnotation.highlighted_text || '')
       setColor(editingAnnotation.color || 'yellow')
+      // Note: we don't load rects for editing since we just want to update content/color usually
     } else {
       // Try to get selected text from the document
       const selection = window.getSelection()
-      if (selection && selection.toString().trim()) {
+      if (selection && selection.toString().trim() && selection.rangeCount > 0) {
         setHighlightedText(selection.toString().trim())
+        
+        const pageElement = document.querySelector('.react-pdf__Page') as HTMLElement
+        if (pageElement) {
+          const pageRect = pageElement.getBoundingClientRect()
+          // Get scale from data-scale attribute set by react-pdf, default to 1
+          const scale = parseFloat(pageElement.getAttribute('data-scale') || '1')
+          
+          const range = selection.getRangeAt(0)
+          const clientRects = range.getClientRects()
+          const newRects = []
+          
+          for (let i = 0; i < clientRects.length; i++) {
+            const rect = clientRects[i]
+            newRects.push({
+              x: (rect.left - pageRect.left) / scale,
+              y: (rect.top - pageRect.top) / scale,
+              width: rect.width / scale,
+              height: rect.height / scale
+            })
+          }
+          setRects(newRects)
+        }
       }
     }
   }, [editingAnnotation])
@@ -62,6 +86,7 @@ export function AnnotationForm({
       highlighted_text: highlightedText.trim() || undefined,
       page_number: pageNumber,
       color,
+      ...(rects.length > 0 ? { rects } : {})
     }
 
     onSave(annotation)

@@ -26,9 +26,12 @@ describe('AnnotationForm', () => {
   });
 
   it('populates initial text from window.getSelection', () => {
-    // Mock getSelection
     const mockGetSelection = vi.fn().mockReturnValue({
       toString: () => 'Selected text from PDF',
+      rangeCount: 1,
+      getRangeAt: () => ({
+        getClientRects: () => [],
+      }),
     });
     vi.spyOn(window, 'getSelection').mockImplementation(mockGetSelection as any);
 

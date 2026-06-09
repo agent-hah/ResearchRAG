@@ -229,8 +229,55 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
                 scale={scale}
                 renderTextLayer={true}
                 renderAnnotationLayer={true}
-                className="shadow-lg"
-              />
+                className="shadow-lg relative"
+              >
+                {/* Render Highlights */}
+                {showAnnotations && annotations.map((ann) => {
+                  if (ann.annotation_type !== 'highlight') return null;
+                  
+                  if (ann.rects && ann.rects.length > 0) {
+                    return (
+                      <div key={ann.id}>
+                        {ann.rects.map((rect: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="absolute mix-blend-multiply cursor-pointer"
+                            style={{
+                              left: `${rect.x * scale}px`,
+                              top: `${rect.y * scale}px`,
+                              width: `${rect.width * scale}px`,
+                              height: `${rect.height * scale}px`,
+                              backgroundColor: ann.color || 'yellow',
+                              opacity: 0.5,
+                            }}
+                            title={ann.content || 'Highlight'}
+                            onClick={() => handleEditAnnotation(ann)}
+                          />
+                        ))}
+                      </div>
+                    )
+                  } else if (ann.x_position != null && ann.y_position != null) {
+                    return (
+                      <div
+                        key={ann.id}
+                        className="absolute mix-blend-multiply cursor-pointer"
+                        style={{
+                          left: `${ann.x_position * 100}%`,
+                          top: `${ann.y_position * 100}%`,
+                          width: `${(ann.width || 0.1) * 100}%`,
+                          height: `${(ann.height || 0.02) * 100}%`,
+                          backgroundColor: ann.color || 'yellow',
+                          opacity: 0.5,
+                        }}
+                        title={ann.content || 'Highlight'}
+                        onClick={() => handleEditAnnotation(ann)}
+                      />
+                    )
+                  }
+                  
+                  return null;
+                })}
+              </Page>
             </Document>
           </div>
         </div>

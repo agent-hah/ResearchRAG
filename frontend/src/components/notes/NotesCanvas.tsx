@@ -115,14 +115,15 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
     }
   })
 
-  const handleSaveNote = (content: string, tags: string[]) => {
+  const handleSaveNote = (title: string, content: string, tags: string[]) => {
     if (editingNote) {
       updateMutation.mutate({
         id: editingNote.id,
-        update: { content, tags }
+        update: { title, content, tags }
       })
     } else {
       const noteData: NoteCreate = {
+        title,
         content,
         tags,
         query_id: queryId,
@@ -325,6 +326,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
                 {editingNote ? 'Edit Note' : 'Create New Note'}
               </h3>
               <NoteEditor
+                initialTitle={editingNote?.title}
                 initialContent={editingNote?.content}
                 initialTags={editingNote?.tags || []}
                 onSave={handleSaveNote}

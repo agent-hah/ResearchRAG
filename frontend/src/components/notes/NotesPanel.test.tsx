@@ -177,6 +177,7 @@ describe('NotesPanel', () => {
 
     await waitFor(() => {
       expect(notesService.createNote).toHaveBeenCalledWith({
+        title: 'Untitled Note',
         content: 'New Note Content',
         tags: [],
         query_id: 10,
@@ -213,8 +214,9 @@ describe('NotesPanel', () => {
 
     await waitFor(() => {
       expect(notesService.updateNote).toHaveBeenCalledWith(1, {
+        title: 'Untitled Note',
         content: 'Updated Note 1 content',
-        tags: ['tag1', 'tag2'],
+        tags: ['tag1', 'tag2']
       });
     });
   });

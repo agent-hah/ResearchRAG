@@ -14,8 +14,9 @@ def test_create_note():
         file_size_bytes=100,
         table_name="test_dataset_1"
     )
-    note = NotesService.create_note("Test content", tags=["tag1", "tag2"], dataset_id=ds.id)
+    note = NotesService.create_note("Test title", "Test content", tags=["tag1", "tag2"], dataset_id=ds.id)
     assert note.id is not None
+    assert note.title == "Test title"
     assert note.content == "Test content"
     assert note.tags == "tag1,tag2"
     assert note.dataset_id == ds.id
@@ -24,18 +25,18 @@ def test_create_note():
 def test_create_note_exception():
     with patch('notes.models.Note.objects.create', side_effect=Exception("DB Error")):
         with pytest.raises(Exception):
-            NotesService.create_note("Test content")
+            NotesService.create_note("Test title", "Test content")
 
 @pytest.mark.django_db
 def test_get_note():
-    note = NotesService.create_note("Test content")
+    note = NotesService.create_note("Test title", "Test content")
     fetched = NotesService.get_note(note.id)
     assert fetched.id == note.id
 
 @pytest.mark.django_db
 def test_list_notes():
-    NotesService.create_note("First note", tags=["a", "b"])
-    NotesService.create_note("Second note", tags=["b", "c"])
+    NotesService.create_note("First note", "First note", tags=["a", "b"])
+    NotesService.create_note("Second note", "Second note", tags=["b", "c"])
     
     notes = NotesService.list_notes()
     assert len(notes) == 2
@@ -50,9 +51,10 @@ def test_list_notes():
 
 @pytest.mark.django_db
 def test_update_note():
-    note = NotesService.create_note("Old content", tags=["old"])
+    note = NotesService.create_note("Old title", "Old content", tags=["old"])
     
-    updated = NotesService.update_note(note.id, content="New content", tags=["new"])
+    updated = NotesService.update_note(note.id, title="New title", content="New content", tags=["new"])
+    assert updated.title == "New title"
     assert updated.content == "New content"
     assert updated.tags == "new"
     
@@ -61,14 +63,14 @@ def test_update_note():
 
 @pytest.mark.django_db
 def test_update_note_exception():
-    note = NotesService.create_note("Old content")
+    note = NotesService.create_note("Old title", "Old content")
     with patch('notes.models.Note.save', side_effect=Exception("DB Error")):
         with pytest.raises(Exception):
             NotesService.update_note(note.id, content="Error")
 
 @pytest.mark.django_db
 def test_delete_note():
-    note = NotesService.create_note("To delete")
+    note = NotesService.create_note("To delete", "To delete")
     NotesService.create_relationship(note.id, EntityType.DATASET, 1, RelationshipType.REFERENCES)
     
     assert NotesService.delete_note(note.id) is True
@@ -80,14 +82,14 @@ def test_delete_note():
 
 @pytest.mark.django_db
 def test_delete_note_exception():
-    note = NotesService.create_note("To delete")
+    note = NotesService.create_note("To delete", "To delete")
     with patch('notes.models.Note.delete', side_effect=Exception("DB Error")):
         with pytest.raises(Exception):
             NotesService.delete_note(note.id)
 
 @pytest.mark.django_db
 def test_create_relationship():
-    note = NotesService.create_note("Note")
+    note = NotesService.create_note("Note title", "Note")
     rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS, "Test rel")
     assert rel.id is not None
     assert rel.target_type == EntityType.LITERATURE
@@ -102,9 +104,9 @@ def test_create_relationship_exception():
 
 @pytest.mark.django_db
 def test_get_related_notes():
-    note1 = NotesService.create_note("Note 1")
-    note2 = NotesService.create_note("Note 2")
-    NotesService.create_note("Note 3") # Not related
+    note1 = NotesService.create_note("Note 1", "Note 1")
+    note2 = NotesService.create_note("Note 2", "Note 2")
+    NotesService.create_note("Note 3", "Note 3") # Not related
     
     NotesService.create_relationship(note1.id, EntityType.QUERY, 10, RelationshipType.REFERENCES)
     NotesService.create_relationship(note2.id, EntityType.QUERY, 10, RelationshipType.REFERENCES)
@@ -117,7 +119,7 @@ def test_get_related_notes():
 
 @pytest.mark.django_db
 def test_delete_relationship():
-    note = NotesService.create_note("Note")
+    note = NotesService.create_note("Note", "Note")
     rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS)
     
     assert NotesService.delete_relationship(rel.id) is True
@@ -127,7 +129,7 @@ def test_delete_relationship():
 
 @pytest.mark.django_db
 def test_delete_relationship_exception():
-    note = NotesService.create_note("Note")
+    note = NotesService.create_note("Note", "Note")
     rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS)
     
     with patch('notes.models.NoteRelationship.delete', side_effect=Exception("DB Error")):
@@ -136,9 +138,9 @@ def test_delete_relationship_exception():
 
 @pytest.mark.django_db
 def test_get_note_graph():
-    note1 = NotesService.create_note("Note 1")
-    note2 = NotesService.create_note("Note 2")
-    note3 = NotesService.create_note("Note 3")
+    note1 = NotesService.create_note("Note 1", "Note 1")
+    note2 = NotesService.create_note("Note 2", "Note 2")
+    note3 = NotesService.create_note("Note 3", "Note 3")
     
     # note1 references literature 1
     NotesService.create_relationship(note1.id, EntityType.LITERATURE, 1, RelationshipType.REFERENCES)
@@ -159,9 +161,9 @@ def test_get_note_graph():
 
 @pytest.mark.django_db
 def test_search_notes():
-    NotesService.create_note("Unique pattern A", tags=["t1"])
-    NotesService.create_note("Unique pattern B", tags=["t1"])
-    NotesService.create_note("Other text", tags=["t2"])
+    NotesService.create_note("Unique pattern A", "Unique pattern A", tags=["t1"])
+    NotesService.create_note("Unique pattern B", "Unique pattern B", tags=["t1"])
+    NotesService.create_note("Other text", "Other text", tags=["t2"])
     
     res1 = NotesService.search_notes("Unique", tags=["t1"])
     assert len(res1) == 2

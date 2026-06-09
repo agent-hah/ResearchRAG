@@ -83,7 +83,7 @@ describe('NoteEditor', () => {
     
     await userEvent.click(screen.getByRole('button', { name: /save note/i }));
 
-    expect(onSave).toHaveBeenCalledWith('Final note content', ['finalTag']);
+    expect(onSave).toHaveBeenCalledWith('Untitled Note', 'Final note content', ['finalTag']);
   });
 
   it('calls onCancel when cancel is clicked', async () => {

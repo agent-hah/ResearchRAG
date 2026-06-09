@@ -13,18 +13,24 @@ export function ExportPage() {
   const [selectedQueries, setSelectedQueries] = useState<number[]>([])
 
   const [selectedNotes, setSelectedNotes] = useState<number[]>(() => {
-    const saved = localStorage.getItem('selectedNotes')
-    return saved ? JSON.parse(saved) : []
+    try {
+      const saved = localStorage.getItem('selectedNotes')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
   })
 
   const [selectedTags, setSelectedTags] = useState<string[]>(() => {
-    const saved = localStorage.getItem('selectedTags')
-    return saved ? JSON.parse(saved) : []
+    try {
+      const saved = localStorage.getItem('selectedTags')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
   })
 
   type ExportMode = 'all' | 'tag' | 'custom'
   const [exportMode, setExportMode] = useState<ExportMode>(() => {
-    return (localStorage.getItem('noteExportMode') as ExportMode) || 'all'
+    try {
+      return (localStorage.getItem('noteExportMode') as ExportMode) || 'all'
+    } catch { return 'all' }
   })
 
   const [showNotesModal, setShowNotesModal] = useState(false)
@@ -34,15 +40,15 @@ export function ExportPage() {
   const [tagsSearchQuery, setTagsSearchQuery] = useState('')
 
   useEffect(() => {
-    localStorage.setItem('selectedNotes', JSON.stringify(selectedNotes))
+    try { localStorage.setItem('selectedNotes', JSON.stringify(selectedNotes)) } catch {}
   }, [selectedNotes])
 
   useEffect(() => {
-    localStorage.setItem('selectedTags', JSON.stringify(selectedTags))
+    try { localStorage.setItem('selectedTags', JSON.stringify(selectedTags)) } catch {}
   }, [selectedTags])
 
   useEffect(() => {
-    localStorage.setItem('noteExportMode', exportMode)
+    try { localStorage.setItem('noteExportMode', exportMode) } catch {}
   }, [exportMode])
 
   // Fetch datasets

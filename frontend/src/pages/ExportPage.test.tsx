@@ -94,7 +94,7 @@ describe('ExportPage', () => {
   it('renders queries and allows export', async () => {
     vi.mocked(useQuery).mockImplementation(({ queryKey }: any) => {
       if (queryKey[0] === 'query-history') {
-        return { data: { queries: [{ id: 1, question: 'test question', created_at: '2023-01-01' }] } } as any
+        return { data: { queries: [{ id: 1, query: 'test question', created_at: '2023-01-01' }] } } as any
       }
       return { data: undefined } as any
     })
@@ -105,11 +105,14 @@ describe('ExportPage', () => {
     
     expect(screen.getByText('test question')).toBeInTheDocument()
     
+    // Select the query
+    fireEvent.click(screen.getByText('test question'))
+    
     // Test Query CSV export
-    fireEvent.click(screen.getAllByText('CSV')[0])
+    fireEvent.click(screen.getByText('Export Selected as CSV'))
     
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/query', { query_id: 1, format: 'csv' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/query', { query_ids: [1], format: 'csv' }, { responseType: 'blob' })
     })
   })
 
@@ -125,13 +128,14 @@ describe('ExportPage', () => {
 
     render(<ExportPage />)
     
-    expect(screen.getByText('All Notes (1)')).toBeInTheDocument()
+    expect(screen.getByText('All Notes')).toBeInTheDocument()
+    expect(screen.getByText('Export all 1 note(s)')).toBeInTheDocument()
     
-    // Test Notes Markdown export
-    fireEvent.click(screen.getByText('Markdown'))
+    // Test Notes CSV export
+    fireEvent.click(screen.getByText('Export CSV'))
     
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/notes', { format: 'markdown' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/notes', { format: 'csv' }, { responseType: 'blob' })
     })
   })
 
@@ -173,7 +177,7 @@ describe('ExportPage', () => {
 
     render(<ExportPage />)
     
-    fireEvent.click(screen.getByText('Markdown'))
+    fireEvent.click(screen.getByText('Export CSV'))
     
     await waitFor(() => {
       expect(window.alert).toHaveBeenCalledWith('Failed to export notes')
@@ -183,7 +187,7 @@ describe('ExportPage', () => {
   it('tests missing JSON exports', async () => {
     vi.mocked(useQuery).mockImplementation(({ queryKey }: any) => {
       if (queryKey[0] === 'query-history') {
-        return { data: { queries: [{ id: 1, question: 'test question', created_at: '2023-01-01' }] } } as any
+        return { data: { queries: [{ id: 1, query: 'test question', created_at: '2023-01-01' }] } } as any
       }
       if (queryKey[0] === 'notes') {
         return { data: [{ id: 1, content: 'test note' }] } as any
@@ -195,14 +199,17 @@ describe('ExportPage', () => {
 
     render(<ExportPage />)
     
+    // Select the query
+    fireEvent.click(screen.getByText('test question'))
+    
     // Test Query JSON export
-    fireEvent.click(screen.getAllByText('JSON')[0]) // The first JSON button will be for query history
+    fireEvent.click(screen.getByText('Export Selected as JSON'))
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/query', { query_id: 1, format: 'json' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/query', { query_ids: [1], format: 'json' }, { responseType: 'blob' })
     })
 
     // Test Notes JSON export
-    fireEvent.click(screen.getAllByText('JSON')[1]) // The second JSON button will be for notes
+    fireEvent.click(screen.getByText('Export JSON'))
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/export/notes', { format: 'json' }, { responseType: 'blob' })
     })

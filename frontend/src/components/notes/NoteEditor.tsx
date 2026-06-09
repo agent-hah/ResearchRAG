@@ -2,20 +2,23 @@ import { useState } from 'react'
 import { Save, X, Tag } from 'lucide-react'
 
 interface NoteEditorProps {
+  initialTitle?: string
   initialContent?: string
   initialTags?: string[]
-  onSave: (content: string, tags: string[]) => void
+  onSave: (title: string, content: string, tags: string[]) => void
   onCancel: () => void
   isLoading?: boolean
 }
 
 export function NoteEditor({
+  initialTitle = '',
   initialContent = '',
   initialTags = [],
   onSave,
   onCancel,
   isLoading = false
 }: NoteEditorProps) {
+  const [title, setTitle] = useState(initialTitle)
   const [content, setContent] = useState(initialContent)
   const [tags, setTags] = useState<string[]>(initialTags)
   const [tagInput, setTagInput] = useState('')
@@ -41,12 +44,28 @@ export function NoteEditor({
 
   const handleSave = () => {
     if (content.trim()) {
-      onSave(content.trim(), tags)
+      onSave(title.trim() || 'Untitled Note', content.trim(), tags)
     }
   }
 
   return (
     <div className="space-y-4">
+      {/* Title Editor */}
+      <div>
+        <label htmlFor="note-title" className="block text-sm font-medium text-gray-700 mb-2">
+          Title
+        </label>
+        <input
+          id="note-title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Note title"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          disabled={isLoading}
+        />
+      </div>
+
       {/* Content Editor */}
       <div>
         <label htmlFor="note-content" className="block text-sm font-medium text-gray-700 mb-2">

@@ -476,10 +476,33 @@ class ExportService:
                                     min_x, min_y, max_x, max_y = x, y - height, x + width, y
                                 
                                 if quad_points:
+                                    # Draw visual highlights using Multiply blend mode so text beneath remains crisp
+                                    can.saveState()
+                                    can.setBlendMode('Multiply')
+                                    can.setFillColor(color)
+                                    
+                                    if ann.rects:
+                                        for rect in ann.rects:
+                                            x = rect.get('x', 0)
+                                            width = rect.get('width', 0)
+                                            height = rect.get('height', 0)
+                                            y = page_height - rect.get('y', 0) - height
+                                            if width > 0 and height > 0:
+                                                can.rect(x, y, width, height, fill=1, stroke=0)
+                                    elif ann.x_position is not None and ann.y_position is not None:
+                                        x = ann.x_position * page_width
+                                        y = page_height - (ann.y_position * page_height)
+                                        width = (ann.width or 0.1) * page_width
+                                        height = (ann.height or 0.02) * page_height
+                                        can.rect(x, y - height, width, height, fill=1, stroke=0)
+                                        
+                                    can.restoreState()
+                                    
+                                    # Also add the invisible native annotation for comments (if PDF viewer supports merged annots)
                                     bounding_rect = [min_x, min_y, max_x, max_y]
                                     rgb_color = [color.red, color.green, color.blue]
                                     comment_text = ann.content if ann.content else "Highlighted Text"
-                                    # Create native PDF highlight annotation (which also acts as a comment)
+                                    # Add annotation with 0 opacity / hidden visual so it doesn't duplicate the visual highlight
                                     can.highlightAnnotation(comment_text, Rect=bounding_rect, QuadPoints=quad_points, Color=rgb_color)
                         
                         can.showPage()

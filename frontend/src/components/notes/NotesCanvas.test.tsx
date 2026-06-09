@@ -145,6 +145,7 @@ describe('NotesCanvas', () => {
 
     await waitFor(() => {
       expect(notesService.createNote).toHaveBeenCalledWith({
+        title: 'Untitled Note',
         content: 'New Canvas Note Content',
         tags: [],
         query_id: 100,
@@ -181,8 +182,9 @@ describe('NotesCanvas', () => {
 
     await waitFor(() => {
       expect(notesService.updateNote).toHaveBeenCalledWith(1, {
+        title: 'Untitled Note',
         content: 'Updated Canvas Note Content',
-        tags: ['canvas'],
+        tags: ['canvas']
       });
     });
   });

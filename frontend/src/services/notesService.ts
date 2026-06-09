@@ -5,6 +5,7 @@ export type EntityType = 'note' | 'query' | 'dataset' | 'literature' | 'visualiz
 
 export interface Note {
   id: number
+  title: string
   content: string
   tags: string[] | null
   dataset_id: number | null
@@ -15,6 +16,7 @@ export interface Note {
 }
 
 export interface NoteCreate {
+  title?: string
   content: string
   tags?: string[]
   dataset_id?: number
@@ -23,6 +25,7 @@ export interface NoteCreate {
 }
 
 export interface NoteUpdate {
+  title?: string
   content?: string
   tags?: string[]
 }
