@@ -15,7 +15,7 @@ describe('queryService', () => {
   });
 
   it('executeQuery calls POST /query/execute/', async () => {
-    const mockResult = { query_id: '123', question: 'test' };
+    const mockResult: any = { query_id: '123', question: 'test' };
     vi.mocked(api.post).mockResolvedValueOnce({ data: mockResult });
 
     const req = { query: 'test query' };
@@ -26,7 +26,7 @@ describe('queryService', () => {
   });
 
   it('getQueryHistory calls GET /query/history/ with pagination', async () => {
-    const mockResult = { items: [], total: 0 };
+    const mockResult: any = { items: [], total: 0 };
     vi.mocked(api.get).mockResolvedValueOnce({ data: mockResult });
 
     const result = await queryService.getQueryHistory(10, 50);
@@ -48,7 +48,7 @@ describe('queryService', () => {
   });
 
   it('executeRawSQL calls POST /query/sql/execute/', async () => {
-    const mockResult = { columns: [], rows: [], row_count: 0 };
+    const mockResult: any = { columns: [], rows: [], row_count: 0 };
     vi.mocked(api.post).mockResolvedValueOnce({ data: mockResult });
 
     const sql = 'SELECT * FROM test';

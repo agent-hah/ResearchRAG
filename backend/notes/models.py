@@ -2,6 +2,7 @@ from django.db import models
 from literature.models import TimeStampedModel
 
 class Note(TimeStampedModel):
+    title = models.CharField(max_length=255, default='Untitled Note')
     content = models.TextField()
     tags = models.CharField(max_length=512, null=True, blank=True)
     dataset = models.ForeignKey('rag.Dataset', on_delete=models.SET_NULL, null=True, blank=True, related_name='notes')

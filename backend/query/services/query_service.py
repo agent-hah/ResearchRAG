@@ -102,7 +102,7 @@ class QueryService:
             logger.error(f"Error getting database schema: {str(e)}")
             raise
     
-    def generate_sql(self, query: str, schemas: List[Dict[str, Any]], dataset_ids: Optional[List[int]] = None) -> Dict[str, Any]:
+    def generate_sql(self, query: str, schemas: List[Dict[str, Any]], dataset_ids: Optional[List[int]] = None, previous_query: Optional[str] = None, previous_error: Optional[str] = None) -> Dict[str, Any]:
         try:
             if dataset_ids:
                 filtered_schemas = []
@@ -131,22 +131,37 @@ class QueryService:
 
 You are an expert SQL query generator. Convert the natural language query to SQL based on the provided database schema.
 
+CRITICAL RULES FOR SQL GENERATION:
+1. YOU MUST USE EXACTLY THE COLUMN NAMES PROVIDED IN THE SCHEMA. DO NOT GUESS OR INVENT COLUMN NAMES (e.g. if the schema has "rank", do NOT use "ranking").
+2. YOU MUST USE EXACTLY THE TABLE NAMES PROVIDED IN THE SCHEMA.
+3. If a column name has spaces or special characters, you MUST quote it properly (e.g. "ranking-institution-title").
+4. If a column is missing from the schema, do not select it. 
+
 DATABASE SCHEMA:
 {schema_context}
 
 NATURAL LANGUAGE QUERY:
 {query}
 
+{f'''
+PREVIOUS ERROR CONTEXT:
+The previous SQL query you generated failed with this error: {previous_error}
+Failed Query: {previous_query}
+
+CRITICAL: The previous query failed because you used a column or table that does not exist or has a syntax error.
+DO NOT repeat the same mistake. You MUST look at the schema and use a column name that ACTUALLY EXISTS.
+''' if previous_query and previous_error else ''}
+
 INSTRUCTIONS:
 1. Generate a valid SQLite SQL query
-2. Use only the tables and columns provided in the schema
+2. Use ONLY the tables and columns provided in the schema
 3. Include appropriate WHERE clauses, JOINs, GROUP BY, ORDER BY as needed
 4. Return results that directly answer the user's question
-5. If the query involves aggregation, include appropriate aggregate functions
-6. If the query involves filtering, use appropriate WHERE conditions
+5. IMPORTANT FOR SEARCHING: If the user provides a well-known abbreviation (like MIT), search for BOTH the exact abbreviation AND its full expanded name (e.g., 'Massachusetts Institute of Technology') using an OR clause or IN clause.
+6. Avoid naive `LIKE '%XYZ%'` queries if it might match partial words inside other words (e.g., matching "Amity" when searching for "MIT"). Prefer exact matches, IN clauses, or surround with spaces like `LIKE '% MIT %'` if wildcarding is necessary.
 7. Limit results to 100 rows unless specifically asked for more
 
-RESPONSE FORMAT (JSON):
+RESPONSE FORMAT (JSON ONLY):
 {{
     "sql_query": "SELECT ... FROM ... WHERE ...",
     "explanation": "This query does X by joining Y and filtering on Z...",
@@ -154,8 +169,6 @@ RESPONSE FORMAT (JSON):
     "columns_used": ["col1", "col2", "col3"],
     "confidence": 0.95
 }}
-
-Respond with valid JSON only:
 """
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -163,11 +176,12 @@ Respond with valid JSON only:
                 config=types.GenerateContentConfig(
                     system_instruction=self.system_instruction,
                     safety_settings=self.safety_settings,
+                    response_mime_type="application/json",
                 )
             )
             
             try:
-                result = json.loads(_extract_response_text(response))
+                result = json.loads(response.text)
                 required_fields = ["sql_query", "explanation", "tables_used", "columns_used", "confidence"]
                 for field in required_fields:
                     if field not in result:
@@ -202,11 +216,13 @@ Respond with valid JSON only:
                 columns = [col[0] for col in cursor.description] if cursor.description else []
                 rows = []
                 for row in cursor.fetchall():
-                    row_dict = dict(zip(columns, row))
-                    for key, value in row_dict.items():
+                    row_values = []
+                    for value in row:
                         if isinstance(value, datetime):
-                            row_dict[key] = value.isoformat()
-                    rows.append(row_dict)
+                            row_values.append(value.isoformat())
+                        else:
+                            row_values.append(value)
+                    rows.append(row_values)
             
             execution_time = (time.time() - start_time) * 1000
             
@@ -278,13 +294,13 @@ LITERATURE CONTEXT (Unstructured data from uploaded documents, may be empty):
 {literature_summary}
 
 INSTRUCTIONS:
-1. Provide a clear summary that answers the user's query using the available information.
-2. If DATA RESULTS are empty, DO NOT mention the lack of data or treat it as an error or limitation. Simply synthesize the LITERATURE CONTEXT.
-3. If LITERATURE CONTEXT is empty, DO NOT mention the lack of literature. Simply synthesize the DATA RESULTS.
-4. Extract key findings, data insights, and literature insights based on what is available.
-5. Identify any methodology considerations if applicable.
-6. Do NOT mention that the snippets are fragmented or incomplete. Treat the provided text as the full truth.
-7. Be objective and evidence-based.
+1. Act as a professional research analyst. Provide a clear, authoritative summary that directly answers the user's query.
+2. SYNTHESIS STYLE: Write naturally. DO NOT use phrases like "Based on the provided information", "The DATA RESULTS show", "In the LITERATURE CONTEXT", or "The provided snippets". Speak directly about the data and facts.
+3. If any data source (structured data or literature) is missing or empty, DO NOT mention the lack of data. Simply synthesize what is available.
+4. CRITICAL: Actively cross-reference findings from the structured datasets with insights from the literature. Highlight how they agree, disagree, or complement each other. Do NOT treat the two sources as separate disconnected inputs in your writing.
+5. Extract key findings, specific data insights, and literature insights. Ensure they are directly relevant to the query.
+6. Identify any methodology considerations if applicable, but avoid stating obvious things like "the list of documents was extracted from the search results." Focus on the methodology of the actual research or data collection.
+7. Be objective, concise, and evidence-based. Avoid conversational filler.
 8. Format all mathematical expressions and equations using plain text or standard Markdown. Do NOT output raw LaTeX macros unless wrapped in $ or $$ for proper rendering.
 
 RESPONSE FORMAT (JSON):
@@ -304,11 +320,12 @@ Respond with valid JSON only:
                 config=types.GenerateContentConfig(
                     system_instruction=self.system_instruction,
                     safety_settings=self.safety_settings,
+                    response_mime_type="application/json",
                 )
             )
             
             try:
-                result = json.loads(_extract_response_text(response))
+                result = json.loads(response.text)
                 default_result = {
                     "summary": "Analysis completed",
                     "key_findings": [],

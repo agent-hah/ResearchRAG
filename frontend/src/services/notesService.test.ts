@@ -17,7 +17,7 @@ describe('notesService', () => {
   });
 
   it('createNote calls api.post and returns data', async () => {
-    const mockNote = { id: 1, content: 'Test Note' };
+    const mockNote: any = { id: 1, content: 'Test Note' };
     (api.post as any).mockResolvedValueOnce({ data: mockNote });
     
     const noteData: NoteCreate = { content: 'Test Note' };
@@ -52,7 +52,7 @@ describe('notesService', () => {
   });
 
   it('getNote calls api.get and returns data', async () => {
-    const mockNote = { id: 1, content: 'Test Note' };
+    const mockNote: any = { id: 1, content: 'Test Note' };
     (api.get as any).mockResolvedValueOnce({ data: mockNote });
     
     const result = await notesService.getNote(1);
@@ -62,7 +62,7 @@ describe('notesService', () => {
   });
 
   it('updateNote calls api.put and returns data', async () => {
-    const mockNote = { id: 1, content: 'Updated Note' };
+    const mockNote: any = { id: 1, content: 'Updated Note' };
     (api.put as any).mockResolvedValueOnce({ data: mockNote });
     
     const updateData: NoteUpdate = { content: 'Updated Note' };

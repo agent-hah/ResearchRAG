@@ -15,6 +15,7 @@ class NoteViewSet(viewsets.ModelViewSet):
         if isinstance(tags, str):
             tags = tags.split(',')
         note = NotesService.create_note(
+            title=data.get('title', 'Untitled Note'),
             content=data.get('content'),
             tags=tags,
             dataset_id=data.get('dataset_id'),
@@ -32,6 +33,7 @@ class NoteViewSet(viewsets.ModelViewSet):
             tags = tags.split(',')
         note = NotesService.update_note(
             note_id=instance.id,
+            title=data.get('title'),
             content=data.get('content'),
             tags=tags
         )

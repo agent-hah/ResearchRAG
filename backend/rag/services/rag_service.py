@@ -144,7 +144,7 @@ class RAGService:
                 reraise=True
             )
             def do_search():
-                return self.vector_store.similarity_search_with_score(query=query, k=fetch_k, filter=filter_dict)
+                return self.vector_store.similarity_search_with_relevance_scores(query=query, k=fetch_k, filter=filter_dict)
                 
             results = do_search()
             

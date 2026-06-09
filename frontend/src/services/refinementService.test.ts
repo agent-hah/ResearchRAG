@@ -16,7 +16,7 @@ describe('refinementService', () => {
   });
 
   it('refineVisualization calls axios.post and returns data', async () => {
-    const mockResponse = { data: { updates: {}, refined_config: { type: 'bar', title: 'test' }, explanation: 'test' } };
+    const mockResponse: any = { data: { updates: {}, refined_config: { type: 'bar', title: 'test' }, explanation: 'test' } };
     (axios.post as any).mockResolvedValueOnce(mockResponse);
     
     const currentConfig: any = { type: 'bar', title: 'test' };
@@ -30,7 +30,7 @@ describe('refinementService', () => {
   });
 
   it('getSuggestions calls axios.post and returns suggestions array', async () => {
-    const mockResponse = { data: { suggestions: ['suggestion 1'] } };
+    const mockResponse: any = { data: { suggestions: ['suggestion 1'] } };
     (axios.post as any).mockResolvedValueOnce(mockResponse);
     
     const dataSummary = { key: 'value' };
@@ -44,7 +44,7 @@ describe('refinementService', () => {
   });
 
   it('getSuggestions uses default dataSummary when not provided', async () => {
-    const mockResponse = { data: { suggestions: ['suggestion 2'] } };
+    const mockResponse: any = { data: { suggestions: ['suggestion 2'] } };
     (axios.post as any).mockResolvedValueOnce(mockResponse);
     
     const result = await refinementService.getSuggestions('bar');

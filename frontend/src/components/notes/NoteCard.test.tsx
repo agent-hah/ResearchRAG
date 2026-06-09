@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { NoteCard } from './NoteCard';
 import userEvent from '@testing-library/user-event';
@@ -12,8 +12,12 @@ vi.mock('react-markdown', () => ({
 describe('NoteCard', () => {
   const mockNote: Note = {
     id: 1,
+
     content: 'This is a test note.',
     tags: ['test1', 'test2'],
+    dataset_id: null,
+    literature_id: null,
+    query_id: null,
     created_at: '2023-10-27T10:00:00Z',
     updated_at: '2023-10-27T10:00:00Z',
   };

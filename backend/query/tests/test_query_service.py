@@ -100,7 +100,7 @@ def test_build_schema_context(query_service):
 
 def test_generate_sql_success(query_service):
     schemas = [{"table_name": "dataset_1", "original_filename": "test.csv", "row_count": 10, "columns": [], "sample_data": []}]
-    mock_response = DummyResponse(text="```json\n{\"sql_query\": \"SELECT * FROM dataset_1\", \"explanation\": \"expl\", \"tables_used\": [\"dataset_1\"], \"columns_used\": [\"*\"], \"confidence\": 0.9}\n```")
+    mock_response = DummyResponse(text="{\"sql_query\": \"SELECT * FROM dataset_1\", \"explanation\": \"expl\", \"tables_used\": [\"dataset_1\"], \"columns_used\": [\"*\"], \"confidence\": 0.9}")
     query_service.client.models.generate_content.return_value = mock_response
     
     res = query_service.generate_sql("query", schemas)
@@ -130,9 +130,9 @@ def test_execute_sql(mock_cursor_func, query_service):
     
     res = query_service.execute_sql("SELECT * FROM dataset_1")
     assert res["row_count"] == 1
-    assert res["rows"][0]["id"] == 1
-    assert res["rows"][0]["name"] == "Test"
-    assert res["rows"][0]["date_col"] == "2023-01-01T00:00:00"
+    assert res["columns"] == ["id", "name", "date_col"]
+    # Rows are arrays of values in column order
+    assert res["rows"][0] == [1, "Test", "2023-01-01T00:00:00"]
 
 @patch('query.services.query_service.connection.cursor')
 def test_execute_sql_error(mock_cursor_func, query_service):
@@ -161,12 +161,17 @@ def test_get_literature_context_max_0(query_service):
 def test_synthesize_results_success(query_service):
     sql_result = {"row_count": 1, "columns": ["id"], "rows": [{"id": 1}]}
     literature_context = [{"title": "Doc", "excerpt": "Excerpt"}]
-    mock_response = DummyResponse(text="```json\n{\"summary\": \"Great summary\", \"key_findings\": [\"A\"], \"data_insights\": [], \"literature_insights\": [], \"methodology_notes\": null}\n```")
+    mock_response = DummyResponse(text="{\"summary\": \"Great summary\", \"key_findings\": [\"A\"], \"data_insights\": [], \"literature_insights\": [], \"methodology_notes\": null}")
     query_service.client.models.generate_content.return_value = mock_response
     
     res = query_service.synthesize_results("query", sql_result, literature_context)
     assert res["summary"] == "Great summary"
     assert res["key_findings"] == ["A"]
+    
+    # Verify the prompt explicitly instructs the model to cross-reference CSV data and PDF literature
+    call_args = query_service.client.models.generate_content.call_args
+    prompt_used = call_args.kwargs['contents']
+    assert "Actively cross-reference findings from the structured datasets with insights from the literature" in prompt_used
 
 def test_synthesize_results_json_error(query_service):
     sql_result = {"row_count": 0}

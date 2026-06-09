@@ -42,15 +42,23 @@ describe('NotesPanel', () => {
   const mockNotes: Note[] = [
     {
       id: 1,
+
       content: 'Note 1 content',
       tags: ['tag1', 'tag2'],
+      dataset_id: null,
+      literature_id: null,
+      query_id: null,
       created_at: '2023-10-01T10:00:00Z',
       updated_at: '2023-10-01T10:00:00Z',
     },
     {
       id: 2,
+
       content: 'Note 2 content',
       tags: ['tag2', 'tag3'],
+      dataset_id: null,
+      literature_id: null,
+      query_id: null,
       created_at: '2023-10-02T10:00:00Z',
       updated_at: '2023-10-02T10:00:00Z',
     },
@@ -143,8 +151,12 @@ describe('NotesPanel', () => {
     vi.mocked(notesService.listNotes).mockResolvedValue(mockNotes);
     vi.mocked(notesService.createNote).mockResolvedValue({
       id: 3,
+
       content: 'New Note',
       tags: [],
+      dataset_id: null,
+      literature_id: null,
+      query_id: null,
       created_at: '2023-10-03T10:00:00Z',
       updated_at: '2023-10-03T10:00:00Z',
     });

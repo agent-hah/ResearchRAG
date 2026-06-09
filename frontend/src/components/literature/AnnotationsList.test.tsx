@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { AnnotationsList } from './AnnotationsList';
 import userEvent from '@testing-library/user-event';
@@ -9,9 +9,15 @@ describe('AnnotationsList', () => {
     {
       id: 1,
       literature_id: 100,
+      note_id: null,
       annotation_type: 'highlight',
+      content: null,
       highlighted_text: 'Important text',
       page_number: 1,
+      x_position: null,
+      y_position: null,
+      width: null,
+      height: null,
       color: 'yellow',
       created_at: '2023-11-01T10:00:00Z',
       updated_at: '2023-11-01T10:00:00Z',
@@ -19,9 +25,15 @@ describe('AnnotationsList', () => {
     {
       id: 2,
       literature_id: 100,
+      note_id: null,
       annotation_type: 'comment',
+      highlighted_text: null,
       content: 'Needs review',
       page_number: 2,
+      x_position: null,
+      y_position: null,
+      width: null,
+      height: null,
       color: 'blue',
       created_at: '2023-11-02T10:00:00Z',
       updated_at: '2023-11-02T10:00:00Z',
@@ -29,10 +41,15 @@ describe('AnnotationsList', () => {
     {
       id: 3,
       literature_id: 100,
+      note_id: null,
       annotation_type: 'note',
       highlighted_text: 'Some concept',
       content: 'Detailed note about the concept',
       page_number: 3,
+      x_position: null,
+      y_position: null,
+      width: null,
+      height: null,
       color: 'green',
       created_at: '2023-11-03T10:00:00Z',
       updated_at: '2023-11-03T10:00:00Z',

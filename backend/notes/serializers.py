@@ -9,7 +9,7 @@ class NoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ['id', 'content', 'tags', 'dataset_id', 'literature_id', 'query_id', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'content', 'tags', 'dataset_id', 'literature_id', 'query_id', 'created_at', 'updated_at']
 
     def get_tags(self, obj):
         if obj.tags:

@@ -6,6 +6,7 @@ import type { DocumentSuggestion } from '../../services/suggestionsService';
 
 const mockSuggestion: DocumentSuggestion = {
   id: 1,
+  dataset_id: null,
   title: 'Test Paper',
   authors: 'John Doe',
   publication_year: 2024,
@@ -13,12 +14,15 @@ const mockSuggestion: DocumentSuggestion = {
   citation_count: 42,
   relevance_score: 0.85,
   abstract: 'This is a test abstract.',
+  snippet: null,
   search_query: 'test query',
   url: 'http://example.com',
+  pdf_url: null,
   is_imported: false,
   is_relevant: null,
   is_dismissed: false,
-  doi: '10.1000/xyz123'
+  doi: '10.1000/xyz123',
+  created_at: '2023-01-01T12:00:00Z'
 };
 
 describe('SuggestionCard', () => {
@@ -55,7 +59,18 @@ describe('SuggestionCard', () => {
   it('handles missing optional fields gracefully', () => {
     const minimalSuggestion: DocumentSuggestion = {
       id: 2,
+      dataset_id: null,
       title: 'Minimal Paper',
+      authors: null,
+      publication_year: null,
+      publication_venue: null,
+      abstract: null,
+      snippet: null,
+      search_query: null,
+      url: null,
+      pdf_url: null,
+      doi: null,
+      created_at: '2023-01-01T12:00:00Z',
       is_imported: false,
       is_relevant: null,
       is_dismissed: false,

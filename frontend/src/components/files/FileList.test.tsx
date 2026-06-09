@@ -39,6 +39,8 @@ const mockDatasets: Dataset[] = [
     table_name: 'test_table',
     row_count: 100,
     column_count: 5,
+    file_path: '/path/to/dataset.csv',
+    updated_at: '2023-01-01T00:00:00Z',
   },
 ];
 
@@ -51,6 +53,8 @@ const mockLiterature: Literature[] = [
     processing_status: 'completed',
     page_count: 10,
     indexed_at: '2023-01-02T00:00:00Z',
+    file_path: '/path/to/doc1.pdf',
+    updated_at: '2023-01-01T00:00:00Z',
   },
   {
     id: 2,
@@ -59,6 +63,8 @@ const mockLiterature: Literature[] = [
     created_at: '2023-01-01T00:00:00Z',
     processing_status: 'processing',
     indexing_progress: 0.5,
+    file_path: '/path/to/doc2.pdf',
+    updated_at: '2023-01-01T00:00:00Z',
   },
   {
     id: 3,
@@ -66,6 +72,8 @@ const mockLiterature: Literature[] = [
     file_size: 2048,
     created_at: '2023-01-01T00:00:00Z',
     processing_status: 'failed',
+    file_path: '/path/to/doc3.pdf',
+    updated_at: '2023-01-01T00:00:00Z',
   },
   {
     id: 4,
@@ -73,6 +81,8 @@ const mockLiterature: Literature[] = [
     file_size: 2048,
     created_at: '2023-01-01T00:00:00Z',
     processing_status: 'pending',
+    file_path: '/path/to/doc4.pdf',
+    updated_at: '2023-01-01T00:00:00Z',
   },
   {
     id: 5,
@@ -80,6 +90,8 @@ const mockLiterature: Literature[] = [
     file_size: 2048,
     created_at: '2023-01-01T00:00:00Z',
     processing_status: 'indexed',
+    file_path: '/path/to/doc5.pdf',
+    updated_at: '2023-01-01T00:00:00Z',
   }
 ];
 

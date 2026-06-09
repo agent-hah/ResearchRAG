@@ -15,4 +15,5 @@ print("🚀 Starting Research Workspace Backend (Django)...")
 print("📍 Backend will be available at: http://localhost:8000")
 
 if __name__ == "__main__":
-    os.system("python backend/manage.py runserver 0.0.0.0:8000")
+    os.system("python manage.py runserver 0.0.0.0:8000")
+

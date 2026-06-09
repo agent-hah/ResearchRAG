@@ -16,6 +16,7 @@ class NotesService:
     
     @staticmethod
     def create_note(
+        title: str,
         content: str,
         tags: Optional[List[str]] = None,
         dataset_id: Optional[int] = None,
@@ -24,6 +25,7 @@ class NotesService:
     ) -> Note:
         try:
             note = Note.objects.create(
+                title=title,
                 content=content,
                 tags=",".join(tags) if tags else None,
                 dataset_id=dataset_id,
@@ -64,6 +66,7 @@ class NotesService:
     @staticmethod
     def update_note(
         note_id: int,
+        title: Optional[str] = None,
         content: Optional[str] = None,
         tags: Optional[List[str]] = None
     ) -> Optional[Note]:
@@ -71,6 +74,9 @@ class NotesService:
             note = NotesService.get_note(note_id)
             if not note:
                 return None
+            
+            if title is not None:
+                note.title = title
             
             if content is not None:
                 note.content = content
@@ -169,6 +175,7 @@ class NotesService:
             if note:
                 nodes.append({
                     "id": note.id,
+                    "title": note.title,
                     "type": "note",
                     "content": note.content[:100],
                     "tags": note.tags.split(",") if note.tags else []

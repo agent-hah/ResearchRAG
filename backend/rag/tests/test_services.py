@@ -22,7 +22,7 @@ def mock_langchain_components(mocker):
     mock_doc = MagicMock()
     mock_doc.page_content = "dummy text"
     mock_doc.metadata = {"literature_id": 1, "filename": "dummy.pdf"}
-    mock_chroma_instance.similarity_search_with_score.return_value = [(mock_doc, 0.9)]
+    mock_chroma_instance.similarity_search_with_relevance_scores.return_value = [(mock_doc, 0.9)]
     
     # For get_stats
     mock_collection = MagicMock()
@@ -174,21 +174,21 @@ def test_search_literature_with_filter_and_max_chunks(mock_langchain_components)
     mock_doc4.page_content = "text4"
     mock_doc4.metadata = {"literature_id": 1, "filename": "dummy.pdf"}
     
-    mock_langchain_components['chroma_instance'].similarity_search_with_score.return_value = [
+    mock_langchain_components['chroma_instance'].similarity_search_with_relevance_scores.return_value = [
         (mock_doc1, 0.9), (mock_doc2, 0.8), (mock_doc3, 0.7), (mock_doc4, 0.6)
     ]
     
     results = service.search_literature("query", top_k=2, literature_ids=[1], max_chunks_per_doc=2)
     
     assert len(results) == 2
-    mock_langchain_components['chroma_instance'].similarity_search_with_score.assert_called_once()
-    kwargs = mock_langchain_components['chroma_instance'].similarity_search_with_score.call_args[1]
+    mock_langchain_components['chroma_instance'].similarity_search_with_relevance_scores.assert_called_once()
+    kwargs = mock_langchain_components['chroma_instance'].similarity_search_with_relevance_scores.call_args[1]
     assert kwargs['filter'] == {"literature_id": {"$in": [1]}}
 
 @pytest.mark.django_db
 def test_search_literature_exception(mock_langchain_components):
     service = RAGService()
-    mock_langchain_components['chroma_instance'].similarity_search_with_score.side_effect = Exception("Test error")
+    mock_langchain_components['chroma_instance'].similarity_search_with_relevance_scores.side_effect = Exception("Test error")
     
     with pytest.raises(Exception):
         service.search_literature("query")

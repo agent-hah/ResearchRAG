@@ -40,7 +40,7 @@ describe('RefinementPanel', () => {
     vi.mocked(refinementService.refineVisualization).mockResolvedValueOnce({
       refined_config: refinedConfig,
       explanation: 'Changed title to New Title',
-      status: 'success'
+      updates: { title: 'New Title' }
     });
 
     render(<RefinementPanel config={mockConfig} onConfigChange={onConfigChange} />);

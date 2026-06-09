@@ -17,6 +17,7 @@ vi.mock('../../services/annotationsService', () => ({
 
 // Mock react-pdf
 vi.mock('react-pdf', () => {
+  // @ts-ignore
   const { useEffect } = require('react');
   return {
     pdfjs: {
@@ -66,7 +67,7 @@ describe('PDFViewer', () => {
     vi.clearAllMocks();
   });
 
-  const mockAnnotations = [
+  const mockAnnotations: any = [
     {
       id: 1,
       literature_id: 10,

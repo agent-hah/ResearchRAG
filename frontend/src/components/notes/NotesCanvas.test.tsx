@@ -50,8 +50,12 @@ describe('NotesCanvas', () => {
   const mockNotes: Note[] = [
     {
       id: 1,
+
       content: 'Canvas Note 1',
       tags: ['canvas'],
+      dataset_id: null,
+      literature_id: null,
+      query_id: null,
       created_at: '2023-11-01T10:00:00Z',
       updated_at: '2023-11-01T10:00:00Z',
     },
@@ -117,8 +121,12 @@ describe('NotesCanvas', () => {
     vi.mocked(notesService.listNotes).mockResolvedValue(mockNotes);
     vi.mocked(notesService.createNote).mockResolvedValue({
       id: 2,
+
       content: 'New Canvas Note',
       tags: [],
+      dataset_id: null,
+      literature_id: null,
+      query_id: null,
       created_at: '2023-11-02T10:00:00Z',
       updated_at: '2023-11-02T10:00:00Z',
     });

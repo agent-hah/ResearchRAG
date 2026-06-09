@@ -67,3 +67,22 @@ backend/run_tmp.py
 frontend/playwright-report/
 frontend/test-results/
 test_genai.py
+
+# Databases
+*.sqlite3
+*.db
+
+# Coverage
+.coverage
+
+# Scratch and one-off test scripts
+backend/test_error.py
+backend/test_llm.py
+backend/test_retry.py
+backend/test_schema.py
+test_api_query.py
+frontend/fix-tests-tsmorph.cjs
+
+# Generated PDFs
+test_merged.pdf
+test_reportlab.pdf

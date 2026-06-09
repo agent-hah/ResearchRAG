@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryHistory } from './QueryHistory';
 
 describe('QueryHistory', () => {
-  const mockHistory = [
+  const mockHistory: any = [
     {
       id: '1',
       question: 'What is the average?',

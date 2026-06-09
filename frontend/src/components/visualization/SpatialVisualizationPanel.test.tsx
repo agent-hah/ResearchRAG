@@ -74,7 +74,7 @@ describe('SpatialVisualizationPanel', () => {
       
       // Mock URL and createElement for downloading
       const mockCreateObjectURL = vi.fn();
-      global.URL.createObjectURL = mockCreateObjectURL;
+      (window as any).URL.createObjectURL = mockCreateObjectURL;
       
       const mockClick = vi.fn();
       const originalCreateElement = document.createElement.bind(document);

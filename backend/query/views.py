@@ -156,20 +156,50 @@ class QueryExecutionView(views.APIView):
         dataset_ids = request.data.get('dataset_ids', None)
         literature_ids = request.data.get('literature_ids', None)
         max_literature = request.data.get('max_literature', 10)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Received query execution request: {query}")
         
         query_service = get_query_service()
+        logger.info("Fetching database schema...")
         schemas = query_service.get_database_schema()
+        logger.info(f"Got {len(schemas)} schemas.")
         
-        sql_generation = query_service.generate_sql(query, schemas, dataset_ids)
-        sql_query = sql_generation.get("sql_query")
-        
+        previous_query = None
+        previous_error = None
+        sql_generation = None
+        sql_query = None
         sql_result = {"row_count": 0, "rows": []}
-        if sql_query:
-            sql_result = query_service.execute_sql(sql_query)
-            
-        literature_context = query_service.get_literature_context(query, max_literature, literature_ids)
         
+        for attempt in range(3):
+            logger.info(f"SQL generation attempt {attempt+1}")
+            sql_generation = query_service.generate_sql(
+                query, schemas, dataset_ids, previous_query, previous_error
+            )
+            sql_query = sql_generation.get("sql_query")
+            
+            if not sql_query:
+                logger.info("No SQL generated, breaking loop.")
+                break
+                
+            logger.info(f"Executing SQL: {sql_query}")
+            sql_result = query_service.execute_sql(sql_query)
+            if "error" in sql_result and any(err in sql_result["error"].lower() for err in ["no such column", "no such table", "syntax error", "operationalerror"]):
+                logger.warning(f"SQL error: {sql_result['error']}")
+                previous_query = sql_query
+                previous_error = sql_result["error"]
+                continue
+            else:
+                logger.info("SQL executed successfully.")
+                break
+            
+        logger.info("Getting literature context...")
+        literature_context = query_service.get_literature_context(query, max_literature, literature_ids)
+        logger.info(f"Got {len(literature_context)} literature snippets.")
+        
+        logger.info("Synthesizing results...")
         synthesis = query_service.synthesize_results(query, sql_result, literature_context)
+        logger.info("Synthesis complete.")
         
         history = query_service.save_query_history(
             query=query,

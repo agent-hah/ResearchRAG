@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { QueryPage } from './QueryPage'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { detectSpatialData } from '../services/spatialVisualizationService'
-import { queryService } from '../services/queryService'
+
 
 // Mock dependencies
 vi.mock('@tanstack/react-query', () => ({
@@ -89,8 +89,8 @@ describe('QueryPage', () => {
 
     vi.mocked(detectSpatialData).mockReturnValue({
       isSpatial: false,
-      latitudeColumn: null,
-      longitudeColumn: null,
+      latIndex: -1,
+      lngIndex: -1,
     })
   })
 

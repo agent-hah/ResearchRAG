@@ -6,6 +6,7 @@ import { QueryResults } from './QueryResults';
 describe('QueryResults', () => {
   const fullResult = {
     id: 'test-id',
+    query_id: 'test-query-1',
     question: 'Test question',
     created_at: '2023-01-01T12:00:00Z',
     synthesis: {
@@ -23,6 +24,7 @@ describe('QueryResults', () => {
     },
     literature_context: [
       {
+        literature_id: '1',
         title: 'Test Paper',
         excerpt: 'Test excerpt',
         relevance_score: 0.85
@@ -95,10 +97,11 @@ describe('QueryResults', () => {
   it('handles partial or empty result gracefully', () => {
     const minimalResult = {
       id: 'minimal-id',
+      query_id: 'test-query-2',
       question: 'Minimal question',
       created_at: '2023-01-01T12:00:00Z',
-      synthesis: null,
-      data_results: null,
+      synthesis: { summary: '', key_findings: [], data_insights: [], literature_insights: [], methodology_notes: '', limitations: '' },
+      data_results: { columns: [], rows: [], row_count: 0 },
       literature_context: [],
       sql_query: '',
       sql_confidence: 0

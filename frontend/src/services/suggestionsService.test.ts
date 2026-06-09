@@ -3,7 +3,7 @@ import axios from 'axios';
 import { suggestionsService } from './suggestionsService';
 
 vi.mock('axios');
-const mockedAxios = vi.mocked(axios);
+const mockedAxios: any = vi.mocked(axios);
 
 describe('suggestionsService', () => {
   beforeEach(() => {

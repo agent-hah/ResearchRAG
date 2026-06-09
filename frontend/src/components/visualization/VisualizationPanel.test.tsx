@@ -147,7 +147,7 @@ describe('VisualizationPanel', () => {
     vi.mocked(visualizationService.exportChartJSON).mockReturnValue('{}');
     
     const mockCreateObjectURL = vi.fn();
-    global.URL.createObjectURL = mockCreateObjectURL;
+    (window as any).URL.createObjectURL = mockCreateObjectURL;
     
     const mockClick = vi.fn();
     const originalCreateElement = document.createElement.bind(document);
@@ -170,7 +170,7 @@ describe('VisualizationPanel', () => {
     vi.mocked(visualizationService.exportChartCSV).mockReturnValue('a,b\n1,2');
     
     const mockCreateObjectURL = vi.fn();
-    global.URL.createObjectURL = mockCreateObjectURL;
+    (window as any).URL.createObjectURL = mockCreateObjectURL;
     
     const mockClick = vi.fn();
     const originalCreateElement = document.createElement.bind(document);

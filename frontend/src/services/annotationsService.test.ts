@@ -17,7 +17,7 @@ describe('annotationsService', () => {
   });
 
   it('createAnnotation calls api.post and returns data', async () => {
-    const mockAnnotation = { id: 1, annotation_type: 'highlight' };
+    const mockAnnotation: any = { id: 1, annotation_type: 'highlight' };
     (api.post as any).mockResolvedValueOnce({ data: mockAnnotation });
     
     const annotationData: AnnotationCreate = { literature_id: 1, annotation_type: 'highlight', page_number: 1 };
@@ -28,7 +28,7 @@ describe('annotationsService', () => {
   });
 
   it('getLiteratureAnnotations calls api.get with pageNumber parameter', async () => {
-    const mockAnnotations = [{ id: 1 }];
+    const mockAnnotations: any = [{ id: 1 }];
     (api.get as any).mockResolvedValueOnce({ data: mockAnnotations });
     
     const result = await annotationsService.getLiteratureAnnotations(1, 2);
@@ -40,7 +40,7 @@ describe('annotationsService', () => {
   });
 
   it('getLiteratureAnnotations calls api.get without pageNumber parameter', async () => {
-    const mockAnnotations = [{ id: 1 }];
+    const mockAnnotations: any = [{ id: 1 }];
     (api.get as any).mockResolvedValueOnce({ data: mockAnnotations });
     
     const result = await annotationsService.getLiteratureAnnotations(1);
@@ -52,7 +52,7 @@ describe('annotationsService', () => {
   });
 
   it('getAnnotation calls api.get and returns data', async () => {
-    const mockAnnotation = { id: 1 };
+    const mockAnnotation: any = { id: 1 };
     (api.get as any).mockResolvedValueOnce({ data: mockAnnotation });
     
     const result = await annotationsService.getAnnotation(1);
@@ -62,7 +62,7 @@ describe('annotationsService', () => {
   });
 
   it('updateAnnotation calls api.put and returns data', async () => {
-    const mockAnnotation = { id: 1, content: 'Updated' };
+    const mockAnnotation: any = { id: 1, content: 'Updated' };
     (api.put as any).mockResolvedValueOnce({ data: mockAnnotation });
     
     const updateData: AnnotationUpdate = { content: 'Updated' };

@@ -105,41 +105,35 @@ def test_export_dataset_json_not_found(export_service):
 
 @pytest.mark.django_db
 def test_export_query_results_csv(export_service, query_history):
-    csv_str = export_service.export_query_results_csv(query_history.id)
-    assert "col1,col2\r\nval1,val2\r\nval3,val4\r\n" == csv_str
+    csv_str = export_service.export_query_results_csv([query_history.id])
+    assert "ID,Question,SQL Query,Created At,Result Count,Synthesis Summary" in csv_str
+    assert "\n1,Test query" in csv_str or "\r\n1,Test query" in csv_str
+    assert "Test query" in csv_str
+    assert "SELECT * FROM test" in csv_str
 
 @pytest.mark.django_db
 def test_export_query_results_csv_not_found(export_service):
-    with pytest.raises(ValueError, match="Query 999 not found"):
-        export_service.export_query_results_csv(999)
-
-@pytest.mark.django_db
-def test_export_query_results_csv_no_results(export_service, query_history):
-    query_history.data_results = None
-    query_history.save()
-    with pytest.raises(ValueError, match="Query has no results"):
-        export_service.export_query_results_csv(query_history.id)
-
-@pytest.mark.django_db
-def test_export_query_results_csv_empty_results(export_service, query_history):
-    query_history.data_results = {"data": []}
-    query_history.save()
-    with pytest.raises(ValueError, match="Query results are empty"):
-        export_service.export_query_results_csv(query_history.id)
+    with pytest.raises(ValueError, match="No queries found"):
+        export_service.export_query_results_csv([999])
 
 @pytest.mark.django_db
 def test_export_query_results_json(export_service, query_history):
-    json_str = export_service.export_query_results_json(query_history.id)
+    query_history.literature_context = [{"text": "Context 1", "relevance_score": 0.95}]
+    query_history.save()
+    json_str = export_service.export_query_results_json([query_history.id])
     data = json.loads(json_str)
     
-    assert data["query"]["id"] == query_history.id
-    assert data["query"]["question"] == "Test query"
-    assert len(data["results"]["data"]) == 2
+    assert "queries" in data
+    assert len(data["queries"]) == 1
+    assert data["queries"][0]["id"] == 1
+    assert data["queries"][0]["question"] == "Test query"
+    assert len(data["queries"][0]["results"]["data"]) == 2
+    assert "relevance_score" not in data["queries"][0]["literature_context"][0]
 
 @pytest.mark.django_db
 def test_export_query_results_json_not_found(export_service):
-    with pytest.raises(ValueError, match="Query 999 not found"):
-        export_service.export_query_results_json(999)
+    with pytest.raises(ValueError, match="No queries found"):
+        export_service.export_query_results_json([999])
 
 @pytest.mark.django_db
 def test_export_notes_markdown(export_service, note_fixture):
@@ -252,3 +246,55 @@ def test_export_literature_pdf_with_annotations(mocker, export_service, lit_fixt
         assert filename == "test_with_annotations.pdf"
         mock_writer_instance.write.assert_called_once()
         mock_canvas.return_value.save.assert_called_once()
+
+@pytest.mark.django_db
+def test_export_literature_pdf_with_annotations_integration(export_service, lit_fixture):
+    # Setup a real dummy PDF to ensure PDF processing doesn't crash (e.g. IndexError on empty pages)
+    import io
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    
+    # Create real dummy PDF
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+    can.drawString(100, 100, 'Test PDF Document')
+    can.showPage()
+    can.save()
+    
+    import tempfile
+    import os
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+        tmp.write(packet.getvalue())
+        tmp_path = tmp.name
+        
+    try:
+        # Update literature to point to real file
+        lit_fixture.file_path = tmp_path
+        lit_fixture.save()
+        
+        # Create an annotation
+        Annotation.objects.create(
+            literature=lit_fixture,
+            page_number=1,
+            annotation_type="highlight",
+            x_position=0.1,
+            y_position=0.2,
+            width=0.3,
+            height=0.4,
+            color="yellow",
+            content="Integration test comment"
+        )
+        
+        # Run export (no mocking of PyPDF2 or reportlab)
+        pdf_bytes, filename = export_service.export_literature_pdf(lit_fixture.id, include_annotations=True)
+        
+        # Check output is a valid PDF bytes
+        assert pdf_bytes.startswith(b'%PDF')
+        assert filename == "test_with_annotations.pdf"
+        
+        # Verify we can read the resulting PDF
+        from PyPDF2 import PdfReader
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        assert len(reader.pages) == 1
+    finally:
+        os.unlink(tmp_path)

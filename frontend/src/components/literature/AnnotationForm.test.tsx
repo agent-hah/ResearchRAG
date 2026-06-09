@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AnnotationForm } from './AnnotationForm';
 import userEvent from '@testing-library/user-event';
@@ -50,6 +50,11 @@ describe('AnnotationForm', () => {
       color: 'blue',
       created_at: '2023-11-01T10:00:00Z',
       updated_at: '2023-11-01T10:00:00Z',
+      note_id: 1,
+      x_position: 10,
+      y_position: 10,
+      width: 100,
+      height: 100,
     };
 
     render(<AnnotationForm {...defaultProps} editingAnnotation={editingAnnotation} />);

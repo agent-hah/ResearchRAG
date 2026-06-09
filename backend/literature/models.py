@@ -41,12 +41,15 @@ class Annotation(TimeStampedModel):
     literature = models.ForeignKey(Literature, on_delete=models.CASCADE, related_name='annotations')
     annotation_type = models.CharField(max_length=20, choices=AnnotationType.choices)
     content = models.TextField(null=True, blank=True)
+    highlighted_text = models.TextField(null=True, blank=True)
+
     page_number = models.IntegerField()
     x_position = models.FloatField(null=True, blank=True)
     y_position = models.FloatField(null=True, blank=True)
     width = models.FloatField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     color = models.CharField(max_length=20, default="yellow", null=True, blank=True)
+    rects = models.JSONField(null=True, blank=True, default=None)  # [{x, y, width, height}, ...]
 
     def __str__(self):
         return f"<Annotation(id={self.id}, type={self.annotation_type}, page={self.page_number})>"

@@ -116,75 +116,125 @@ class ExportService:
             logger.error(f"Failed to export dataset {dataset_id} as JSON: {e}")
             raise
     
-    def export_query_results_csv(self, query_id: int) -> str:
+    def export_query_results_csv(self, query_ids: List[int]) -> str:
         """
-        Export query results as CSV
+        Export query metadata as CSV
         
         Args:
-            query_id: Query history ID
+            query_ids: List of Query history IDs
             
         Returns:
             CSV string
         """
         try:
-            query_history = QueryHistory.objects.filter(id=query_id).first()
+            queries = QueryHistory.objects.filter(id__in=query_ids).order_by('-created_at')
+            if not queries:
+                raise ValueError("No queries found")
             
-            if not query_history:
-                raise ValueError(f"Query {query_id} not found")
-            
-            if not query_history.data_results:
-                raise ValueError("Query has no results")
-            
-            results = query_history.data_results.get('data', [])
-            if not results:
-                raise ValueError("Query results are empty")
-            
-            # Convert to CSV
             output = io.StringIO()
-            writer = csv.DictWriter(output, fieldnames=results[0].keys())
-            writer.writeheader()
-            writer.writerows(results)
+            writer = csv.writer(output)
             
+            # Write header
+            writer.writerow(['ID', 'Question', 'SQL Query', 'Created At', 'Result Count', 'Synthesis Summary'])
+            
+            for index, q in enumerate(queries, 1):
+                synthesis_summary = ""
+                if q.synthesis and isinstance(q.synthesis, dict):
+                    synthesis_summary = q.synthesis.get('summary', '')
+                writer.writerow([
+                    index,
+                    q.query_text,
+                    q.sql_query or '',
+                    q.created_at.isoformat(),
+                    q.result_count or 0,
+                    synthesis_summary
+                ])
+                
             return output.getvalue()
             
         except Exception as e:
-            logger.error(f"Failed to export query {query_id} as CSV: {e}")
+            logger.error(f"Failed to export queries as CSV: {e}")
             raise
     
-    def export_query_results_json(self, query_id: int) -> str:
+    def export_query_results_json(self, query_ids: List[int]) -> str:
         """
         Export query results as JSON
         
         Args:
-            query_id: Query history ID
+            query_ids: List of Query history IDs
             
         Returns:
             JSON string
         """
         try:
-            query_history = QueryHistory.objects.filter(id=query_id).first()
+            queries = QueryHistory.objects.filter(id__in=query_ids).order_by('-created_at')
+            if not queries:
+                raise ValueError("No queries found")
             
-            if not query_history:
-                raise ValueError(f"Query {query_id} not found")
-            
-            # Create export object
-            export_data = {
-                "query": {
-                    "id": query_history.id,
-                    "question": query_history.query_text,
-                    "sql_query": query_history.sql_query,
-                    "created_at": query_history.created_at.isoformat()
-                },
-                "results": query_history.data_results,
+            export_list = []
+            for index, q in enumerate(queries, 1):
+                # Remove relevance scores from literature context if present
+                lit_context = q.literature_context
+                if lit_context and isinstance(lit_context, list):
+                    # Make a deep copy to avoid modifying the DB if we ever save this instance (though unlikely here)
+                    import copy
+                    lit_context = copy.deepcopy(lit_context)
+                    for item in lit_context:
+                        if isinstance(item, dict) and 'relevance_score' in item:
+                            del item['relevance_score']
+
+                export_data = {
+                    "id": index,
+                    "question": q.query_text,
+                    "sql_query": q.sql_query,
+                    "created_at": q.created_at.isoformat(),
+                    "result_count": q.result_count,
+                    "results": q.data_results,
+                    "literature_context": lit_context,
+                    "synthesis": q.synthesis
+                }
+                export_list.append(export_data)
+                
+            return json.dumps({
+                "queries": export_list,
                 "exported_at": datetime.utcnow().isoformat()
-            }
-            
-            return json.dumps(export_data, indent=2, default=str)
+            }, indent=2, default=str)
             
         except Exception as e:
-            logger.error(f"Failed to export query {query_id} as JSON: {e}")
+            logger.error(f"Failed to export queries as JSON: {e}")
             raise
     
+    def export_notes_csv(self, note_ids: Optional[List[int]] = None) -> str:
+        try:
+            query = Note.objects.all()
+            if note_ids:
+                query = query.filter(id__in=note_ids)
+            notes = query.order_by('-created_at')
+            
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Write header
+            writer.writerow(['ID', 'Title', 'Content', 'Tags', 'Dataset ID', 'Literature ID', 'Query ID', 'Created At'])
+            
+            for note in notes:
+                tags = [t.strip() for t in note.tags if t.strip()] if isinstance(note.tags, list) else (note.tags.split(',') if note.tags else [])
+                writer.writerow([
+                    note.id,
+                    note.title,
+                    note.content,
+                    ', '.join(tags),
+                    note.dataset_id,
+                    note.literature_id,
+                    note.query_id,
+                    note.created_at.isoformat()
+                ])
+                
+            return output.getvalue()
+        except Exception as e:
+            logger.error(f"Failed to export notes as CSV: {e}")
+            raise
+
     def export_notes_markdown(self, note_ids: Optional[List[int]] = None) -> str:
         """
         Export notes as Markdown
@@ -212,7 +262,7 @@ class ExportService:
             
             for note in notes:
                 # Use first line of content as title or generate one
-                title = note.content.split('\n')[0][:100] if note.content else f"Note {note.id}"
+                title = note.title or (note.content.split('\n')[0][:100] if note.content else f"Note {note.id}")
                 output.write(f"## {title}\n\n")
                 
                 # Metadata
@@ -263,6 +313,7 @@ class ExportService:
             notes_data = [
                 {
                     "id": note.id,
+                    "title": note.title,
                     "content": note.content,
                     "tags": [t.strip() for t in note.tags if t.strip()] if isinstance(note.tags, list) else (note.tags.split(',') if note.tags else []),
                     "dataset_id": note.dataset_id,
@@ -372,24 +423,17 @@ class ExportService:
                     
                     # Check if this page has annotations
                     if (page_num + 1) in annotations_by_page:
-                        # Create overlay with annotations
-                        packet = io.BytesIO()
-                        can = canvas.Canvas(packet, pagesize=letter)
-                        
                         # Get page dimensions
                         page_width = float(page.mediabox.width)
                         page_height = float(page.mediabox.height)
+
+                        # Create overlay with annotations
+                        packet = io.BytesIO()
+                        can = canvas.Canvas(packet, pagesize=(page_width, page_height))
                         
                         # Draw annotations
                         for ann in annotations_by_page[page_num + 1]:
-                            if ann.annotation_type == "highlight" and ann.x_position is not None:
-                                # Convert normalized coordinates to actual coordinates
-                                x = ann.x_position * page_width
-                                y = page_height - (ann.y_position * page_height)  # PDF coordinates are bottom-up
-                                width = (ann.width or 0.1) * page_width
-                                height = (ann.height or 0.02) * page_height
-                                
-                                # Set color based on annotation color
+                            if ann.annotation_type == "highlight":
                                 color_map = {
                                     'yellow': yellow,
                                     'red': red,
@@ -398,21 +442,47 @@ class ExportService:
                                     'orange': orange
                                 }
                                 color = color_map.get(ann.color, yellow)
+                                quad_points = []
+                                min_x, min_y, max_x, max_y = float('inf'), float('inf'), float('-inf'), float('-inf')
                                 
-                                # Draw semi-transparent rectangle
-                                can.setFillColor(color, alpha=0.3)
-                                can.rect(x, y - height, width, height, fill=1, stroke=0)
-                            
-                            # Add comment as text annotation if present
-                            if ann.content and ann.x_position is not None:
-                                x = ann.x_position * page_width
-                                y = page_height - (ann.y_position * page_height)
+                                if ann.rects:
+                                    for rect in ann.rects:
+                                        x = rect.get('x', 0)
+                                        width = rect.get('width', 0)
+                                        height = rect.get('height', 0)
+                                        y = page_height - rect.get('y', 0) - height
+                                        if width > 0 and height > 0:
+                                            quad_points.extend([
+                                                x, y + height,
+                                                x + width, y + height,
+                                                x, y,
+                                                x + width, y
+                                            ])
+                                            min_x = min(min_x, x)
+                                            min_y = min(min_y, y)
+                                            max_x = max(max_x, x + width)
+                                            max_y = max(max_y, y + height)
+                                elif ann.x_position is not None and ann.y_position is not None:
+                                    x = ann.x_position * page_width
+                                    y = page_height - (ann.y_position * page_height)
+                                    width = (ann.width or 0.1) * page_width
+                                    height = (ann.height or 0.02) * page_height
+                                    quad_points.extend([
+                                        x, y,
+                                        x + width, y,
+                                        x, y - height,
+                                        x + width, y - height
+                                    ])
+                                    min_x, min_y, max_x, max_y = x, y - height, x + width, y
                                 
-                                can.setFillColor('black')
-                                can.setFont("Helvetica", 8)
-                                # Draw comment text
-                                can.drawString(x, y - 15, f"Note: {ann.content[:50]}...")
+                                if quad_points:
+                                    bounding_rect = [min_x, min_y, max_x, max_y]
+                                    rgb_color = [color.red, color.green, color.blue]
+                                    comment_text = ann.content if ann.content else "Highlighted Text"
+                                    # Create native PDF highlight annotation (which also acts as a comment)
+                                    can.highlightAnnotation(comment_text, Rect=bounding_rect, QuadPoints=quad_points, Color=rgb_color)
                         
+                        can.showPage()
                         can.save()
                         
                         # Merge overlay with original page

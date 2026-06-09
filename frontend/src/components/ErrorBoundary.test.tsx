@@ -50,7 +50,7 @@ describe('ErrorBoundary', () => {
     fireEvent.click(getByText('Reload Page'));
     expect(window.location.reload).toHaveBeenCalled();
 
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
     consoleError.mockRestore();
   });
 
