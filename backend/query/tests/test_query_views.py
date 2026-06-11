@@ -548,7 +548,7 @@ class TestExecuteSQLServiceContract:
     """
 
     @patch("query.services.query_service.connection.cursor")
-    @patch("query.services.query_service.genai.Client")
+    @patch("query.services.query_service.get_llm_client")
     def test_execute_sql_returns_array_rows(self, mock_client, mock_cursor_func):
         """
         execute_sql must return rows as arrays of values (not dicts),
@@ -574,7 +574,7 @@ class TestExecuteSQLServiceContract:
         assert result["rows"][1] == [2, "Bob"]
 
     @patch("query.services.query_service.connection.cursor")
-    @patch("query.services.query_service.genai.Client")
+    @patch("query.services.query_service.get_llm_client")
     def test_execute_sql_columns_returned(self, mock_client, mock_cursor_func):
         """execute_sql must return a columns list."""
         from query.services.query_service import QueryService

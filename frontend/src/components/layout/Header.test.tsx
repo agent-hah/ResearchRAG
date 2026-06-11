@@ -1,18 +1,37 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from './Header';
+import { SettingsProvider } from '../../context/SettingsContext';
 
 describe('Header', () => {
+  beforeAll(() => {
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      writable: true,
+    });
+  });
+  const renderHeader = () => {
+    return render(
+      <SettingsProvider>
+        <Header />
+      </SettingsProvider>
+    );
+  };
+
   it('renders default header icons', () => {
-    render(<Header />);
+    renderHeader();
     expect(screen.getByText('View notifications')).toBeInTheDocument();
     expect(screen.getByText('Settings')).toBeInTheDocument();
     expect(screen.getByText('Help')).toBeInTheDocument();
   });
 
   it('toggles mobile menu', () => {
-    render(<Header />);
+    renderHeader();
     
     // Initially mobile menu is closed (no "Menu" text, only the text inside buttons)
     expect(screen.queryByText('Menu')).not.toBeInTheDocument();

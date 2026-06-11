@@ -6,14 +6,13 @@ import json
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 
-from google import genai
-from google.genai import types
 from django.conf import settings
 from django.db import connection
 
 from rag.models import Dataset
 from query.models import QueryHistory
 from query.services.csv_processor import CSVProcessor
+from query.services.llm_client import get_llm_client
 from rag.services.rag_service import get_rag_service
 
 import logging
@@ -65,15 +64,8 @@ class QueryService:
     """Service for processing natural language queries."""
     
     def __init__(self):
-        self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+        self.llm_client = get_llm_client()
         self.system_instruction = "You are a helpful research assistant. Respond safely and accurately without generating harmful content."
-        self.safety_settings = [
-            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
-            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
-            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE")
-        ]
-        self.model_name = settings.GEMINI_MODEL
         logger.info("Query service initialized")
     
     def get_database_schema(self) -> List[Dict[str, Any]]:
@@ -170,34 +162,24 @@ RESPONSE FORMAT (JSON ONLY):
     "confidence": 0.95
 }}
 """
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_instruction,
-                    safety_settings=self.safety_settings,
-                    response_mime_type="application/json",
-                )
-            )
+            fallback_result = {
+                "sql_query": "",
+                "explanation": "Failed to generate SQL",
+                "tables_used": [],
+                "columns_used": [],
+                "confidence": 0.0
+            }
             
-            try:
-                result = json.loads(response.text)
-                required_fields = ["sql_query", "explanation", "tables_used", "columns_used", "confidence"]
-                for field in required_fields:
-                    if field not in result:
-                        result[field] = "" if field != "confidence" else 0.0
-                
-                result["confidence"] = max(0.0, min(1.0, float(result.get("confidence", 0.0))))
-                return result
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse SQL generation response: {str(e)}")
-                return {
-                    "sql_query": "",
-                    "explanation": f"Failed to generate SQL: {str(e)}",
-                    "tables_used": [],
-                    "columns_used": [],
-                    "confidence": 0.0
-                }
+            result = self.llm_client.generate_json(self.system_instruction, prompt, fallback_result)
+            
+            required_fields = ["sql_query", "explanation", "tables_used", "columns_used", "confidence"]
+            for field in required_fields:
+                if field not in result:
+                    result[field] = "" if field != "confidence" else 0.0
+            
+            result["confidence"] = max(0.0, min(1.0, float(result.get("confidence", 0.0))))
+            return result
+            
         except Exception as e:
             logger.error(f"Error generating SQL: {str(e)}")
             return {
@@ -314,40 +296,30 @@ RESPONSE FORMAT (JSON):
 
 Respond with valid JSON only:
 """
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_instruction,
-                    safety_settings=self.safety_settings,
-                    response_mime_type="application/json",
-                )
-            )
+            fallback_result = {
+                "summary": "Analysis failed",
+                "key_findings": [],
+                "data_insights": [],
+                "literature_insights": [],
+                "methodology_notes": None,
+                "limitations": None
+            }
             
-            try:
-                result = json.loads(response.text)
-                default_result = {
-                    "summary": "Analysis completed",
-                    "key_findings": [],
-                    "data_insights": [],
-                    "literature_insights": [],
-                    "methodology_notes": None,
-                    "limitations": None
-                }
-                for key, default_value in default_result.items():
-                    if key not in result:
-                        result[key] = default_value
-                return result
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse synthesis response: {str(e)}")
-                return {
-                    "summary": f"Synthesis failed: {str(e)}",
-                    "key_findings": [],
-                    "data_insights": [],
-                    "literature_insights": [],
-                    "methodology_notes": None,
-                    "limitations": None
-                }
+            result = self.llm_client.generate_json(self.system_instruction, prompt, fallback_result)
+            
+            default_result = {
+                "summary": "Analysis completed",
+                "key_findings": [],
+                "data_insights": [],
+                "literature_insights": [],
+                "methodology_notes": None,
+                "limitations": None
+            }
+            for key, default_value in default_result.items():
+                if key not in result:
+                    result[key] = default_value
+            return result
+            
         except Exception as e:
             logger.error(f"Error synthesizing results: {str(e)}")
             return {

@@ -6,7 +6,9 @@ from files.services.file_service import FileService
 from literature.models import Literature, ProcessingStatus
 import threading
 
-def index_literature_background(literature_id):
+def index_literature_background(literature_id, context):
+    from core.middleware import set_llm_context
+    set_llm_context(context)
     literature = Literature.objects.get(id=literature_id)
     try:
         rag_service = get_rag_service()
@@ -35,7 +37,9 @@ class RAGIndexView(views.APIView):
         if literature.processing_status == ProcessingStatus.INDEXED and not force_reindex:
             return Response({"status": "already_indexed", "message": "Already indexed"}, status=status.HTTP_200_OK)
             
-        thread = threading.Thread(target=index_literature_background, args=(literature.id,))
+        from core.middleware import get_llm_context
+        current_context = get_llm_context().copy()
+        thread = threading.Thread(target=index_literature_background, args=(literature.id, current_context))
         thread.start()
         
         return Response({"status": "indexing", "message": "Scheduled"}, status=status.HTTP_202_ACCEPTED)

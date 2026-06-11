@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Menu, X, Bell, Settings, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
+import { SettingsModal } from '../SettingsModal'
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
     <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
@@ -45,6 +46,7 @@ export function Header() {
           <button
             type="button"
             className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
+            onClick={() => setSettingsOpen(true)}
           >
             <span className="sr-only">Settings</span>
             <Settings className="h-6 w-6" aria-hidden="true" />
@@ -84,6 +86,8 @@ export function Header() {
           </div>
         </div>
       )}
+      
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )
 }

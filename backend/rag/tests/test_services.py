@@ -5,7 +5,7 @@ from literature.models import Literature, ProcessingStatus
 
 @pytest.fixture
 def mock_langchain_components(mocker):
-    mock_embeddings = mocker.patch('rag.services.rag_service.GoogleGenerativeAIEmbeddings')
+    mock_embeddings = mocker.patch('rag.services.rag_service.DynamicEmbeddings')
     mock_splitter = mocker.patch('rag.services.rag_service.RecursiveCharacterTextSplitter')
     mock_chroma = mocker.patch('rag.services.rag_service.Chroma')
     

@@ -17,7 +17,25 @@ api.interceptors.request.use(
       delete config.headers['Content-Type']
     }
     
-    // Add any auth headers here if needed in the future
+    // Add LLM Settings from local storage
+    try {
+      const stored = localStorage.getItem('llmSettings')
+      if (stored) {
+        const settings = JSON.parse(stored)
+        config.headers['X-LLM-Provider'] = settings.provider
+        if (settings.apiKey) config.headers['X-LLM-API-Key'] = settings.apiKey
+        if (settings.modelName) config.headers['X-LLM-Model'] = settings.modelName
+        if (settings.baseUrl) config.headers['X-LLM-Base-URL'] = settings.baseUrl
+        
+        config.headers['X-Embed-Provider'] = settings.embeddingProvider
+        if (settings.embeddingApiKey) config.headers['X-Embed-API-Key'] = settings.embeddingApiKey
+        if (settings.embeddingModelName) config.headers['X-Embed-Model'] = settings.embeddingModelName
+        if (settings.embeddingBaseUrl) config.headers['X-Embed-Base-URL'] = settings.embeddingBaseUrl
+      }
+    } catch (e) {
+      console.error('Failed to parse LLM settings in interceptor', e)
+    }
+
     return config
   },
   (error) => {

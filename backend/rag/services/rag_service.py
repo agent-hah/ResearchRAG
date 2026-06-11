@@ -2,6 +2,7 @@
 RAG service for literature indexing and retrieval using LangChain and ChromaDB (Django ORM).
 """
 import time
+import threading
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -10,23 +11,41 @@ from tenacity import retry, wait_exponential, stop_after_attempt
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_core.embeddings import Embeddings
 
 from django.conf import settings
 from literature.models import Literature, ProcessingStatus
 from literature.services.pdf_processor import PDFProcessor
+from query.services.llm_client import get_llm_client
+from core.middleware import get_llm_context, set_llm_context
 
 import logging
 logger = logging.getLogger(__name__)
+
+def _background_reindex_task(context: Dict[str, Any]):
+    """Runs reindex_all in a background thread with the specified LLM context."""
+    set_llm_context(context)
+    try:
+        logger.info("Starting background reindex all due to embedding model change...")
+        get_rag_service().reindex_all()
+    except Exception as e:
+        logger.error(f"Background reindex failed: {e}")
+
+class DynamicEmbeddings(Embeddings):
+    """Langchain embeddings wrapper for our LLMClient using litellm."""
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        client = get_llm_client()
+        return client.embed_texts(texts)
+
+    def embed_query(self, text: str) -> List[float]:
+        client = get_llm_client()
+        return client.embed_texts([text])[0]
 
 class RAGService:
     """Service for RAG operations using LangChain and ChromaDB."""
     
     def __init__(self):
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model=settings.EMBEDDING_MODEL,
-            google_api_key=settings.GOOGLE_API_KEY
-        )
+        self.embeddings = DynamicEmbeddings()
         
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=settings.CHUNK_SIZE,
@@ -127,6 +146,26 @@ class RAGService:
             logger.error(f"Error indexing literature {literature.id}: {str(e)}")
             literature.processing_status = ProcessingStatus.FAILED
             literature.save()
+            
+            # Check for Chroma dimension mismatch which means the user changed their embedding model
+            if "dimensionality" in str(e).lower() or "expected" in str(e).lower():
+                logger.warning("Detected embedding model mismatch. Clearing ChromaDB collection.")
+                self.vector_store.delete_collection()
+                # Re-initialize collection
+                self.vector_store = Chroma(
+                    collection_name=settings.CHROMA_COLLECTION,
+                    embedding_function=self.embeddings,
+                    persist_directory=str(settings.CHROMA_DB_DIR)
+                )
+                
+                # Launch background re-index using the current context
+                current_context = get_llm_context().copy()
+                thread = threading.Thread(target=_background_reindex_task, args=(current_context,))
+                thread.daemon = True
+                thread.start()
+                
+                raise Exception("Embedding model changed. Vector database wiped and automatic re-indexing started in background. Please check back later.")
+                
             raise
     
     def search_literature(self, query: str, top_k: int = 5, literature_ids: Optional[List[int]] = None, max_chunks_per_doc: int = 3) -> List[Dict[str, Any]]:
@@ -184,6 +223,24 @@ class RAGService:
             logger.info(f"Search completed: {len(formatted_results)} results in {search_time:.2f}ms")
             return formatted_results
         except Exception as e:
+            # Check for Chroma dimension mismatch
+            if "dimensionality" in str(e).lower() or "expected" in str(e).lower():
+                logger.warning("Detected embedding model mismatch during search. Collection must be wiped.")
+                self.vector_store.delete_collection()
+                self.vector_store = Chroma(
+                    collection_name=settings.CHROMA_COLLECTION,
+                    embedding_function=self.embeddings,
+                    persist_directory=str(settings.CHROMA_DB_DIR)
+                )
+                
+                # Launch background re-index using the current context
+                current_context = get_llm_context().copy()
+                thread = threading.Thread(target=_background_reindex_task, args=(current_context,))
+                thread.daemon = True
+                thread.start()
+                
+                raise Exception("Embedding model changed. Automatic re-indexing started in background. Please wait for documents to be re-indexed.")
+                
             logger.error(f"Error searching literature: {str(e)}")
             raise
     
