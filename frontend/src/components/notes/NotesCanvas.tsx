@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, ZoomIn, ZoomOut, Maximize2, Grid } from 'lucide-react'
 import _Draggable from 'react-draggable'
@@ -36,7 +36,6 @@ function DraggableNoteWrapper({ note, position, zoom, onDragStop, onEdit, onDele
       position={position}
       onStop={(_: any, data: any) => onDragStop(note.id, data)}
       handle=".drag-handle"
-      bounds="parent"
       scale={zoom}
     >
       <div ref={nodeRef} style={{ position: 'absolute' }}>
@@ -56,8 +55,9 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
   
   const [showEditor, setShowEditor] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
-  const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(true)
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false)
+  const [{ zoom, pan }, setView] = useState({ zoom: 0.75, pan: { x: 0, y: 0 } })
   
   // Store note positions in local state (could be persisted to backend)
   const [notePositions, setNotePositions] = useState<Record<number, NotePosition>>({})
@@ -82,8 +82,8 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
         setNotePositions(prev => ({
           ...prev,
           [newNote.id]: {
-            x: (rect.width / 2 - 150) / zoom,
-            y: (rect.height / 2 - 100) / zoom
+            x: (rect.width / 2 - 150 - pan.x) / zoom,
+            y: (rect.height / 2 - 100 - pan.y) / zoom
           }
         }))
       }
@@ -157,18 +157,6 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
     }))
   }, [])
 
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.1, 2))
-  }
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.1, 0.5))
-  }
-
-  const handleResetZoom = () => {
-    setZoom(1)
-  }
-
   const getInitialPosition = (noteId: number, index: number): NotePosition => {
     if (notePositions[noteId]) {
       return notePositions[noteId]
@@ -183,6 +171,114 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
       x: 50 + col * 350,
       y: 50 + row * 250
     }
+  }
+
+  const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
+  const updateZoom = (direction: 'in' | 'out' | null, absolute?: number) => {
+    setView(prevView => {
+      let newZoom = prevView.zoom;
+      if (absolute !== undefined) {
+        newZoom = absolute;
+      } else if (direction === 'in') {
+        const nextLevel = ZOOM_LEVELS.find(z => z > prevView.zoom + 0.01) || prevView.zoom;
+        newZoom = nextLevel;
+      } else if (direction === 'out') {
+        const prevLevel = [...ZOOM_LEVELS].reverse().find(z => z < prevView.zoom - 0.01) || prevView.zoom;
+        newZoom = prevLevel;
+      }
+      
+      if (prevView.zoom === newZoom) return prevView;
+      
+      if (!canvasRef.current) return { ...prevView, zoom: newZoom };
+      
+      const targetX = canvasRef.current.clientWidth / 2;
+      const targetY = canvasRef.current.clientHeight / 2;
+      
+      const ix = (targetX - prevView.pan.x) / prevView.zoom;
+      const iy = (targetY - prevView.pan.y) / prevView.zoom;
+      
+      return {
+        zoom: newZoom,
+        pan: {
+          x: targetX - ix * newZoom,
+          y: targetY - iy * newZoom
+        }
+      };
+    });
+  }
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault(); // Prevent browser zoom
+        
+        const zoomFactor = Math.exp(-e.deltaY / 200);
+        setView(prevView => {
+          let newZoom = prevView.zoom * zoomFactor;
+          newZoom = Math.max(0.1, Math.min(3, newZoom));
+          if (prevView.zoom === newZoom) return prevView;
+          
+          const rect = canvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          
+          const ix = (mouseX - prevView.pan.x) / prevView.zoom;
+          const iy = (mouseY - prevView.pan.y) / prevView.zoom;
+          
+          return {
+            zoom: newZoom,
+            pan: {
+              x: mouseX - ix * newZoom,
+              y: mouseY - iy * newZoom
+            }
+          };
+        });
+      } else {
+        // Two-finger trackpad pan or regular mouse wheel
+        setView(prevView => ({
+          ...prevView,
+          pan: {
+            x: prevView.pan.x - e.deltaX,
+            y: prevView.pan.y - e.deltaY
+          }
+        }));
+      }
+    };
+
+    canvas.addEventListener('wheel', handleNativeWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [notes, notePositions]); // Re-bind if dependencies change, though we mostly just use state updaters
+
+  const handleZoomIn = () => updateZoom('in');
+  const handleZoomOut = () => updateZoom('out');
+  const handleResetZoom = () => updateZoom(null, 0.75);
+
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (target.id === 'canvas-container' || target.id === 'canvas-content') {
+      setIsDraggingCanvas(true)
+    }
+  }
+
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingCanvas) return
+    setView(prev => ({
+      ...prev,
+      pan: {
+        x: prev.pan.x + e.movementX,
+        y: prev.pan.y + e.movementY
+      }
+    }))
+  }
+
+  const handleCanvasMouseUp = () => {
+    setIsDraggingCanvas(false)
   }
 
   return (
@@ -214,7 +310,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
           <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg">
             <button
               onClick={handleZoomOut}
-              disabled={zoom <= 0.5}
+              disabled={zoom <= 0.25}
               className="p-1 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
               title="Zoom out"
             >
@@ -252,24 +348,34 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
       <div className="flex-1 overflow-hidden relative bg-gray-50">
         <div
           ref={canvasRef}
-          className="w-full h-full overflow-auto"
+          id="canvas-container"
+          className="w-full h-full overflow-hidden select-none"
+          onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
+          onMouseLeave={handleCanvasMouseUp}
           style={{
+            cursor: isDraggingCanvas ? 'grabbing' : 'grab',
             backgroundImage: showGrid
               ? `
                 linear-gradient(to right, #e5e7eb 1px, transparent 1px),
                 linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
               `
               : 'none',
-            backgroundSize: showGrid ? `${20 * zoom}px ${20 * zoom}px` : 'auto'
+            backgroundSize: showGrid ? `${20 * zoom}px ${20 * zoom}px` : 'auto',
+            backgroundPosition: showGrid ? `${pan.x}px ${pan.y}px` : '0 0'
           }}
         >
           <div
+            id="canvas-content"
             style={{
-              transform: `scale(${zoom})`,
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
               transformOrigin: '0 0',
-              minWidth: '2000px',
-              minHeight: '2000px',
-              position: 'relative'
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+              top: 0,
+              left: 0
             }}
           >
             {isLoading ? (

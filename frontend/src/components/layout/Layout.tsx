@@ -12,7 +12,7 @@ export function Layout({ children }: LayoutProps) {
   const isNotesPage = location.pathname === '/notes'
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className={`bg-gray-50 flex flex-col ${isNotesPage ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       <Sidebar />
       <div className="lg:pl-72 flex flex-col flex-1">
         <Header />
