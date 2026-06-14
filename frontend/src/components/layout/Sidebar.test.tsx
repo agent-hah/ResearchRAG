@@ -24,9 +24,6 @@ describe('Sidebar', () => {
     expect(screen.getByText('Notes')).toBeInTheDocument();
     expect(screen.getByText('Suggestions')).toBeInTheDocument();
     expect(screen.getByText('Export')).toBeInTheDocument();
-
-    // Check footer
-    expect(screen.getByText('Local Database')).toBeInTheDocument();
   });
 
   it('sets active class based on route', () => {

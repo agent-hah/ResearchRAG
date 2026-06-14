@@ -24,6 +24,7 @@ vi.mock('../components/suggestions/SuggestionsPanel', () => ({
 vi.mock('lucide-react', () => ({
   Sparkles: () => <div data-testid="icon-sparkles" />,
   Database: () => <div data-testid="icon-db" />,
+  X: () => <div data-testid="icon-x" />,
 }))
 
 describe('SuggestionsPage', () => {
@@ -79,8 +80,12 @@ describe('SuggestionsPage', () => {
 
     render(<SuggestionsPage />)
     expect(screen.getAllByText('Global Context')[0]).toBeInTheDocument()
+    
+    fireEvent.click(screen.getByText('Select Datasets'))
     expect(screen.getByText('data1.csv')).toBeInTheDocument()
     expect(screen.getByText('100 rows')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Done'))
 
     // Global selected by default
     expect(screen.getByTestId('suggestions-panel')).toHaveTextContent('Global Context')
@@ -99,7 +104,9 @@ describe('SuggestionsPage', () => {
 
     render(<SuggestionsPage />)
     
+    fireEvent.click(screen.getByText('Select Datasets'))
     fireEvent.click(screen.getByText('data1.csv'))
+    fireEvent.click(screen.getByText('Done'))
     expect(screen.getByTestId('suggestions-panel')).toHaveTextContent('Dataset: 1 - data1.csv')
 
     fireEvent.click(screen.getAllByText('Global Context')[0])

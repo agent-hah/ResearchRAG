@@ -8,7 +8,6 @@ import {
   StickyNote,
   Sparkles,
   Download,
-  Database,
   Brain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -85,18 +84,6 @@ export function Sidebar() {
                   </li>
                 ))}
               </ul>
-            </li>
-            
-            <li className="mt-auto">
-              <div className="rounded-lg bg-gray-50 p-4">
-                <div className="flex items-center space-x-3">
-                  <Database className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Local Database</p>
-                    <p className="text-xs text-gray-500">SQLite + ChromaDB</p>
-                  </div>
-                </div>
-              </div>
             </li>
           </ul>
         </nav>

@@ -115,7 +115,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
 
       {/* Datasets Tab */}
       {activeTab === 'datasets' && (
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
           {datasets.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
               <Database className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -200,7 +200,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
 
       {/* Literature Tab */}
       {activeTab === 'literature' && (
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
           {literature.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
               <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />

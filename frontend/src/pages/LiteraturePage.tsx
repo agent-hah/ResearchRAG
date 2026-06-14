@@ -89,7 +89,7 @@ export function LiteraturePage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
               {files.map((file) => (
                 <button
                   key={file.id}

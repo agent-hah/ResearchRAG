@@ -12,7 +12,7 @@ vi.mock('react-markdown', () => ({
 describe('NoteCard', () => {
   const mockNote: Note = {
     id: 1,
-
+    title: 'Test Note',
     content: 'This is a test note.',
     tags: ['test1', 'test2'],
     dataset_id: null,

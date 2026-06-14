@@ -50,8 +50,8 @@ describe('NotesCanvas', () => {
   const mockNotes: Note[] = [
     {
       id: 1,
-
-      content: 'Canvas Note 1',
+      title: 'Canvas Note 1 Title',
+      content: 'Canvas Note 1 Content',
       tags: ['canvas'],
       dataset_id: null,
       literature_id: null,
@@ -85,7 +85,7 @@ describe('NotesCanvas', () => {
     renderWithClient(<NotesCanvas />);
 
     await waitFor(() => {
-      expect(screen.getByText('Canvas Note 1')).toBeInTheDocument();
+      expect(screen.getByText('Canvas Note 1 Title')).toBeInTheDocument();
     });
     
     // Check that we rendered the draggable wrapper
@@ -110,7 +110,7 @@ describe('NotesCanvas', () => {
     renderWithClient(<NotesCanvas />);
 
     await waitFor(() => {
-      expect(screen.getByText('Canvas Note 1')).toBeInTheDocument();
+      expect(screen.getByText('Canvas Note 1 Title')).toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByRole('button', { name: /new note/i }));
@@ -121,7 +121,7 @@ describe('NotesCanvas', () => {
     vi.mocked(notesService.listNotes).mockResolvedValue(mockNotes);
     vi.mocked(notesService.createNote).mockResolvedValue({
       id: 2,
-
+      title: 'Untitled Note',
       content: 'New Canvas Note',
       tags: [],
       dataset_id: null,
@@ -134,7 +134,7 @@ describe('NotesCanvas', () => {
     renderWithClient(<NotesCanvas queryId={100} datasetId={200} literatureId={300} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Canvas Note 1')).toBeInTheDocument();
+      expect(screen.getByText('Canvas Note 1 Title')).toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByRole('button', { name: /new note/i }));
@@ -165,7 +165,7 @@ describe('NotesCanvas', () => {
     renderWithClient(<NotesCanvas />);
 
     await waitFor(() => {
-      expect(screen.getByText('Canvas Note 1')).toBeInTheDocument();
+      expect(screen.getByText('Canvas Note 1 Title')).toBeInTheDocument();
     });
 
     // Click edit
@@ -182,7 +182,7 @@ describe('NotesCanvas', () => {
 
     await waitFor(() => {
       expect(notesService.updateNote).toHaveBeenCalledWith(1, {
-        title: 'Untitled Note',
+        title: 'Canvas Note 1 Title',
         content: 'Updated Canvas Note Content',
         tags: ['canvas']
       });
@@ -197,7 +197,7 @@ describe('NotesCanvas', () => {
     renderWithClient(<NotesCanvas />);
 
     await waitFor(() => {
-      expect(screen.getByText('Canvas Note 1')).toBeInTheDocument();
+      expect(screen.getByText('Canvas Note 1 Title')).toBeInTheDocument();
     });
 
     const deleteButton = screen.getByTitle('Delete note');
@@ -215,24 +215,24 @@ describe('NotesCanvas', () => {
     renderWithClient(<NotesCanvas />);
 
     await waitFor(() => {
-      expect(screen.getByText('100%')).toBeInTheDocument();
+      expect(screen.getByText('75%')).toBeInTheDocument();
     });
 
     const zoomInButton = screen.getByTitle('Zoom in');
     await userEvent.click(zoomInButton);
 
-    expect(screen.getByText('110%')).toBeInTheDocument();
+    expect(screen.getByText('100%')).toBeInTheDocument();
 
     const zoomOutButton = screen.getByTitle('Zoom out');
     await userEvent.click(zoomOutButton);
-    await userEvent.click(zoomOutButton); // now 90%
+    await userEvent.click(zoomOutButton); // now 50%
 
-    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getByText('50%')).toBeInTheDocument();
 
     const resetZoomButton = screen.getByTitle('Reset zoom');
     await userEvent.click(resetZoomButton);
 
-    expect(screen.getByText('100%')).toBeInTheDocument();
+    expect(screen.getByText('75%')).toBeInTheDocument();
   });
 
   it('toggles grid view', async () => {

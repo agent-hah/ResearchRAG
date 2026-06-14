@@ -557,25 +557,6 @@ export function ExportPage() {
         </div>
       </div>
 
-      {/* Export Info */}
-      <div className="card bg-blue-50 border-blue-200">
-        <div className="card-content">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">
-            Export Formats
-          </h3>
-          <div className="space-y-3 text-sm text-blue-800">
-            <div>
-              <span className="font-semibold">CSV:</span> Comma-separated values, compatible with Excel and data analysis tools
-            </div>
-            <div>
-              <span className="font-semibold">JSON:</span> Structured data format, includes metadata and can be imported back
-            </div>
-            <div>
-              <span className="font-semibold">Markdown:</span> Human-readable format for notes, preserves formatting
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Notes Modal */}
       {showNotesModal && (

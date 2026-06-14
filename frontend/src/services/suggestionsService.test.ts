@@ -19,10 +19,10 @@ describe('suggestionsService', () => {
 
   it('generateSuggestions posts payload', async () => {
     mockedAxios.post.mockResolvedValueOnce({ data: { success: true } });
-    await suggestionsService.generateSuggestions({ dataset_id: 5, max_per_keyword: 2 });
+    await suggestionsService.generateSuggestions({ dataset_id: '5', max_per_keyword: 2 });
     expect(mockedAxios.post).toHaveBeenCalledWith(
       'http://localhost:8000/api/v1/query/suggestions/generate',
-      { dataset_id: 5, max_per_keyword: 2 }
+      { dataset_id: '5', max_per_keyword: 2 }
     );
   });
 

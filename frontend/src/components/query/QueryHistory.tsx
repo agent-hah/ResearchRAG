@@ -33,7 +33,7 @@ export function QueryHistory({ history, onSelectQuery, isLoading }: QueryHistory
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
       {history.map((query) => (
         <button
           key={query.id}

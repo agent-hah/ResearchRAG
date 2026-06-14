@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { HomePage } from './HomePage'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -39,7 +40,7 @@ describe('HomePage', () => {
       data: undefined,
     } as any)
 
-    render(<HomePage />)
+    render(<MemoryRouter><HomePage /></MemoryRouter>)
     
     expect(screen.getByText('Research Workspace')).toBeInTheDocument()
     expect(screen.getByText('Datasets')).toBeInTheDocument()
@@ -72,7 +73,7 @@ describe('HomePage', () => {
       return { data: undefined } as any
     })
 
-    render(<HomePage />)
+    render(<MemoryRouter><HomePage /></MemoryRouter>)
     
     expect(screen.getByText('10')).toBeInTheDocument()
     expect(screen.getByText('20')).toBeInTheDocument()
@@ -101,7 +102,7 @@ describe('HomePage', () => {
       return { data: undefined } as any;
     })
 
-    render(<HomePage />)
+    render(<MemoryRouter><HomePage /></MemoryRouter>)
     
     vi.mocked(api.get).mockResolvedValue({ data: [] })
     

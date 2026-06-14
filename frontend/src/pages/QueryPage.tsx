@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QueryInput } from '../components/query/QueryInput'
 import { QueryResults } from '../components/query/QueryResults'
@@ -12,6 +13,9 @@ import type { QueryHistoryItem } from '@/types'
 import { AlertCircle, BarChart3, Map } from 'lucide-react'
 
 export function QueryPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const queryIdParam = searchParams.get('id')
+
   const [currentResult, setCurrentResult] = useState<QueryResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showVisualization, setShowVisualization] = useState(false)
@@ -105,6 +109,16 @@ export function QueryPage() {
       }
     }
   }
+
+  useEffect(() => {
+    if (queryIdParam && history.length > 0) {
+      handleSelectHistory(queryIdParam)
+      
+      searchParams.delete('id')
+      setSearchParams(searchParams, { replace: true })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryIdParam, history])
 
   const handleToggleVisualization = () => {
     setShowVisualization(!showVisualization)

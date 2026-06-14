@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { QueryPage } from './QueryPage'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { detectSpatialData } from '../services/spatialVisualizationService'
@@ -95,7 +96,7 @@ describe('QueryPage', () => {
   })
 
   it('renders initial state correctly', () => {
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     expect(screen.getByText('Query')).toBeInTheDocument()
     expect(screen.getByText('Ready to explore your data')).toBeInTheDocument()
     expect(screen.getByTestId('query-input')).toBeInTheDocument()
@@ -103,13 +104,13 @@ describe('QueryPage', () => {
   })
 
   it('submits a query successfully', () => {
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     fireEvent.click(screen.getByText('Submit'))
     expect(mockMutate).toHaveBeenCalledWith({ query: 'test question' })
   })
 
   it('shows error when submitting empty query', () => {
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     fireEvent.click(screen.getByText('Submit Empty'))
     expect(screen.getByText('Please enter a question')).toBeInTheDocument()
     expect(mockMutate).not.toHaveBeenCalled()
@@ -121,7 +122,7 @@ describe('QueryPage', () => {
       isPending: true,
     } as any)
     
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     expect(screen.getByText('Processing your query...')).toBeInTheDocument()
   })
 
@@ -132,7 +133,7 @@ describe('QueryPage', () => {
       return { mutate: mockMutate, isPending: false } as any;
     })
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     
     act(() => {
       onSuccessCb({ question: 'test question', data_results: { row_count: 5, columns: [], rows: [] } })
@@ -150,7 +151,7 @@ describe('QueryPage', () => {
       return { mutate: mockMutate, isPending: false } as any;
     })
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     act(() => {
       onSuccessCb({ question: 'test question', data_results: { row_count: 5, columns: [], rows: [] } })
     })
@@ -175,7 +176,7 @@ describe('QueryPage', () => {
       return { mutate: mockMutate, isPending: false } as any;
     })
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     act(() => {
       onSuccessCb({ question: 'test question', data_results: { row_count: 5, columns: [], rows: [] } })
     })
@@ -198,7 +199,7 @@ describe('QueryPage', () => {
       return { mutate: mockMutate, isPending: false } as any;
     })
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     
     act(() => {
       onErrorCb({ response: { data: { detail: 'Server error occurred' } } })
@@ -231,7 +232,7 @@ describe('QueryPage', () => {
       isLoading: false,
     } as any)
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     
     fireEvent.click(screen.getByText('history query'))
     expect(screen.getByTestId('query-results')).toHaveTextContent('history query')
@@ -249,7 +250,7 @@ describe('QueryPage', () => {
       isLoading: false,
     } as any)
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     
     fireEvent.click(screen.getByText('history query 2'))
     expect(mockMutate).toHaveBeenCalledWith({ query: 'history query 2' })
@@ -262,7 +263,7 @@ describe('QueryPage', () => {
       isLoading: false,
     } as any)
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     
     act(() => {
       // Because query is empty, the button text is empty. We can query it by role
@@ -280,7 +281,7 @@ describe('QueryPage', () => {
       return { data: undefined } as any;
     })
     
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     
     const { queryService } = await import('../services/queryService')
     vi.mocked(queryService.getQueryHistory).mockResolvedValue('history' as any)
@@ -294,7 +295,7 @@ describe('QueryPage', () => {
       return { mutate: mockMutate, isPending: false } as any;
     })
 
-    render(<QueryPage />)
+    render(<MemoryRouter><QueryPage /></MemoryRouter>)
     
     act(() => {
       onErrorCb({ response: { data: { detail: [{ loc: ['body', 'q'], msg: 'invalid' }] } } })

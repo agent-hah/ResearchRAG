@@ -42,7 +42,7 @@ describe('NotesPanel', () => {
   const mockNotes: Note[] = [
     {
       id: 1,
-
+      title: 'Note 1 title',
       content: 'Note 1 content',
       tags: ['tag1', 'tag2'],
       dataset_id: null,
@@ -53,7 +53,7 @@ describe('NotesPanel', () => {
     },
     {
       id: 2,
-
+      title: 'Note 2 title',
       content: 'Note 2 content',
       tags: ['tag2', 'tag3'],
       dataset_id: null,
@@ -151,7 +151,7 @@ describe('NotesPanel', () => {
     vi.mocked(notesService.listNotes).mockResolvedValue(mockNotes);
     vi.mocked(notesService.createNote).mockResolvedValue({
       id: 3,
-
+      title: 'Untitled Note',
       content: 'New Note',
       tags: [],
       dataset_id: null,
@@ -214,7 +214,7 @@ describe('NotesPanel', () => {
 
     await waitFor(() => {
       expect(notesService.updateNote).toHaveBeenCalledWith(1, {
-        title: 'Untitled Note',
+        title: 'Note 1 title',
         content: 'Updated Note 1 content',
         tags: ['tag1', 'tag2']
       });

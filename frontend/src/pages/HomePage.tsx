@@ -11,10 +11,12 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatDuration } from '@/lib/utils'
+import { useNavigate } from 'react-router-dom'
 import type { RAGStatsResponse, QueryHistoryResponse } from '@/types'
 import { fileService } from '@/services/fileService'
 
 export function HomePage() {
+  const navigate = useNavigate()
   // Fetch dashboard data
   const { data: filesData } = useQuery({
     queryKey: ['files'],
@@ -67,9 +69,9 @@ export function HomePage() {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col h-full space-y-4">
       {/* Header */}
-      <div>
+      <div className="shrink-0">
         <h1 className="text-3xl font-bold text-gray-900">Research Workspace</h1>
         <p className="mt-2 text-lg text-gray-600">
           AI-driven data engineering workspace for researchers
@@ -77,7 +79,7 @@ export function HomePage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="shrink-0 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <div key={stat.name} className="card">
             <div className="card-content">
@@ -96,11 +98,11 @@ export function HomePage() {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* Dashboard Panels */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Activity */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card flex flex-col min-h-0">
+          <div className="card-header shrink-0 pb-2">
             <div className="flex items-center space-x-2">
               <Clock className="h-5 w-5 text-gray-400" />
               <h3 className="card-title">Recent Queries</h3>
@@ -109,11 +111,15 @@ export function HomePage() {
               Your latest natural language queries
             </p>
           </div>
-          <div className="card-content">
+          <div className="card-content flex-1 overflow-y-auto min-h-0 pr-2">
             {queryHistory?.queries?.length ? (
               <div className="space-y-4">
                 {queryHistory.queries.map((query) => (
-                  <div key={query.id} className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50">
+                  <div 
+                    key={query.id} 
+                    className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/query?id=${query.id}`)}
+                  >
                     <Search className="h-4 w-4 text-gray-400 mt-1 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
@@ -137,12 +143,10 @@ export function HomePage() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* System Status */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="card">
-          <div className="card-header">
+        {/* System Status */}
+        <div className="card flex flex-col min-h-0">
+          <div className="card-header shrink-0 pb-2">
             <div className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5 text-gray-400" />
               <h3 className="card-title">System Status</h3>
@@ -151,7 +155,7 @@ export function HomePage() {
               Current system information
             </p>
           </div>
-          <div className="card-content">
+          <div className="card-content flex-1 overflow-y-auto min-h-0 pr-2">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Backend API</span>
@@ -187,8 +191,8 @@ export function HomePage() {
 
       {/* Getting Started */}
       {(!filesData?.total_datasets && !filesData?.total_literature) && (
-        <div className="card">
-          <div className="card-header">
+        <div className="card shrink-0">
+          <div className="card-header shrink-0 pb-2">
             <h3 className="card-title">Getting Started</h3>
             <p className="card-description">
               Follow these steps to start analyzing your research data

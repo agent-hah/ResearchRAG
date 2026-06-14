@@ -235,10 +235,10 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
                 {showAnnotations && annotations.map((ann) => {
                   if (ann.annotation_type !== 'highlight') return null;
                   
-                  if (ann.rects && ann.rects.length > 0) {
+                  if ((ann as any).rects && (ann as any).rects.length > 0) {
                     return (
                       <div key={ann.id}>
-                        {ann.rects.map((rect: any, idx: number) => (
+                        {(ann as any).rects.map((rect: any, idx: number) => (
                           <div
                             key={idx}
                             className="absolute mix-blend-multiply cursor-pointer"

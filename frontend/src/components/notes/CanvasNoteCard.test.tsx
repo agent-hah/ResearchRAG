@@ -31,7 +31,7 @@ vi.mock('react-markdown', () => ({
 describe('CanvasNoteCard', () => {
   const mockNote: Note = {
     id: 0,
-
+    title: 'Test Note',
     content: 'This is a test canvas note.',
     tags: ['canvas1', 'canvas2'],
     dataset_id: null,
