@@ -104,5 +104,12 @@ export const queryService = {
   }> {
     const response = await api.post('/query/sql/execute/', { sql })
     return response.data
+  },
+
+  /**
+   * Delete a query history item
+   */
+  async deleteQueryHistory(queryId: string): Promise<void> {
+    await api.delete(`/query/history/${queryId}/`)
   }
 }

@@ -3,15 +3,15 @@ import {
   Database, 
   Search, 
   Clock,
-  TrendingUp,
   FileText,
   Brain
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatDuration } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
-import type { RAGStatsResponse, QueryHistoryResponse } from '@/types'
+import type { RAGStatsResponse } from '@/types'
 import { fileService } from '@/services/fileService'
+import { queryService } from '@/services/queryService'
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -28,7 +28,7 @@ export function HomePage() {
 
   const { data: queryHistory } = useQuery({
     queryKey: ['query-history'],
-    queryFn: () => api.get<QueryHistoryResponse>('/query/history?page=1&page_size=5').then(res => res.data),
+    queryFn: () => queryService.getQueryHistory(0, 5),
   })
 
   const stats = [
@@ -97,7 +97,7 @@ export function HomePage() {
       </div>
 
       {/* Dashboard Panels */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 gap-4">
         {/* Recent Activity */}
         <div className="card flex flex-col min-h-0">
           <div className="card-header shrink-0 pb-2">
@@ -139,50 +139,6 @@ export function HomePage() {
                 <p className="text-xs text-gray-400">Start by uploading data and asking questions</p>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* System Status */}
-        <div className="card flex flex-col min-h-0">
-          <div className="card-header shrink-0 pb-2">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-gray-400" />
-              <h3 className="card-title">System Status</h3>
-            </div>
-            <p className="card-description">
-              Current system information
-            </p>
-          </div>
-          <div className="card-content flex-1 overflow-y-auto min-h-0 pr-2">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Backend API</span>
-                <span className="badge badge-success">Online</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Vector Database</span>
-                <span className="badge badge-success">
-                  {ragStats?.collection_name || 'Ready'}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Embedding Model</span>
-                <span className="text-sm text-gray-900">
-                  {ragStats?.embedding_model || 'Gemini'}
-                </span>
-              </div>
-              
-              {ragStats && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Chunk Settings</span>
-                  <span className="text-sm text-gray-900">
-                    {ragStats.chunk_size}/{ragStats.chunk_overlap}
-                  </span>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>

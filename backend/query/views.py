@@ -129,7 +129,7 @@ class ExecuteSQLView(views.APIView):
         result = query_service.execute_sql(sql)
         return Response(result)
 
-class QueryHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+class QueryHistoryViewSet(viewsets.ModelViewSet):
     queryset = QueryHistory.objects.all().order_by('-created_at')
     serializer_class = QueryHistorySerializer
 

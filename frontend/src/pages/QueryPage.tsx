@@ -274,6 +274,11 @@ export function QueryPage() {
               <QueryHistory
                 history={history}
                 onSelectQuery={handleSelectHistory}
+                onDeleteQuery={(id) => {
+                  queryService.deleteQueryHistory(id).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['queryHistory'] })
+                  })
+                }}
                 isLoading={historyLoading}
               />
             </div>
