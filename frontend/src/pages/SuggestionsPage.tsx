@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Sparkles, Database } from 'lucide-react'
+import { Sparkles, Database, X } from 'lucide-react'
 import { fileService } from '../services/fileService'
 import { SuggestionsPanel } from '../components/suggestions/SuggestionsPanel'
 
 export function SuggestionsPage() {
-  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null | 'global'>('global')
+  const [isGlobal, setIsGlobal] = useState(true)
+  const [selectedDatasetIds, setSelectedDatasetIds] = useState<number[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Fetch datasets
   const { data: datasets = [], isLoading, error } = useQuery({
     queryKey: ['datasets'],
     queryFn: fileService.listDatasets,
   })
-
-  const selectedDataset = datasets.find(d => d.id === selectedDatasetId)
 
   return (
     <div className="space-y-8">
@@ -59,21 +59,24 @@ export function SuggestionsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <button
-                onClick={() => setSelectedDatasetId('global')}
+                onClick={() => {
+                  setIsGlobal(true)
+                  setSelectedDatasetIds([])
+                }}
                 className={`p-4 border-2 rounded-lg text-left transition-all ${
-                  selectedDatasetId === 'global'
+                  isGlobal
                     ? 'border-primary-500 bg-primary-50'
                     : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-lg ${
-                    selectedDatasetId === 'global'
+                    isGlobal
                       ? 'bg-primary-100'
                       : 'bg-gray-100'
                   }`}>
                     <Sparkles className={`w-5 h-5 ${
-                      selectedDatasetId === 'global'
+                      isGlobal
                         ? 'text-primary-600'
                         : 'text-gray-600'
                     }`} />
@@ -88,67 +91,64 @@ export function SuggestionsPage() {
                   </div>
                 </div>
               </button>
-              {datasets.map((dataset) => (
-                <button
-                  key={dataset.id}
-                  onClick={() => setSelectedDatasetId(dataset.id)}
-                  className={`p-4 border-2 rounded-lg text-left transition-all ${
-                    selectedDatasetId === dataset.id
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      selectedDatasetId === dataset.id
-                        ? 'bg-primary-100'
-                        : 'bg-gray-100'
-                    }`}>
-                      <Database className={`w-5 h-5 ${
-                        selectedDatasetId === dataset.id
-                          ? 'text-primary-600'
-                          : 'text-gray-600'
-                      }`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {dataset.filename}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {(dataset.row_count ?? dataset.metadata?.row_count ?? 0).toLocaleString()} rows
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(dataset.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className={`p-4 border-2 rounded-lg text-left transition-all ${
+                  !isGlobal && selectedDatasetIds.length > 0
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    !isGlobal && selectedDatasetIds.length > 0
+                      ? 'bg-primary-100'
+                      : 'bg-gray-100'
+                  }`}>
+                    <Database className={`w-5 h-5 ${
+                      !isGlobal && selectedDatasetIds.length > 0
+                        ? 'text-primary-600'
+                        : 'text-gray-600'
+                    }`} />
                   </div>
-                </button>
-              ))}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      Select Datasets
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {selectedDatasetIds.length === 0 
+                        ? 'Choose specific datasets' 
+                        : `${selectedDatasetIds.length} dataset${selectedDatasetIds.length === 1 ? '' : 's'} selected`}
+                    </p>
+                  </div>
+                </div>
+              </button>
             </div>
           )}
         </div>
       </div>
 
       {/* Suggestions Panel */}
-      {selectedDatasetId === 'global' ? (
+      {isGlobal ? (
         <div className="card">
           <div className="card-content">
-            <SuggestionsPanel />
+            <SuggestionsPanel isGlobal={true} />
           </div>
         </div>
-      ) : selectedDataset ? (
+      ) : selectedDatasetIds.length > 0 ? (
         <div className="card">
           <div className="card-content">
             <SuggestionsPanel
-              datasetId={selectedDataset.id}
-              datasetName={selectedDataset.filename}
+              datasetIds={selectedDatasetIds}
+              datasetNames={selectedDatasetIds.map(id => datasets.find(d => d.id === id)?.filename || '').filter(Boolean)}
+              isGlobal={false}
             />
           </div>
         </div>
       ) : null}
 
       {/* Help Text */}
-      {!selectedDatasetId && datasets.length > 0 && (
+      {!isGlobal && selectedDatasetIds.length === 0 && datasets.length > 0 && (
         <div className="card bg-blue-50 border-blue-200">
           <div className="card-content">
             <h3 className="text-lg font-semibold text-blue-900 mb-2">
@@ -176,6 +176,97 @@ export function SuggestionsPage() {
                 <span>Provide feedback to improve future suggestions</span>
               </li>
             </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Dataset Selection Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+              onClick={() => setIsModalOpen(false)}
+            />
+            
+            <div className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Select Datasets</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Choose datasets to find relevant research articles
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="btn btn-ghost btn-sm"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-auto p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {datasets.map((dataset) => (
+                    <button
+                      key={dataset.id}
+                      onClick={() => {
+                        setIsGlobal(false)
+                        const newIds = selectedDatasetIds.includes(dataset.id)
+                          ? selectedDatasetIds.filter(id => id !== dataset.id)
+                          : [...selectedDatasetIds, dataset.id]
+                        setSelectedDatasetIds(newIds)
+                        if (newIds.length === 0) {
+                          setIsGlobal(true)
+                        }
+                      }}
+                      className={`p-4 border-2 rounded-lg text-left transition-all relative ${
+                        !isGlobal && selectedDatasetIds.includes(dataset.id)
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          !isGlobal && selectedDatasetIds.includes(dataset.id)
+                            ? 'bg-primary-100'
+                            : 'bg-gray-100'
+                        }`}>
+                          <Database className={`w-5 h-5 ${
+                            !isGlobal && selectedDatasetIds.includes(dataset.id)
+                              ? 'text-primary-600'
+                              : 'text-gray-600'
+                          }`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {dataset.filename}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {(dataset.row_count ?? dataset.metadata?.row_count ?? 0).toLocaleString()} rows
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(dataset.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-6 border-t border-gray-200">
+                <div className="text-sm text-gray-500">
+                  {selectedDatasetIds.length} selected
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="btn btn-primary"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

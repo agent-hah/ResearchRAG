@@ -11,13 +11,14 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatDuration } from '@/lib/utils'
-import type { FileListResponse, RAGStatsResponse, QueryHistoryResponse } from '@/types'
+import type { RAGStatsResponse, QueryHistoryResponse } from '@/types'
+import { fileService } from '@/services/fileService'
 
 export function HomePage() {
   // Fetch dashboard data
   const { data: filesData } = useQuery({
     queryKey: ['files'],
-    queryFn: () => api.get<FileListResponse>('/files/list').then(res => res.data),
+    queryFn: fileService.listFiles,
   })
 
   const { data: ragStats } = useQuery({

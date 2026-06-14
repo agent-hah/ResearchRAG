@@ -14,9 +14,9 @@ vi.mock('../services/fileService', () => ({
 }))
 
 vi.mock('../components/suggestions/SuggestionsPanel', () => ({
-  SuggestionsPanel: ({ datasetId, datasetName }: any) => (
+  SuggestionsPanel: ({ datasetIds, datasetNames }: any) => (
     <div data-testid="suggestions-panel">
-      {datasetId ? `Dataset: ${datasetId} - ${datasetName}` : 'Global Context'}
+      {datasetIds?.length > 0 ? `Dataset: ${datasetIds[0]} - ${datasetNames[0]}` : 'Global Context'}
     </div>
   ),
 }))

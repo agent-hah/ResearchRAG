@@ -85,7 +85,7 @@ def test_analyze_dataset_for_keywords(suggestion_service):
     mock_resp = DummyResponse(text="```json\n{\"keywords\": [\"key1\", \"key2\"]}\n```")
     suggestion_service.client.models.generate_content.return_value = mock_resp
     
-    keywords = suggestion_service.analyze_dataset_for_keywords(1)
+    keywords = suggestion_service.analyze_dataset_for_keywords([1])
     assert keywords == ["key1", "key2"]
 
 @pytest.mark.django_db
@@ -174,7 +174,7 @@ def test_generate_suggestions_for_dataset(mock_analyze, mock_search, mock_cache,
         
     mock_search.side_effect = mock_search_func
     
-    suggestions = suggestion_service.generate_suggestions_for_dataset(dataset_id=1, max_per_keyword=1)
+    suggestions = suggestion_service.generate_suggestions_for_dataset(dataset_ids=[1], max_per_keyword=1)
     
     assert len(suggestions) == 1
     assert suggestions[0].title == "Sug1"

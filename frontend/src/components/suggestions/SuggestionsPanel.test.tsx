@@ -8,7 +8,6 @@ import { suggestionsService } from '../../services/suggestionsService';
 vi.mock('../../services/suggestionsService', () => ({
   suggestionsService: {
     getDatasetSuggestions: vi.fn(),
-    getDatasetKeywords: vi.fn(),
     getGenerationStatus: vi.fn(),
     generateSuggestions: vi.fn(),
     updateFeedback: vi.fn(),
@@ -91,14 +90,14 @@ describe('SuggestionsPanel', () => {
     (suggestionsService.getDatasetSuggestions as any).mockResolvedValue(mockSuggestions);
     (suggestionsService.updateFeedback as any).mockResolvedValue({});
 
-    renderComponent({ datasetId: 1, datasetName: 'Test Dataset' });
+    renderComponent({ datasetIds: [1], datasetNames: ['Test Dataset'], isGlobal: false });
 
     await waitFor(() => {
       expect(screen.getByText('Paper 1')).toBeInTheDocument();
       expect(screen.queryByText('Paper 2')).not.toBeInTheDocument(); // dismissed
     });
 
-    expect(screen.getByText('For dataset: Test Dataset')).toBeInTheDocument();
+    expect(screen.getByText('For datasets: Test Dataset')).toBeInTheDocument();
 
     const relevantBtn = screen.getByText('Relevant');
     fireEvent.click(relevantBtn);
@@ -147,22 +146,6 @@ describe('SuggestionsPanel', () => {
     });
   });
 
-  it('shows keywords', async () => {
-    (suggestionsService.getDatasetSuggestions as any).mockResolvedValue([]);
-    (suggestionsService.getDatasetKeywords as any).mockResolvedValue({ keywords: ['AI', 'Testing'] });
-
-    renderComponent();
-
-    const showKeywordsBtn = screen.getByText('Show Keywords');
-    fireEvent.click(showKeywordsBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText('AI')).toBeInTheDocument();
-      expect(screen.getByText('Testing')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('Hide Keywords')).toBeInTheDocument();
-  });
 
   it('handles generate suggestions and progress', async () => {
     (suggestionsService.getDatasetSuggestions as any).mockResolvedValue([]);

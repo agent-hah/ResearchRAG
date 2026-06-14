@@ -68,7 +68,7 @@ class DocumentSuggestionService:
                 )
             except Exception as e:
                 error_msg = str(e).lower()
-                if "504" in error_msg or "deadline" in error_msg or "503" in error_msg or "timeout" in error_msg or "429" in error_msg or "resource_exhausted" in error_msg:
+                if "504" in error_msg or "deadline" in error_msg or "503" in error_msg or "timeout" in error_msg or "429" in error_msg or "resource_exhausted" in error_msg or "500" in error_msg or "internal" in error_msg:
                     if attempt == max_retries - 1:
                         raise e
                     logger.warning(f"Gemini API timeout/error (attempt {attempt+1}): {e}. Retrying...")
@@ -76,12 +76,12 @@ class DocumentSuggestionService:
                 else:
                     raise e
 
-    def analyze_dataset_for_keywords(self, dataset_id: Optional[int] = None) -> List[str]:
+    def analyze_dataset_for_keywords(self, dataset_ids: Optional[List[int]] = None) -> List[str]:
         """
-        Analyze a dataset (if provided) and research context to extract key terms
+        Analyze datasets (if provided) and research context to extract key terms
         
         Args:
-            dataset_id: Dataset ID to analyze (optional)
+            dataset_ids: Dataset IDs to analyze (optional)
             
         Returns:
             List of search keywords/phrases
@@ -94,22 +94,25 @@ class DocumentSuggestionService:
             columns = []
             dataset_name = "Global Research Context"
             
-            if dataset_id is not None:
-                # Get dataset
-                dataset = Dataset.objects.filter(id=dataset_id).first()
-                if not dataset:
-                    raise ValueError(f"Dataset {dataset_id} not found")
-                dataset_name = dataset.filename
-                try:
-                    columns = json.loads(dataset.columns_json) if dataset.columns_json else []
-                except Exception:
-                    pass
+            if dataset_ids:
+                # Get datasets
+                datasets = Dataset.objects.filter(id__in=dataset_ids)
+                if not datasets:
+                    raise ValueError(f"Datasets {dataset_ids} not found")
+                dataset_names = [d.filename for d in datasets]
+                dataset_name = ", ".join(dataset_names)
+                for d in datasets:
+                    try:
+                        cols = json.loads(d.columns_json) if d.columns_json else []
+                        columns.extend(cols)
+                    except Exception:
+                        pass
             
             # Fetch contextual information
             
             # 1. Notes
-            if dataset_id is not None:
-                recent_notes = Note.objects.filter(dataset_id=dataset_id).order_by('-created_at')[:5]
+            if dataset_ids:
+                recent_notes = Note.objects.filter(dataset_id__in=dataset_ids).order_by('-created_at')[:10]
             else:
                 recent_notes = Note.objects.all().order_by('-created_at')[:5]
             note_texts = [n.content[:200] for n in recent_notes if n.content]
@@ -118,7 +121,7 @@ class DocumentSuggestionService:
             recent_literature = Literature.objects.all().order_by('-created_at')[:5]
             literature_titles = [l.filename for l in recent_literature if l.filename]
             
-            if dataset_id is None and not literature_titles and not note_texts:
+            if not dataset_ids and not literature_titles and not note_texts:
                 logger.warning("No context available to generate suggestions")
                 return []
             
@@ -130,8 +133,8 @@ class DocumentSuggestionService:
                 context_section += "\n\nUploaded Literature:\n- " + "\n- ".join(literature_titles)
             
             dataset_info = ""
-            if dataset_id is not None:
-                dataset_info = f"Dataset: {dataset_name}\nColumns: {', '.join(columns)}"
+            if dataset_ids:
+                dataset_info = f"Datasets: {dataset_name}\nColumns: {', '.join(columns)}"
             
             # Create analysis prompt
             prompt = f"""{self.system_instruction}
@@ -176,11 +179,11 @@ Return the result STRICTLY as a valid JSON object with a single field "keywords"
                 logger.error(f"Failed to parse JSON for keywords: {keywords_text}")
                 cleaned_keywords = []
             
-            logger.info(f"Generated {len(cleaned_keywords)} keywords for dataset {dataset_id}")
+            logger.info(f"Generated {len(cleaned_keywords)} keywords for datasets {dataset_ids}")
             return cleaned_keywords[:5]  # Limit to 5 keywords
             
         except Exception as e:
-            logger.error(f"Failed to analyze dataset {dataset_id}: {e}")
+            logger.error(f"Failed to analyze datasets {dataset_ids}: {e}")
             return []
     
     async def search_articles(
@@ -286,29 +289,30 @@ Return ONLY valid JSON, no additional text."""
             return []
     def generate_suggestions_for_dataset(
         self, 
-        dataset_id: Optional[int] = None,
+        dataset_ids: Optional[List[int]] = None,
         max_per_keyword: int = 3
     ) -> List[DocumentSuggestion]:
         """
-        Generate article suggestions for a dataset or general context
+        Generate article suggestions for datasets or general context
         
         Args:
-            dataset_id: Dataset ID (optional)
+            dataset_ids: Dataset IDs (optional)
             max_per_keyword: Maximum suggestions per keyword
             
         Returns:
             List of DocumentSuggestion objects
         """
         from django.core.cache import cache
-        cache_key = f"suggestion_progress_{dataset_id or 'global'}"
+        cache_id = ",".join(map(str, dataset_ids)) if dataset_ids else "global"
+        cache_key = f"suggestion_progress_{cache_id}"
         
         try:
             cache.set(cache_key, {"status": "Analyzing research context for keywords...", "progress": 10}, timeout=3600)
             
             # Get keywords
-            keywords = self.analyze_dataset_for_keywords(dataset_id)
+            keywords = self.analyze_dataset_for_keywords(dataset_ids)
             if not keywords:
-                logger.warning(f"No keywords generated for dataset {dataset_id}")
+                logger.warning(f"No keywords generated for datasets {dataset_ids}")
                 cache.set(cache_key, {"status": "Failed: No keywords generated", "progress": 0}, timeout=60)
                 return []
             
@@ -327,9 +331,10 @@ Return ONLY valid JSON, no additional text."""
                 articles = async_to_sync(self.search_articles)(keyword, max_results=max_per_keyword)
                 
                 for article in articles:
+                    primary_dataset_id = dataset_ids[0] if dataset_ids else None
                     # Create suggestion
                     suggestion = DocumentSuggestion(
-                        dataset_id=dataset_id,
+                        dataset_id=primary_dataset_id,
                         title=article.get('title', ''),
                         authors=article.get('authors', ''),
                         publication_year=article.get('year'),
@@ -347,12 +352,12 @@ Return ONLY valid JSON, no additional text."""
                     all_suggestions.append(suggestion)
             
             cache.set(cache_key, {"status": "Completed successfully", "progress": 100}, timeout=60)
-            logger.info(f"Generated {len(all_suggestions)} suggestions for context/dataset {dataset_id}")
+            logger.info(f"Generated {len(all_suggestions)} suggestions for context/datasets {dataset_ids}")
             return all_suggestions
             
         except Exception as e:
             cache.set(cache_key, {"status": f"Error: {str(e)}", "progress": 0}, timeout=60)
-            logger.error(f"Failed to generate suggestions for context/dataset {dataset_id}: {e}")
+            logger.error(f"Failed to generate suggestions for context/datasets {dataset_ids}: {e}")
             raise
     
     def get_suggestions_for_dataset(

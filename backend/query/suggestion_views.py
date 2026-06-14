@@ -19,7 +19,11 @@ class SuggestionViewSet(viewsets.ModelViewSet):
         if dataset_id == 'global':
             queryset = queryset.filter(dataset__isnull=True)
         elif dataset_id:
-            queryset = queryset.filter(dataset_id=dataset_id)
+            try:
+                ids = [int(id.strip()) for id in str(dataset_id).split(',')]
+                queryset = queryset.filter(dataset_id__in=ids)
+            except ValueError:
+                pass
             
         # Filter dismissed
         include_dismissed = self.request.query_params.get('include_dismissed', 'false').lower() == 'true'
@@ -28,10 +32,16 @@ class SuggestionViewSet(viewsets.ModelViewSet):
             
         return queryset
 
-    @action(detail=False, methods=['delete'], url_path=r'dataset/(?P<dataset_id>\d+)')
+    @action(detail=False, methods=['delete'], url_path=r'dataset/(?P<dataset_id>[\d,]+)')
     def delete_by_dataset(self, request, dataset_id=None):
         service = DocumentSuggestionService()
-        count = service.delete_suggestions_for_dataset(dataset_id=dataset_id)
+        try:
+            ids = [int(id.strip()) for id in str(dataset_id).split(',')]
+        except ValueError:
+            ids = []
+        count = 0
+        for d_id in ids:
+            count += service.delete_suggestions_for_dataset(dataset_id=d_id)
         return Response({"deleted_count": count, "message": f"Deleted {count} suggestions."})
         
     @action(detail=False, methods=['delete'], url_path=r'global')
@@ -69,10 +79,10 @@ class SuggestionGenerateView(APIView):
         
         # Convert string 'global' or empty to None
         if not dataset_id or str(dataset_id).lower() == 'global':
-            dataset_id = None
+            dataset_ids = None
         else:
             try:
-                dataset_id = int(dataset_id)
+                dataset_ids = [int(id.strip()) for id in str(dataset_id).split(',')]
             except ValueError:
                 return Response({"error": "Invalid dataset_id"}, status=status.HTTP_400_BAD_REQUEST)
                 
@@ -84,7 +94,7 @@ class SuggestionGenerateView(APIView):
         def run_sync_generation():
             try:
                 service.generate_suggestions_for_dataset(
-                    dataset_id=dataset_id,
+                    dataset_ids=dataset_ids,
                     max_per_keyword=max_per_keyword
                 )
             except Exception as e:
@@ -102,12 +112,17 @@ class SuggestionGenerateView(APIView):
 class SuggestionKeywordsView(APIView):
     def get(self, request, dataset_id=None):
         if str(dataset_id).lower() == 'global':
-            dataset_id = None
+            dataset_ids = None
+        else:
+            try:
+                dataset_ids = [int(id.strip()) for id in str(dataset_id).split(',')]
+            except ValueError:
+                dataset_ids = []
             
         service = DocumentSuggestionService()
         
         # Getting keywords is sync
-        keywords = service.analyze_dataset_for_keywords(dataset_id=dataset_id)
+        keywords = service.analyze_dataset_for_keywords(dataset_ids=dataset_ids)
         
         return Response({
             "dataset_id": dataset_id or 'global',
@@ -119,9 +134,15 @@ class SuggestionStatusView(APIView):
         from django.core.cache import cache
         
         if str(dataset_id).lower() == 'global':
-            dataset_id = None
+            cache_id = 'global'
+        else:
+            try:
+                dataset_ids = [int(id.strip()) for id in str(dataset_id).split(',')]
+                cache_id = ",".join(map(str, dataset_ids))
+            except ValueError:
+                cache_id = 'global'
             
-        cache_key = f"suggestion_progress_{dataset_id or 'global'}"
+        cache_key = f"suggestion_progress_{cache_id}"
         progress_data = cache.get(cache_key)
         
         if not progress_data:

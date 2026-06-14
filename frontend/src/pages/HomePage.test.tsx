@@ -103,10 +103,15 @@ describe('HomePage', () => {
 
     render(<HomePage />)
     
-    vi.mocked(api.get).mockResolvedValue({ data: 'mockData' })
+    vi.mocked(api.get).mockResolvedValue({ data: [] })
     
-    expect(await filesQueryFn()).toBe('mockData')
-    expect(await statsQueryFn()).toBe('mockData')
-    expect(await historyQueryFn()).toBe('mockData')
+    expect(await filesQueryFn()).toEqual({
+      datasets: [],
+      literature: [],
+      total_datasets: 0,
+      total_literature: 0
+    })
+    expect(await statsQueryFn()).toEqual([])
+    expect(await historyQueryFn()).toEqual([])
   })
 })

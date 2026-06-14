@@ -24,7 +24,7 @@ export interface DocumentSuggestion {
 }
 
 export interface GenerateSuggestionsRequest {
-  dataset_id?: number | 'global'
+  dataset_id?: string | 'global'
   max_per_keyword?: number
 }
 
@@ -35,7 +35,7 @@ export interface UpdateFeedbackRequest {
 }
 
 export interface KeywordsResponse {
-  dataset_id: number | 'global'
+  dataset_id: string | 'global'
   keywords: string[]
 }
 
@@ -48,7 +48,7 @@ export const suggestionsService = {
   /**
    * Get suggestion generation status
    */
-  async getGenerationStatus(datasetId?: number | 'global'): Promise<GenerationStatus> {
+  async getGenerationStatus(datasetId?: string | number | 'global'): Promise<GenerationStatus> {
     const idParam = datasetId || 'global'
     const response = await axios.get(`${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/status`)
     return response.data
@@ -70,7 +70,7 @@ export const suggestionsService = {
    * Get suggestions for a dataset
    */
   async getDatasetSuggestions(
-    datasetId?: number,
+    datasetId?: string | number,
     includeDismissed: boolean = false
   ): Promise<DocumentSuggestion[]> {
     const response = await axios.get(
@@ -87,7 +87,7 @@ export const suggestionsService = {
   /**
    * Get keywords for a dataset
    */
-  async getDatasetKeywords(datasetId?: number): Promise<KeywordsResponse> {
+  async getDatasetKeywords(datasetId?: string | number): Promise<KeywordsResponse> {
     const idParam = datasetId || 'global'
     const response = await axios.get(
       `${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/keywords`
@@ -112,7 +112,7 @@ export const suggestionsService = {
   /**
    * Delete all suggestions for a dataset
    */
-  async deleteDatasetSuggestions(datasetId?: number): Promise<void> {
+  async deleteDatasetSuggestions(datasetId?: string | number): Promise<void> {
     const idParam = datasetId || 'global'
     if (idParam === 'global') {
       await axios.delete(`${API_BASE_URL}/api/v1/query/suggestions/global/`)

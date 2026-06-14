@@ -11,10 +11,8 @@ import { Page } from '@playwright/test';
 
 /** Empty-state mock data matching the backend's response shapes. */
 const MOCK_RESPONSES: Record<string, unknown> = {
-  '/api/v1/files/list': {
-    datasets: [],
-    literature: [],
-  },
+  '/api/v1/query/datasets/': [],
+  '/api/v1/literature/': [],
   '/api/v1/rag/stats': {
     total_documents: 0,
     total_chunks: 0,

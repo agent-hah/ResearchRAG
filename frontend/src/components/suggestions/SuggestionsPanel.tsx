@@ -1,37 +1,31 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, RefreshCw, Lightbulb, Filter } from 'lucide-react'
+import { Sparkles, RefreshCw, Filter } from 'lucide-react'
 import { suggestionsService } from '../../services/suggestionsService'
 import { SuggestionCard } from './SuggestionCard'
 
 interface SuggestionsPanelProps {
-  datasetId?: number
-  datasetName?: string
+  datasetIds?: number[]
+  datasetNames?: string[]
+  isGlobal?: boolean
 }
 
-export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelProps) {
+export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: SuggestionsPanelProps) {
+  const idParam = isGlobal ? 'global' : (datasetIds?.length ? datasetIds.join(',') : 'global')
   const [includeDismissed, setIncludeDismissed] = useState(false)
-  const [showKeywords, setShowKeywords] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const queryClient = useQueryClient()
 
   // Fetch suggestions
   const { data: suggestions = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['suggestions', datasetId || 'global', includeDismissed],
-    queryFn: () => suggestionsService.getDatasetSuggestions(datasetId, includeDismissed),
-  })
-
-  // Fetch keywords
-  const { data: keywordsData } = useQuery({
-    queryKey: ['keywords', datasetId || 'global'],
-    queryFn: () => suggestionsService.getDatasetKeywords(datasetId),
-    enabled: showKeywords,
+    queryKey: ['suggestions', idParam, includeDismissed],
+    queryFn: () => suggestionsService.getDatasetSuggestions(idParam, includeDismissed),
   })
   
   // Fetch generation status
   const { data: statusData, refetch: refetchStatus } = useQuery({
-    queryKey: ['suggestionStatus', datasetId || 'global'],
-    queryFn: () => suggestionsService.getGenerationStatus(datasetId),
+    queryKey: ['suggestionStatus', idParam],
+    queryFn: () => suggestionsService.getGenerationStatus(idParam),
     refetchInterval: isGenerating ? 1000 : false,
   })
 
@@ -50,7 +44,7 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
 
   // Generate suggestions mutation
   const generateMutation = useMutation({
-    mutationFn: () => suggestionsService.generateSuggestions({ dataset_id: datasetId || 'global' }),
+    mutationFn: () => suggestionsService.generateSuggestions({ dataset_id: idParam }),
     onSuccess: () => {
       setIsGenerating(true)
       setTimeout(() => refetchStatus(), 500)
@@ -62,7 +56,7 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
     mutationFn: ({ id, feedback }: { id: number; feedback: any }) =>
       suggestionsService.updateFeedback(id, feedback),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['suggestions', datasetId || 'global'] })
+      queryClient.invalidateQueries({ queryKey: ['suggestions', idParam] })
     },
   })
 
@@ -88,8 +82,12 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
     alert('Import functionality coming soon! This will download and process the PDF.')
   }
 
-  const activeSuggestions = suggestions.filter(s => !s.is_dismissed)
-  const dismissedCount = suggestions.filter(s => s.is_dismissed).length
+  const activeSuggestions = Array.from(new Map(
+    suggestions.filter(s => !s.is_dismissed).map(s => [s.title, s])
+  ).values())
+  const dismissedCount = Array.from(new Map(
+    suggestions.filter(s => s.is_dismissed).map(s => [s.title, s])
+  ).values()).length
 
   return (
     <div className="space-y-4">
@@ -101,17 +99,10 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
             Suggested Articles
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            {datasetId ? `For dataset: ${datasetName}` : 'Based on your recent uploads, notes, and queries'}
+            {!isGlobal && datasetNames?.length ? `For datasets: ${datasetNames.join(', ')}` : 'Based on your recent uploads, notes, and queries'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowKeywords(!showKeywords)}
-            className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors flex items-center gap-2"
-          >
-            <Lightbulb className="w-4 h-4" />
-            {showKeywords ? 'Hide' : 'Show'} Keywords
-          </button>
           <button
             onClick={handleGenerate}
             disabled={isGenerating || generateMutation.isPending}
@@ -139,22 +130,6 @@ export function SuggestionsPanel({ datasetId, datasetName }: SuggestionsPanelPro
         </div>
       )}
 
-      {/* Keywords Display */}
-      {showKeywords && keywordsData && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Research Keywords</h3>
-          <div className="flex flex-wrap gap-2">
-            {keywordsData.keywords.map((keyword, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-              >
-                {keyword}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Filter Toggle */}
       {dismissedCount > 0 && (
