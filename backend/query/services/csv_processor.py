@@ -18,7 +18,8 @@ class CSVProcessor:
     @staticmethod
     def parse_csv(file_path: Path) -> pd.DataFrame:
         try:
-            df = pd.read_csv(file_path)
+            # Auto-detect delimiter
+            df = pd.read_csv(file_path, sep=None, engine='python')
             logger.info(f"Parsed CSV: {file_path} - {len(df)} rows, {len(df.columns)} columns")
             return df
         except Exception as e:
