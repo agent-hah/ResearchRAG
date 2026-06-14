@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { 
-  Files, 
   Database, 
   Search, 
-  BarChart3, 
   Clock,
   TrendingUp,
   FileText,
@@ -189,44 +187,6 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Getting Started */}
-      {(!filesData?.total_datasets && !filesData?.total_literature) && (
-        <div className="card shrink-0">
-          <div className="card-header shrink-0 pb-2">
-            <h3 className="card-title">Getting Started</h3>
-            <p className="card-description">
-              Follow these steps to start analyzing your research data
-            </p>
-          </div>
-          <div className="card-content">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="text-center p-4 rounded-lg border-2 border-dashed border-gray-200">
-                <Files className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <h4 className="text-sm font-medium text-gray-900">1. Upload Files</h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload CSV datasets and PDF literature
-                </p>
-              </div>
-              
-              <div className="text-center p-4 rounded-lg border-2 border-dashed border-gray-200">
-                <Search className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <h4 className="text-sm font-medium text-gray-900">2. Ask Questions</h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  Use natural language to query your data
-                </p>
-              </div>
-              
-              <div className="text-center p-4 rounded-lg border-2 border-dashed border-gray-200">
-                <BarChart3 className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <h4 className="text-sm font-medium text-gray-900">3. Visualize Results</h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  Generate charts and export findings
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

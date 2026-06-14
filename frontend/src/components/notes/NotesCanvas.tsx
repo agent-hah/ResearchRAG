@@ -5,6 +5,7 @@ import _Draggable from 'react-draggable'
 const Draggable = _Draggable as any
 import { NoteEditor } from './NoteEditor'
 import { CanvasNoteCard } from './CanvasNoteCard'
+import { ConfirmDialog } from '../common/ConfirmDialog'
 import { notesService, type Note, type NoteCreate, type NoteUpdate } from '../../services/notesService'
 
 interface NotePosition {
@@ -57,6 +58,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [showGrid, setShowGrid] = useState(true)
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false)
+  const [noteToDelete, setNoteToDelete] = useState<number | null>(null)
   const [{ zoom, pan }, setView] = useState({ zoom: 0.75, pan: { x: 0, y: 0 } })
   
   // Store note positions in local state (could be persisted to backend)
@@ -145,9 +147,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
   }
 
   const handleDeleteNote = (noteId: number) => {
-    if (confirm('Are you sure you want to delete this note?')) {
-      deleteMutation.mutate(noteId)
-    }
+    setNoteToDelete(noteId)
   }
 
   const handleDragStop = useCallback((noteId: number, data: { x: number; y: number }) => {
@@ -443,6 +443,20 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={noteToDelete !== null}
+        title="Delete Note"
+        message="Are you sure you want to delete this note?"
+        confirmText="Delete"
+        onConfirm={() => {
+          if (noteToDelete !== null) {
+            deleteMutation.mutate(noteToDelete)
+            setNoteToDelete(null)
+          }
+        }}
+        onCancel={() => setNoteToDelete(null)}
+      />
     </div>
   )
 }

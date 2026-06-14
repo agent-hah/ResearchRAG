@@ -51,12 +51,6 @@ describe('HomePage', () => {
     // Values should be 0
     const zeroValues = screen.getAllByText('0')
     expect(zeroValues.length).toBeGreaterThanOrEqual(4)
-
-    // Should show getting started section
-    expect(screen.getByText('Getting Started')).toBeInTheDocument()
-    expect(screen.getByText('1. Upload Files')).toBeInTheDocument()
-    expect(screen.getByText('2. Ask Questions')).toBeInTheDocument()
-    expect(screen.getByText('3. Visualize Results')).toBeInTheDocument()
   })
 
   it('renders data correctly when available', () => {

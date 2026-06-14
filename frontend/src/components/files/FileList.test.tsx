@@ -100,7 +100,6 @@ describe('FileList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(window, 'confirm').mockImplementation(() => true);
   });
 
   const renderComponent = (datasets: Dataset[] = [], literature: Literature[] = []) => {
@@ -166,7 +165,9 @@ describe('FileList', () => {
     const deleteBtn = screen.getByTitle('Delete');
     fireEvent.click(deleteBtn);
 
-    expect(window.confirm).toHaveBeenCalled();
+    await screen.findByText('Are you sure you want to delete this dataset?');
+    const dialogDeleteBtns = screen.getAllByRole('button', { name: 'Delete' });
+    fireEvent.click(dialogDeleteBtns[dialogDeleteBtns.length - 1]);
     
     await waitFor(() => {
       expect(fileService.deleteDataset).toHaveBeenCalledWith(1, expect.anything());
@@ -178,13 +179,15 @@ describe('FileList', () => {
   });
 
   it('handles dataset delete abort', async () => {
-    vi.spyOn(window, 'confirm').mockImplementation(() => false);
     renderComponent(mockDatasets, []);
 
     const deleteBtn = screen.getByTitle('Delete');
     fireEvent.click(deleteBtn);
 
-    expect(window.confirm).toHaveBeenCalled();
+    await screen.findByText('Are you sure you want to delete this dataset?');
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelBtn);
+
     expect(fileService.deleteDataset).not.toHaveBeenCalled();
   });
 
@@ -194,6 +197,10 @@ describe('FileList', () => {
 
     const deleteBtn = screen.getByTitle('Delete');
     fireEvent.click(deleteBtn);
+
+    await screen.findByText('Are you sure you want to delete this dataset?');
+    const dialogDeleteBtns = screen.getAllByRole('button', { name: 'Delete' });
+    fireEvent.click(dialogDeleteBtns[dialogDeleteBtns.length - 1]);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Failed to delete dataset');
@@ -259,7 +266,9 @@ describe('FileList', () => {
     const deleteBtns = screen.getAllByTitle('Delete');
     fireEvent.click(deleteBtns[0]);
 
-    expect(window.confirm).toHaveBeenCalled();
+    await screen.findByText('Are you sure you want to delete this literature?');
+    const dialogDeleteBtns = screen.getAllByRole('button', { name: 'Delete' });
+    fireEvent.click(dialogDeleteBtns[dialogDeleteBtns.length - 1]);
 
     await waitFor(() => {
       expect(fileService.deleteLiterature).toHaveBeenCalledWith(1, expect.anything());
@@ -277,6 +286,10 @@ describe('FileList', () => {
 
     const deleteBtns = screen.getAllByTitle('Delete');
     fireEvent.click(deleteBtns[0]);
+
+    await screen.findByText('Are you sure you want to delete this literature?');
+    const dialogDeleteBtns = screen.getAllByRole('button', { name: 'Delete' });
+    fireEvent.click(dialogDeleteBtns[dialogDeleteBtns.length - 1]);
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Failed to delete literature');

@@ -236,7 +236,6 @@ describe('PDFViewer', () => {
   it('deletes an annotation', async () => {
     vi.mocked(annotationsService.getLiteratureAnnotations).mockResolvedValue(mockAnnotations);
     vi.mocked(annotationsService.deleteAnnotation).mockResolvedValue(undefined);
-    vi.spyOn(window, 'confirm').mockImplementation(() => true);
 
     renderWithClient(<PDFViewer fileUrl="test.pdf" literatureId={10} />);
 
@@ -246,10 +245,12 @@ describe('PDFViewer', () => {
 
     await userEvent.click(screen.getByTitle('Delete annotation'));
 
+    await screen.findByText('Are you sure you want to delete this annotation?');
+    const dialogDeleteBtns = screen.getAllByRole('button', { name: 'Delete' });
+    await userEvent.click(dialogDeleteBtns[dialogDeleteBtns.length - 1]);
+
     await waitFor(() => {
       expect(annotationsService.deleteAnnotation).toHaveBeenCalledWith(1, expect.anything());
     });
-
-    vi.restoreAllMocks();
   });
 });

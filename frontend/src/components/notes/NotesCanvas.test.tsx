@@ -192,7 +192,6 @@ describe('NotesCanvas', () => {
   it('deletes a note', async () => {
     vi.mocked(notesService.listNotes).mockResolvedValue(mockNotes);
     vi.mocked(notesService.deleteNote).mockResolvedValue(undefined);
-    vi.spyOn(window, 'confirm').mockImplementation(() => true);
 
     renderWithClient(<NotesCanvas />);
 
@@ -203,11 +202,13 @@ describe('NotesCanvas', () => {
     const deleteButton = screen.getByTitle('Delete note');
     await userEvent.click(deleteButton);
 
+    await screen.findByText('Are you sure you want to delete this note?');
+    const dialogDeleteButton = screen.getAllByRole('button', { name: 'Delete' });
+    await userEvent.click(dialogDeleteButton[dialogDeleteButton.length - 1]);
+
     await waitFor(() => {
       expect(notesService.deleteNote).toHaveBeenCalledWith(1);
     });
-
-    vi.restoreAllMocks();
   });
 
   it('handles zoom controls', async () => {

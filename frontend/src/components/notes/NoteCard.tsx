@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Edit2, Trash2, Tag, Calendar, Link as LinkIcon } from 'lucide-react'
 import type { Note } from '../../services/notesService'
 import ReactMarkdown from 'react-markdown'
+import { ConfirmDialog } from '../common/ConfirmDialog'
 
 interface NoteCardProps {
   note: Note
@@ -12,15 +13,19 @@ interface NoteCardProps {
 
 export function NoteCard({ note, onEdit, onDelete, onViewRelationships }: NoteCardProps) {
   const [showFullContent, setShowFullContent] = useState(false)
-  
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
   const contentPreview = note.content.length > 200 
     ? note.content.substring(0, 200) + '...'
     : note.content
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this note? This will also remove all its relationships.')) {
-      onDelete(note.id)
-    }
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    onDelete(note.id)
+    setIsDeleteDialogOpen(false)
   }
 
   return (
@@ -105,6 +110,15 @@ export function NoteCard({ note, onEdit, onDelete, onViewRelationships }: NoteCa
           )}
         </div>
       </div>
+      
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        title="Delete Note"
+        message="Are you sure you want to delete this note? This will also remove all its relationships."
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setIsDeleteDialogOpen(false)}
+      />
     </div>
   )
 }

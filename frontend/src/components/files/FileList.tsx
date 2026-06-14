@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { fileService } from '@/services/fileService'
 import { formatBytes, formatDate, cn } from '@/lib/utils'
+import { ConfirmDialog } from '../common/ConfirmDialog'
 import type { Dataset, Literature, ProcessingStatus } from '@/types'
 
 interface FileListProps {
@@ -14,6 +15,8 @@ interface FileListProps {
 
 export function FileList({ datasets, literature, onPreview }: FileListProps) {
   const [activeTab, setActiveTab] = useState<'datasets' | 'literature'>('datasets')
+  const [datasetToDelete, setDatasetToDelete] = useState<number | null>(null)
+  const [literatureToDelete, setLiteratureToDelete] = useState<number | null>(null)
   const queryClient = useQueryClient()
 
   const deleteDatasetMutation = useMutation({
@@ -31,6 +34,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     mutationFn: fileService.deleteLiterature,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['literature'] })
       toast.success('Literature deleted successfully')
     },
     onError: () => {
@@ -53,6 +57,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     mutationFn: fileService.reprocessLiterature,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['literature'] })
       toast.success('Literature reprocessing started')
     },
     onError: () => {
@@ -178,11 +183,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                       </button>
                       
                       <button
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this dataset?')) {
-                            deleteDatasetMutation.mutate(dataset.id)
-                          }
-                        }}
+                        onClick={() => setDatasetToDelete(dataset.id)}
                         disabled={deleteDatasetMutation.isPending}
                         className="btn btn-sm btn-ghost text-red-600 hover:text-red-700"
                         title="Delete"
@@ -268,11 +269,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                       </button>
                       
                       <button
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this literature?')) {
-                            deleteLiteratureMutation.mutate(lit.id)
-                          }
-                        }}
+                        onClick={() => setLiteratureToDelete(lit.id)}
                         disabled={deleteLiteratureMutation.isPending}
                         className="btn btn-sm btn-ghost text-red-600 hover:text-red-700"
                         title="Delete"
@@ -287,6 +284,34 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
           )}
         </div>
       )}
+      
+      <ConfirmDialog
+        isOpen={datasetToDelete !== null}
+        title="Delete Dataset"
+        message="Are you sure you want to delete this dataset?"
+        confirmText="Delete"
+        onConfirm={() => {
+          if (datasetToDelete !== null) {
+            deleteDatasetMutation.mutate(datasetToDelete)
+            setDatasetToDelete(null)
+          }
+        }}
+        onCancel={() => setDatasetToDelete(null)}
+      />
+      
+      <ConfirmDialog
+        isOpen={literatureToDelete !== null}
+        title="Delete Literature"
+        message="Are you sure you want to delete this literature?"
+        confirmText="Delete"
+        onConfirm={() => {
+          if (literatureToDelete !== null) {
+            deleteLiteratureMutation.mutate(literatureToDelete)
+            setLiteratureToDelete(null)
+          }
+        }}
+        onCancel={() => setLiteratureToDelete(null)}
+      />
     </div>
   )
 }

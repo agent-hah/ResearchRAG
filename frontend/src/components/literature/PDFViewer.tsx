@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { annotationsService, type Annotation, type AnnotationCreate } from '../../services/annotationsService'
 import { AnnotationsList } from './AnnotationsList'
 import { AnnotationForm } from './AnnotationForm'
+import { ConfirmDialog } from '../common/ConfirmDialog'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 
@@ -24,6 +25,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
   const [showAnnotations, setShowAnnotations] = useState(true)
   const [showAnnotationForm, setShowAnnotationForm] = useState(false)
   const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(null)
+  const [annotationToDelete, setAnnotationToDelete] = useState<number | null>(null)
 
   const queryClient = useQueryClient()
 
@@ -115,9 +117,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
   }
 
   function handleDeleteAnnotation(annotationId: number) {
-    if (confirm('Are you sure you want to delete this annotation?')) {
-      deleteAnnotationMutation.mutate(annotationId)
-    }
+    setAnnotationToDelete(annotationId)
   }
 
   function handleCancelAnnotation() {
@@ -314,6 +314,20 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
           onCancel={handleCancelAnnotation}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={annotationToDelete !== null}
+        title="Delete Annotation"
+        message="Are you sure you want to delete this annotation?"
+        confirmText="Delete"
+        onConfirm={() => {
+          if (annotationToDelete !== null) {
+            deleteAnnotationMutation.mutate(annotationToDelete)
+            setAnnotationToDelete(null)
+          }
+        }}
+        onCancel={() => setAnnotationToDelete(null)}
+      />
     </div>
   )
 }

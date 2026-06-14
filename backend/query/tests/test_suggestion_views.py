@@ -36,6 +36,9 @@ def test_get_dataset_suggestions(api_client, dataset, suggestion):
 
 @pytest.mark.django_db
 def test_get_global_suggestions(api_client, db):
+    # Clear any leaked suggestions from background threads
+    DocumentSuggestion.objects.all().delete()
+    
     DocumentSuggestion.objects.create(
         title="Global Suggestion",
         relevance_score=0.90
@@ -48,6 +51,9 @@ def test_get_global_suggestions(api_client, db):
 
 @pytest.mark.django_db
 def test_delete_by_dataset(api_client, dataset, suggestion):
+    # Clear any leaked suggestions from background threads
+    DocumentSuggestion.objects.exclude(id=suggestion.id).delete()
+    
     url = reverse('suggestion-delete-by-dataset', kwargs={'dataset_id': dataset.id})
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_200_OK
@@ -56,6 +62,9 @@ def test_delete_by_dataset(api_client, dataset, suggestion):
 
 @pytest.mark.django_db
 def test_delete_global(api_client, db):
+    # Clear any leaked suggestions from background threads
+    DocumentSuggestion.objects.all().delete()
+    
     DocumentSuggestion.objects.create(title="Global Suggestion")
     url = reverse('suggestion-delete-global')
     response = api_client.delete(url)

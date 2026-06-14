@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NotesPanel } from './NotesPanel';
 import userEvent from '@testing-library/user-event';
@@ -224,7 +224,6 @@ describe('NotesPanel', () => {
   it('deletes a note', async () => {
     vi.mocked(notesService.listNotes).mockResolvedValue(mockNotes);
     vi.mocked(notesService.deleteNote).mockResolvedValue(undefined);
-    vi.spyOn(window, 'confirm').mockImplementation(() => true);
 
     renderWithClient(<NotesPanel />);
 
@@ -233,14 +232,18 @@ describe('NotesPanel', () => {
     });
 
     // Click delete on the first note
-    const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
+    const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
     await userEvent.click(deleteButtons[0]);
+
+    // Click confirm delete in dialog
+    await screen.findByText(/Are you sure you want to delete this note/i);
+    const dialog = screen.getByRole('dialog');
+    const confirmButton = within(dialog).getByRole('button', { name: 'Delete' });
+    await userEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(notesService.deleteNote).toHaveBeenCalledWith(1);
     });
-
-    vi.restoreAllMocks();
   });
 
   it('shows error state if listNotes fails', async () => {

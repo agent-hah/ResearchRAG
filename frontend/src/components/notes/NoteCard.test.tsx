@@ -86,32 +86,29 @@ describe('NoteCard', () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();
     
-    // Mock window.confirm to return true
-    vi.spyOn(window, 'confirm').mockImplementation(() => true);
-
     render(<NoteCard note={mockNote} onEdit={onEdit} onDelete={onDelete} />);
     
     await userEvent.click(screen.getByRole('button', { name: /delete/i }));
-    expect(window.confirm).toHaveBeenCalled();
-    expect(onDelete).toHaveBeenCalledWith(mockNote.id);
     
-    vi.restoreAllMocks();
+    // Dialog opens, click the second delete button (inside dialog)
+    const buttons = screen.getAllByRole('button', { name: /delete/i });
+    await userEvent.click(buttons[1]);
+    
+    expect(onDelete).toHaveBeenCalledWith(mockNote.id);
   });
 
   it('does not call onDelete when Delete is cancelled', async () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();
     
-    // Mock window.confirm to return false
-    vi.spyOn(window, 'confirm').mockImplementation(() => false);
-
     render(<NoteCard note={mockNote} onEdit={onEdit} onDelete={onDelete} />);
     
     await userEvent.click(screen.getByRole('button', { name: /delete/i }));
-    expect(window.confirm).toHaveBeenCalled();
-    expect(onDelete).not.toHaveBeenCalled();
     
-    vi.restoreAllMocks();
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    await userEvent.click(cancelButton);
+    
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it('renders and calls onViewRelationships when provided', async () => {
