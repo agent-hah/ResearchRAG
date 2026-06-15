@@ -21,6 +21,7 @@ dependencies:
       - langchain-community
       - langchain-google-genai
       - google-generativeai
+      - google-genai
       
       # Document Processing
       - pdfplumber==0.11.9
