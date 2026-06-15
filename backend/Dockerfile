@@ -20,4 +20,4 @@ EXPOSE $PORT
 
 # Start the Django application using the Conda environment
 # The environment name 'RAG' matches your environment.yml
-CMD conda run --no-capture-output -n RAG uvicorn core.asgi:application --host 0.0.0.0 --port $PORT
+CMD conda run --no-capture-output -n RAG sh -c "python manage.py migrate && uvicorn core.asgi:application --host 0.0.0.0 --port $PORT"
