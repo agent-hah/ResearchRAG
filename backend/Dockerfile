@@ -1,0 +1,23 @@
+# dockerfile
+# Use an official lightweight Conda image
+FROM continuumio/miniconda3:latest
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the environment.yml from the root directory to the container
+# (Assuming Docker build context is the root or backend, adjust paths if necessary)
+COPY ../environment.yml .
+
+# Create the Conda environment
+RUN conda env create -f environment.yml
+
+# Copy the rest of the backend source code
+COPY . .
+
+# Render dynamically assigns a port via the PORT environment variable
+EXPOSE $PORT
+
+# Start the Django application using the Conda environment
+# The environment name 'RAG' matches your environment.yml
+CMD conda run --no-capture-output -n RAG uvicorn core.asgi:application --host 0.0.0.0 --port $PORT
