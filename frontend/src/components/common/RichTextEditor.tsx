@@ -11,7 +11,7 @@ import {
   ListOrdered, 
   Quote 
 } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 interface RichTextEditorProps {
   initialContent: string
@@ -116,8 +116,7 @@ export function RichTextEditor({
   minHeight = '150px',
   maxHeight = '400px'
 }: RichTextEditorProps) {
-  // Use a ref to track if it's the initial render so we don't fire onChange immediately
-  const isInitialRender = useRef(true)
+  // The original unused ref was removed
 
   const editor = useEditor({
     extensions: [
@@ -128,7 +127,7 @@ export function RichTextEditor({
     editable: !disabled,
     onUpdate: ({ editor }) => {
       // get the markdown content and pass it back
-      const markdown = editor.storage.markdown.getMarkdown()
+      const markdown = (editor.storage as any).markdown.getMarkdown()
       onChange(markdown)
     },
     editorProps: {
