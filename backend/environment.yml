@@ -15,7 +15,8 @@ dependencies:
       - uvicorn==0.27.0
       
       # RAG & AI
-      - chromadb==0.4.22
+      - langchain-pinecone==0.1.3
+      - pinecone-client==5.0.1
       - langchain
       - langchain-community
       - langchain-google-genai
@@ -32,6 +33,10 @@ dependencies:
       - django-environ
       - python-multipart==0.0.6
       - requests==2.34.2
+      
+      # Cloud Storage
+      - boto3
+      - django-storages
       
       # Cloud Database Adapters (Required for Render)
       - dj-database-url

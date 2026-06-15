@@ -16,10 +16,16 @@ class CSVProcessor:
     """Service for processing CSV files."""
     
     @staticmethod
-    def parse_csv(file_path: Path) -> pd.DataFrame:
+    def parse_csv(file_path: str) -> pd.DataFrame:
         try:
+            from django.core.files.storage import default_storage
+            import io
+            
+            with default_storage.open(file_path, "rb") as f:
+                file_obj = io.BytesIO(f.read())
+            
             # Auto-detect delimiter
-            df = pd.read_csv(file_path, sep=None, engine='python')
+            df = pd.read_csv(file_obj, sep=None, engine='python')
             logger.info(f"Parsed CSV: {file_path} - {len(df)} rows, {len(df.columns)} columns")
             return df
         except Exception as e:
@@ -68,7 +74,7 @@ class CSVProcessor:
         return dataset
     
     @staticmethod
-    def process_csv_file(file_path: Path, dataset: Dataset) -> Dataset:
+    def process_csv_file(file_path: str, dataset: Dataset) -> Dataset:
         try:
             df = CSVProcessor.parse_csv(file_path)
             table_name = CSVProcessor.generate_table_name(dataset.filename, dataset.id)

@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "storages",
     "files",
     "literature",
     "notes",
@@ -167,16 +168,31 @@ from dotenv import load_dotenv
 # Load .env from project root
 load_dotenv(BASE_DIR.parent / ".env")
 
+# Cloudflare R2 Storage Settings
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "access_key": os.getenv("R2_ACCESS_KEY", ""),
+            "secret_key": os.getenv("R2_SECRET_KEY", ""),
+            "bucket_name": "researchrag-uploads",
+            "endpoint_url": os.getenv("R2_ENDPOINT_URL", ""),
+            "region_name": "auto",
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
 DATA_DIR = BASE_DIR.parent / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
-CHROMA_DB_DIR = DATA_DIR / "chroma_db"
 
-MAX_UPLOAD_SIZE = 104857600  # 100MB
+MAX_UPLOAD_SIZE = 10485760  # 10MB
 
 # Ensure directories exist
 DATA_DIR.mkdir(exist_ok=True)
 UPLOAD_DIR.mkdir(exist_ok=True)
-CHROMA_DB_DIR.mkdir(exist_ok=True)
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 GEMINI_MODEL = "gemma-4-26b-a4b-it"
@@ -184,5 +200,6 @@ EMBEDDING_MODEL = "models/gemini-embedding-2"
 LLM_TEMPERATURE = 0.1
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
-CHROMA_COLLECTION = "research_literature"
 OPENALEX_API_KEY = os.getenv("OPENALEX_API_KEY")
+
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "")

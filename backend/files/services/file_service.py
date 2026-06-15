@@ -40,6 +40,10 @@ class FileService:
             elif file_ext == ".pdf" and "pdf" not in file.content_type.lower():
                 return False, "Invalid content type for PDF file"
         
+        MAX_SIZE = 10485760 # 10MB limit
+        if file.size > MAX_SIZE:
+            return False, "File is too large. Please upload files smaller than 10MB to keep the server happy."
+        
         return True, None
     
     @staticmethod
@@ -61,21 +65,17 @@ class FileService:
         return unique_filename
     
     @staticmethod
-    def save_uploaded_file(file: UploadedFile, destination: Path) -> int:
+    def save_uploaded_file(file: UploadedFile) -> Tuple[str, int]:
         """
-        Save uploaded file to disk.
+        Save uploaded file to default storage.
         """
         try:
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            with destination.open("wb") as buffer:
-                for chunk in file.chunks():
-                    buffer.write(chunk)
-            
-            file_size = destination.stat().st_size
-            logger.info(f"Saved file: {destination} ({file_size} bytes)")
-            return file_size
+            from django.core.files.storage import default_storage
+            saved_path = default_storage.save(file.name, file)
+            logger.info(f"Saved file to cloud storage: {saved_path} ({file.size} bytes)")
+            return saved_path, file.size
         except Exception as e:
-            logger.error(f"Error saving file {destination}: {str(e)}")
+            logger.error(f"Error saving file {file.name}: {str(e)}")
             raise Exception(f"Failed to save file: {str(e)}")
     
     @staticmethod
@@ -128,9 +128,9 @@ class FileService:
         if not dataset:
             return False
         
-        file_path = Path(dataset.file_path)
-        if file_path.exists():
-            file_path.unlink()
+        from django.core.files.storage import default_storage
+        if dataset.file_path and default_storage.exists(dataset.file_path):
+            default_storage.delete(dataset.file_path)
         
         dataset.delete()
         return True
@@ -141,9 +141,9 @@ class FileService:
         if not literature:
             return False
         
-        file_path = Path(literature.file_path)
-        if file_path.exists():
-            file_path.unlink()
+        from django.core.files.storage import default_storage
+        if literature.file_path and default_storage.exists(literature.file_path):
+            default_storage.delete(literature.file_path)
         
         literature.delete()
         return True

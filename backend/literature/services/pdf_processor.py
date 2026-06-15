@@ -14,10 +14,16 @@ class PDFProcessor:
     """Service for processing PDF files."""
     
     @staticmethod
-    def extract_text(file_path: Path) -> str:
+    def extract_text(file_path: str) -> str:
         try:
+            from django.core.files.storage import default_storage
+            import io
+            
+            with default_storage.open(file_path, "rb") as f:
+                file_obj = io.BytesIO(f.read())
+                
             text_content = []
-            with pdfplumber.open(file_path) as pdf:
+            with pdfplumber.open(file_obj) as pdf:
                 for page in pdf.pages:
                     # layout=False and strict x_tolerance helps preserve spaces for badly kerned PDFs
                     text = page.extract_text(x_tolerance=1)
@@ -32,9 +38,15 @@ class PDFProcessor:
             raise ValueError(f"Failed to extract text from PDF: {str(e)}")
     
     @staticmethod
-    def get_metadata(file_path: Path) -> Dict[str, Any]:
+    def get_metadata(file_path: str) -> Dict[str, Any]:
         try:
-            with pdfplumber.open(file_path) as pdf:
+            from django.core.files.storage import default_storage
+            import io
+            
+            with default_storage.open(file_path, "rb") as f:
+                file_obj = io.BytesIO(f.read())
+                
+            with pdfplumber.open(file_obj) as pdf:
                 metadata = {
                     "page_count": len(pdf.pages),
                     "title": None,
@@ -64,7 +76,7 @@ class PDFProcessor:
         return literature
     
     @staticmethod
-    def process_pdf_file(file_path: Path, literature: Literature) -> tuple[Literature, str]:
+    def process_pdf_file(file_path: str, literature: Literature) -> tuple[Literature, str]:
         try:
             literature.processing_status = ProcessingStatus.PROCESSING
             literature.save()
@@ -82,9 +94,15 @@ class PDFProcessor:
             raise
     
     @staticmethod
-    def validate_pdf(file_path: Path) -> bool:
+    def validate_pdf(file_path: str) -> bool:
         try:
-            with pdfplumber.open(file_path) as pdf:
+            from django.core.files.storage import default_storage
+            import io
+            
+            with default_storage.open(file_path, "rb") as f:
+                file_obj = io.BytesIO(f.read())
+                
+            with pdfplumber.open(file_obj) as pdf:
                 _ = len(pdf.pages)
             return True
         except Exception as e:

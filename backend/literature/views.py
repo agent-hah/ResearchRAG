@@ -50,10 +50,9 @@ class LiteratureViewSet(viewsets.ModelViewSet):
             print(f"Error deleting embeddings for literature {instance.id}: {e}")
             
         try:
-            from pathlib import Path
-            file_path = Path(instance.file_path)
-            if file_path.exists():
-                file_path.unlink()
+            from django.core.files.storage import default_storage
+            if instance.file_path and default_storage.exists(instance.file_path):
+                default_storage.delete(instance.file_path)
         except Exception as e:
             print(f"Error deleting file for literature {instance.id}: {e}")
             
@@ -62,7 +61,8 @@ class LiteratureViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
         literature = self.get_object()
-        response = FileResponse(open(literature.file_path, 'rb'), as_attachment=False, filename=literature.filename)
+        from django.core.files.storage import default_storage
+        response = FileResponse(default_storage.open(literature.file_path, 'rb'), as_attachment=False, filename=literature.filename)
         response['Access-Control-Expose-Headers'] = 'Accept-Ranges, Content-Range, Content-Encoding, Content-Length'
         return response
 
@@ -87,18 +87,16 @@ class FileUploadView(views.APIView):
             if not is_valid:
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
             
-            unique_filename = FileService.get_unique_filename(settings.UPLOAD_DIR, file.name)
-            file_path = settings.UPLOAD_DIR / unique_filename
-            file_size = FileService.save_uploaded_file(file, file_path)
+            saved_path, file_size = FileService.save_uploaded_file(file)
             
             literature = FileService.create_literature_record(
-                filename=unique_filename,
-                file_path=str(file_path),
+                filename=file.name,
+                file_path=saved_path,
                 file_size=file_size
             )
             
             # Start background thread
-            thread = threading.Thread(target=process_pdf_background, args=(literature.id, str(file_path)))
+            thread = threading.Thread(target=process_pdf_background, args=(literature.id, saved_path))
             thread.start()
             
             return Response(LiteratureSerializer(literature).data, status=status.HTTP_201_CREATED)

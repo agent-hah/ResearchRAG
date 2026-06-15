@@ -9,7 +9,9 @@ from datetime import datetime
 from tenacity import retry, wait_exponential, stop_after_attempt
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone
+import os
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from django.conf import settings
@@ -35,12 +37,12 @@ class RAGService:
             separators=["\n\n", "\n", ". ", " ", ""]
         )
         
-        self.vector_store = Chroma(
-            collection_name=settings.CHROMA_COLLECTION,
-            embedding_function=self.embeddings,
-            persist_directory=str(settings.CHROMA_DB_DIR)
+        self.vector_store = PineconeVectorStore(
+            index_name="researchrag-index",
+            embedding=self.embeddings,
+            pinecone_api_key=settings.PINECONE_API_KEY
         )
-        logger.info("RAG service initialized")
+        logger.info("RAG service initialized with Pinecone")
     
     def index_literature(self, literature: Literature, text_content: str, force_reindex: bool = False) -> Dict[str, Any]:
         try:
@@ -106,8 +108,6 @@ class RAGService:
                 
                 # Delay between batches to stretch out quota usage over the day
                 time.sleep(15.0)
-            
-            self.vector_store.persist()
             
             literature.processing_status = ProcessingStatus.INDEXED
             literature.indexing_progress = 1.0
@@ -190,13 +190,17 @@ class RAGService:
     def get_stats(self) -> Dict[str, Any]:
         try:
             indexed_count = Literature.objects.filter(processing_status=ProcessingStatus.INDEXED).count()
-            collection = self.vector_store._collection
-            total_chunks = collection.count()
+            
+            # Fetch stats directly from the Pinecone client
+            pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY", settings.PINECONE_API_KEY))
+            index = pc.Index("researchrag-index")
+            stats = index.describe_index_stats()
+            total_chunks = stats.total_vector_count
             
             return {
                 "total_indexed": indexed_count,
                 "total_chunks": total_chunks,
-                "collection_name": settings.CHROMA_COLLECTION,
+                "collection_name": "researchrag-index",
                 "embedding_model": settings.EMBEDDING_MODEL,
                 "chunk_size": settings.CHUNK_SIZE,
                 "chunk_overlap": settings.CHUNK_OVERLAP
@@ -207,12 +211,8 @@ class RAGService:
     
     def _delete_literature_chunks(self, literature_id: int):
         try:
-            collection = self.vector_store._collection
-            results = collection.get(where={"literature_id": literature_id})
-            if results and results["ids"]:
-                collection.delete(ids=results["ids"])
-                self.vector_store.persist()
-                logger.info(f"Deleted {len(results['ids'])} chunks for literature {literature_id}")
+            self.vector_store.delete(filter={"literature_id": literature_id})
+            logger.info(f"Deleted chunks for literature {literature_id}")
         except Exception as e:
             logger.error(f"Error deleting chunks for literature {literature_id}: {str(e)}")
             raise
