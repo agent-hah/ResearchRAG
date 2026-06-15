@@ -49,7 +49,7 @@ class SearchAPIService:
             if self.openalex_api_key:
                 headers["Authorization"] = f"Bearer {self.openalex_api_key}"
                 
-            response = requests.get(url, params=params, headers=headers, timeout=10)
+            response = requests.get(url, params=params, headers=headers, timeout=60)
             response.raise_for_status()
             
             data = response.json()

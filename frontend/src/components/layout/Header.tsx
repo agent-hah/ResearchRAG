@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Menu, X, Bell, Settings, HelpCircle } from 'lucide-react'
+import { Menu, X, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { HelpGuide } from './HelpGuide'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   return (
     <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
@@ -29,37 +31,20 @@ export function Header() {
         </div>
         
         <div className="flex items-center gap-x-4 lg:gap-x-6">
-          {/* Notifications */}
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
-          >
-            <span className="sr-only">View notifications</span>
-            <Bell className="h-6 w-6" aria-hidden="true" />
-          </button>
-
-          {/* Separator */}
-          <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />
-
-          {/* Settings */}
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
-          >
-            <span className="sr-only">Settings</span>
-            <Settings className="h-6 w-6" aria-hidden="true" />
-          </button>
-
           {/* Help */}
           <button
             type="button"
             className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
+            onClick={() => setHelpOpen(true)}
           >
             <span className="sr-only">Help</span>
             <HelpCircle className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
       </div>
+
+      {/* Help Guide */}
+      <HelpGuide isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
