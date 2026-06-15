@@ -1,6 +1,4 @@
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { api } from '../lib/api'
 
 export interface DocumentSuggestion {
   id: number
@@ -50,7 +48,7 @@ export const suggestionsService = {
    */
   async getGenerationStatus(datasetId?: string | number | 'global'): Promise<GenerationStatus> {
     const idParam = datasetId || 'global'
-    const response = await axios.get(`${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/status`)
+    const response = await api.get(`/query/suggestions/dataset/${idParam}/status`)
     return response.data
   },
 
@@ -62,7 +60,7 @@ export const suggestionsService = {
       ...request,
       dataset_id: request.dataset_id || 'global'
     }
-    const response = await axios.post(`${API_BASE_URL}/api/v1/query/suggestions/generate`, payload)
+    const response = await api.post(`/query/suggestions/generate`, payload)
     return response.data
   },
 
@@ -73,8 +71,8 @@ export const suggestionsService = {
     datasetId?: string | number,
     includeDismissed: boolean = false
   ): Promise<DocumentSuggestion[]> {
-    const response = await axios.get(
-      `${API_BASE_URL}/api/v1/query/suggestions/`,
+    const response = await api.get(
+      `/query/suggestions/`,
       { params: { 
           dataset_id: datasetId || 'global',
           include_dismissed: includeDismissed 
@@ -89,8 +87,8 @@ export const suggestionsService = {
    */
   async getDatasetKeywords(datasetId?: string | number): Promise<KeywordsResponse> {
     const idParam = datasetId || 'global'
-    const response = await axios.get(
-      `${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/keywords`
+    const response = await api.get(
+      `/query/suggestions/dataset/${idParam}/keywords`
     )
     return response.data
   },
@@ -102,8 +100,8 @@ export const suggestionsService = {
     suggestionId: number,
     feedback: UpdateFeedbackRequest
   ): Promise<DocumentSuggestion> {
-    const response = await axios.put(
-      `${API_BASE_URL}/api/v1/query/suggestions/${suggestionId}/feedback/`,
+    const response = await api.put(
+      `/query/suggestions/${suggestionId}/feedback/`,
       feedback
     )
     return response.data
@@ -115,9 +113,9 @@ export const suggestionsService = {
   async deleteDatasetSuggestions(datasetId?: string | number): Promise<void> {
     const idParam = datasetId || 'global'
     if (idParam === 'global') {
-      await axios.delete(`${API_BASE_URL}/api/v1/query/suggestions/global/`)
+      await api.delete(`/query/suggestions/global/`)
     } else {
-      await axios.delete(`${API_BASE_URL}/api/v1/query/suggestions/dataset/${idParam}/`)
+      await api.delete(`/query/suggestions/dataset/${idParam}/`)
     }
   },
 
@@ -125,7 +123,7 @@ export const suggestionsService = {
    * Get a specific suggestion
    */
   async getSuggestion(suggestionId: number): Promise<DocumentSuggestion> {
-    const response = await axios.get(`${API_BASE_URL}/api/v1/query/suggestions/${suggestionId}/`)
+    const response = await api.get(`/query/suggestions/${suggestionId}/`)
     return response.data
   }
 }

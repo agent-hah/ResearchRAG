@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { LiteraturePage } from './LiteraturePage'
 import { useQuery } from '@tanstack/react-query'
+import { API_BASE_URL } from '../lib/api'
 
 // Mock dependencies
 vi.mock('@tanstack/react-query', () => ({
@@ -103,7 +104,7 @@ describe('LiteraturePage', () => {
 
     // Should show PDF viewer
     expect(screen.getByTestId('pdf-viewer')).toBeInTheDocument()
-    expect(screen.getByTestId('pdf-viewer')).toHaveTextContent('/api/v1/literature/1/download/')
+    expect(screen.getByTestId('pdf-viewer')).toHaveTextContent(`${API_BASE_URL}/literature/1/download/`)
     expect(screen.getByText('test-paper.pdf')).toBeInTheDocument() // Title in viewer header
     
     // Click back

@@ -1,8 +1,14 @@
 import axios from 'axios'
 
+// 1. Check if we are in production (Vercel) and have the env variable.
+// If so, use the full Render URL. If not, use the local relative path for Vite's proxy.
+export const API_BASE_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api/v1` 
+  : '/api/v1';
+
 // Create axios instance with base configuration
 export const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE_URL,
   timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
