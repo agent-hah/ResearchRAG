@@ -7,7 +7,6 @@ import {
   Brain
 } from 'lucide-react'
 import { api } from '@/lib/api'
-import { formatDuration } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 import type { RAGStatsResponse } from '@/types'
 import { fileService } from '@/services/fileService'
@@ -126,7 +125,6 @@ export function HomePage() {
                       <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
                         <span>{query.row_count} rows</span>
                         <span>{query.literature_count} literature</span>
-                        <span>{formatDuration(query.processing_time_ms)}</span>
                       </div>
                     </div>
                   </div>

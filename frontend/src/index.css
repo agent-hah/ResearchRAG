@@ -64,6 +64,34 @@
   h4 {
     @apply text-lg;
   }
+
+  button, 
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    @apply cursor-pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input[type="button"]:disabled,
+  input[type="submit"]:disabled,
+  input[type="reset"]:disabled {
+    @apply cursor-not-allowed;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    @apply cursor-pointer;
+  }
+
+  input[type="checkbox"]:disabled,
+  input[type="radio"]:disabled,
+  select:disabled {
+    @apply cursor-not-allowed;
+  }
 }
 
 @utility btn {

@@ -16,7 +16,6 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('@/lib/utils', () => ({
-  formatDuration: vi.fn().mockReturnValue('1.5s'),
 }))
 
 vi.mock('lucide-react', () => ({
@@ -75,7 +74,6 @@ describe('HomePage', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
 
     expect(screen.getByText('test q')).toBeInTheDocument()
-    expect(screen.getByText('1.5s')).toBeInTheDocument()
 
     // Getting started should be hidden when files are present
     expect(screen.queryByText('Getting Started')).not.toBeInTheDocument()

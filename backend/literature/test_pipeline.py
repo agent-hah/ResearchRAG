@@ -17,6 +17,20 @@ class LiteraturePipelineTests(APITestCase):
             content_type="application/pdf"
         )
     
+    def tearDown(self):
+        import os
+        from django.conf import settings
+        # Clean up any dummy files created during tests
+        uploads_dir = os.path.join(settings.BASE_DIR, '..', 'data', 'uploads')
+        if os.path.exists(uploads_dir):
+            for filename in os.listdir(uploads_dir):
+                if filename.startswith("dummy_test"):
+                    try:
+                        os.remove(os.path.join(uploads_dir, filename))
+                    except OSError:
+                        pass
+        super().tearDown()
+    
     @patch('literature.views.threading.Thread')
     @patch('literature.views.PDFProcessor.process_pdf_file')
     @patch('rag.views.threading.Thread')
