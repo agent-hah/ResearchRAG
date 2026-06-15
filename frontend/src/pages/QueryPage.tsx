@@ -7,6 +7,7 @@ import { QueryHistory } from '../components/query/QueryHistory'
 import { VisualizationPanel } from '../components/visualization/VisualizationPanel'
 import { SpatialVisualizationPanel } from '../components/visualization/SpatialVisualizationPanel'
 import { queryService } from '../services/queryService'
+import { fileService } from '../services/fileService'
 import { detectSpatialData } from '../services/spatialVisualizationService'
 import type { QueryResult } from '../services/queryService'
 import type { QueryHistoryItem } from '@/types'
@@ -27,8 +28,17 @@ export function QueryPage() {
     queryFn: () => queryService.getQueryHistory(0, 20),
   })
 
+  // Fetch files to check if there is data
+  const { data: filesData } = useQuery({
+    queryKey: ['files'],
+    queryFn: fileService.listFiles,
+  })
+
   // Extract queries array from response
   const history: QueryHistoryItem[] = historyData?.queries || []
+
+  const hasData = filesData ? filesData.total_datasets > 0 || filesData.total_literature > 0 : true
+
 
   const queryClient = useQueryClient()
   
@@ -162,7 +172,7 @@ export function QueryPage() {
               </p>
             </div>
             <div className="card-content">
-              <QueryInput onSubmit={handleSubmitQuery} isLoading={isLoading} />
+              <QueryInput onSubmit={handleSubmitQuery} isLoading={isLoading} disabled={!hasData} />
             </div>
           </div>
 

@@ -93,7 +93,7 @@ describe('ExportPage', () => {
 
   it('renders queries and allows export', async () => {
     vi.mocked(useQuery).mockImplementation(({ queryKey }: any) => {
-      if (queryKey[0] === 'query-history') {
+      if (queryKey[0] === 'queryHistory') {
         return { data: { queries: [{ id: 1, query: 'test question', created_at: '2023-01-01' }] } } as any
       }
       return { data: undefined } as any
@@ -186,7 +186,7 @@ describe('ExportPage', () => {
 
   it('tests missing JSON exports', async () => {
     vi.mocked(useQuery).mockImplementation(({ queryKey }: any) => {
-      if (queryKey[0] === 'query-history') {
+      if (queryKey[0] === 'queryHistory') {
         return { data: { queries: [{ id: 1, query: 'test question', created_at: '2023-01-01' }] } } as any
       }
       if (queryKey[0] === 'notes') {
@@ -222,7 +222,7 @@ describe('ExportPage', () => {
 
     vi.mocked(useQuery).mockImplementation((opts: any) => {
       if (opts.queryKey[0] === 'files') filesQueryFn = opts.queryFn;
-      if (opts.queryKey[0] === 'query-history') queryHistoryFn = opts.queryFn;
+      if (opts.queryKey[0] === 'queryHistory') queryHistoryFn = opts.queryFn;
       if (opts.queryKey[0] === 'notes') notesQueryFn = opts.queryFn;
       return { data: undefined } as any;
     })

@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { VisualizationPanel } from './VisualizationPanel';
 import * as visualizationService from '../../services/visualizationService';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 vi.mock('../../services/visualizationService', () => ({
   detectChartType: vi.fn(),
@@ -13,8 +13,8 @@ vi.mock('../../services/visualizationService', () => ({
   exportChartCSV: vi.fn(),
 }));
 
-vi.mock('html2canvas', () => ({
-  default: vi.fn(),
+vi.mock('html-to-image', () => ({
+  toPng: vi.fn(),
 }));
 
 vi.mock('./ChartRenderer', () => ({
@@ -117,10 +117,7 @@ describe('VisualizationPanel', () => {
   });
 
   it('handles PNG export', async () => {
-    const mockCanvas = {
-      toDataURL: vi.fn().mockReturnValue('data:image/png;base64,123')
-    };
-    vi.mocked(html2canvas).mockResolvedValue(mockCanvas as any);
+    vi.mocked(toPng).mockResolvedValue('data:image/png;base64,123');
     
     // Mock URL and createElement for downloading
     const mockClick = vi.fn();
@@ -136,7 +133,7 @@ describe('VisualizationPanel', () => {
     fireEvent.click(exportPngBtn);
     
     await waitFor(() => {
-      expect(html2canvas).toHaveBeenCalled();
+      expect(toPng).toHaveBeenCalled();
       expect(mockClick).toHaveBeenCalled();
     });
     
@@ -190,7 +187,7 @@ describe('VisualizationPanel', () => {
   });
 
   it('handles export failure gracefully', async () => {
-    vi.mocked(html2canvas).mockRejectedValue(new Error('Export failed'));
+    vi.mocked(toPng).mockRejectedValue(new Error('Export failed'));
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
     render(<VisualizationPanel columns={mockColumns} rows={mockRows} />);

@@ -12,8 +12,17 @@ class QueryHistorySerializer(serializers.ModelSerializer):
         fields = ['id', 'query', 'sql_query', 'row_count', 'processing_time_ms', 'literature_count', 'created_at', 'sql_confidence', 'data_results', 'literature_context', 'synthesis']
 
     def get_literature_count(self, obj):
-        # We don't have this in the model yet, default to 0
-        return 0
+        if not obj.literature_context:
+            return 0
+            
+        valid_docs = set()
+        for chunk in obj.literature_context:
+            if chunk.get('relevance_score', 0.0) > 0.50:
+                doc_id = chunk.get('literature_id') or chunk.get('title')
+                if doc_id:
+                    valid_docs.add(doc_id)
+                    
+        return len(valid_docs)
 
 class DocumentSuggestionSerializer(serializers.ModelSerializer):
     class Meta:

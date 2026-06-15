@@ -139,7 +139,7 @@ describe('NotesCanvas', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /new note/i }));
     
-    const textarea = screen.getByPlaceholderText(/Write your note here/i);
+    const textarea = screen.getByRole('textbox', { name: /Write your note here/i });
     await userEvent.type(textarea, 'New Canvas Note Content');
     await userEvent.click(screen.getByRole('button', { name: /save note/i }));
 
@@ -174,7 +174,7 @@ describe('NotesCanvas', () => {
 
     expect(screen.getByText('Edit Note')).toBeInTheDocument();
 
-    const textarea = screen.getByPlaceholderText(/Write your note here/i);
+    const textarea = screen.getByRole('textbox', { name: /Write your note here/i });
     await userEvent.clear(textarea);
     await userEvent.type(textarea, 'Updated Canvas Note Content');
 

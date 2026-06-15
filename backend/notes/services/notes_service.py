@@ -214,3 +214,12 @@ class NotesService:
         
         queryset = queryset.order_by('-created_at')
         return list(queryset[:limit])
+
+    @staticmethod
+    def get_all_tags() -> List[str]:
+        tags = set()
+        for note in Note.objects.exclude(tags__isnull=True).exclude(tags=""):
+            for tag in note.tags.split(','):
+                if tag.strip():
+                    tags.add(tag.strip())
+        return sorted(list(tags))

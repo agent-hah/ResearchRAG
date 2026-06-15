@@ -23,6 +23,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     mutationFn: fileService.deleteDataset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['rag-stats'] })
       toast.success('Dataset deleted successfully')
     },
     onError: () => {
@@ -35,6 +36,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })
       queryClient.invalidateQueries({ queryKey: ['literature'] })
+      queryClient.invalidateQueries({ queryKey: ['rag-stats'] })
       toast.success('Literature deleted successfully')
     },
     onError: () => {
@@ -46,6 +48,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     mutationFn: fileService.reprocessDataset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })
+      queryClient.invalidateQueries({ queryKey: ['rag-stats'] })
       toast.success('Dataset reprocessing started')
     },
     onError: () => {
@@ -58,6 +61,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })
       queryClient.invalidateQueries({ queryKey: ['literature'] })
+      queryClient.invalidateQueries({ queryKey: ['rag-stats'] })
       toast.success('Literature reprocessing started')
     },
     onError: () => {

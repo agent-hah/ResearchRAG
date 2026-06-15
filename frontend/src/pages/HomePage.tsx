@@ -27,7 +27,7 @@ export function HomePage() {
   })
 
   const { data: queryHistory } = useQuery({
-    queryKey: ['query-history'],
+    queryKey: ['queryHistory'],
     queryFn: () => queryService.getQueryHistory(0, 5),
   })
 

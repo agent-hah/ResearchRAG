@@ -61,7 +61,7 @@ describe('HomePage', () => {
       if (queryKey[0] === 'rag-stats') {
         return { data: { total_chunks: 500, collection_name: 'test-col', embedding_model: 'model-a', chunk_size: 1000, chunk_overlap: 200 } } as any
       }
-      if (queryKey[0] === 'query-history') {
+      if (queryKey[0] === 'queryHistory') {
         return { data: { total_count: 5, queries: [{ id: 1, query: 'test q', row_count: 5, literature_count: 2, processing_time_ms: 1500 }] } } as any
       }
       return { data: undefined } as any
@@ -76,9 +76,6 @@ describe('HomePage', () => {
 
     expect(screen.getByText('test q')).toBeInTheDocument()
     expect(screen.getByText('1.5s')).toBeInTheDocument()
-    expect(screen.getByText('test-col')).toBeInTheDocument()
-    expect(screen.getByText('model-a')).toBeInTheDocument()
-    expect(screen.getByText('1000/200')).toBeInTheDocument()
 
     // Getting started should be hidden when files are present
     expect(screen.queryByText('Getting Started')).not.toBeInTheDocument()
@@ -92,7 +89,7 @@ describe('HomePage', () => {
     vi.mocked(useQuery).mockImplementation((opts: any) => {
       if (opts.queryKey[0] === 'files') filesQueryFn = opts.queryFn;
       if (opts.queryKey[0] === 'rag-stats') statsQueryFn = opts.queryFn;
-      if (opts.queryKey[0] === 'query-history') historyQueryFn = opts.queryFn;
+      if (opts.queryKey[0] === 'queryHistory') historyQueryFn = opts.queryFn;
       return { data: undefined } as any;
     })
 

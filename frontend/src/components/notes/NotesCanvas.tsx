@@ -213,9 +213,9 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
     if (!canvas) return;
 
     const handleNativeWheel = (e: WheelEvent) => {
+      e.preventDefault(); // Prevent browser zoom and native scroll
+
       if (e.ctrlKey || e.metaKey) {
-        e.preventDefault(); // Prevent browser zoom
-        
         const zoomFactor = Math.exp(-e.deltaY / 200);
         setView(prevView => {
           let newZoom = prevView.zoom * zoomFactor;

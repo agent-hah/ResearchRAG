@@ -191,7 +191,7 @@ describe('PDFViewer', () => {
 
     expect(screen.getByText('Add Annotation')).toBeInTheDocument();
 
-    await userEvent.type(screen.getByLabelText(/Comment \/ Note/i), 'New comment');
+    await userEvent.type(screen.getByRole('textbox', { name: /Add your thoughts/i }), 'New comment');
     await userEvent.click(screen.getByRole('button', { name: /Save/i }));
 
     await waitFor(() => {
@@ -219,7 +219,7 @@ describe('PDFViewer', () => {
 
     expect(screen.getByText('Edit Annotation')).toBeInTheDocument();
 
-    const input = await screen.findByLabelText(/Comment \/ Note/i);
+    const input = await screen.findByRole('textbox', { name: /add your thoughts/i });
     await userEvent.clear(input);
     await userEvent.type(input, 'Updated comment');
 

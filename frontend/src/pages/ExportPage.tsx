@@ -62,7 +62,7 @@ export function ExportPage() {
 
   // Fetch query history
   const { data: queryHistoryData } = useQuery({
-    queryKey: ['query-history'],
+    queryKey: ['queryHistory'],
     queryFn: () => queryService.getQueryHistory(0, 50),
   })
 

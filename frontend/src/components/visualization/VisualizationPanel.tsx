@@ -11,8 +11,7 @@ import {
   exportChartCSV,
   type ChartConfig
 } from '../../services/visualizationService'
-import html2canvas from 'html2canvas'
-
+import { toPng } from 'html-to-image'
 interface VisualizationPanelProps {
   columns: string[]
   rows: any[][]
@@ -73,17 +72,24 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
     }
   }
 
+  const getExportFilename = (extension: string) => {
+    const baseName = config.title 
+      ? config.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() 
+      : 'chart'
+    return `${baseName}.${extension}`
+  }
+
   const exportAsPNG = async () => {
     if (!chartRef.current) return
 
-    const canvas = await html2canvas(chartRef.current, {
+    const dataUrl = await toPng(chartRef.current, {
       backgroundColor: '#ffffff',
-      scale: 2
+      pixelRatio: 2
     })
 
     const link = document.createElement('a')
-    link.download = `chart-${Date.now()}.png`
-    link.href = canvas.toDataURL('image/png')
+    link.download = getExportFilename('png')
+    link.href = dataUrl
     link.click()
   }
 
@@ -91,7 +97,7 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
     const json = exportChartJSON(chartData, config)
     const blob = new Blob([json], { type: 'application/json' })
     const link = document.createElement('a')
-    link.download = `chart-${Date.now()}.json`
+    link.download = getExportFilename('json')
     link.href = URL.createObjectURL(blob)
     link.click()
   }
@@ -100,7 +106,7 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
     const csv = exportChartCSV(chartData)
     const blob = new Blob([csv], { type: 'text/csv' })
     const link = document.createElement('a')
-    link.download = `chart-${Date.now()}.csv`
+    link.download = getExportFilename('csv')
     link.href = URL.createObjectURL(blob)
     link.click()
   }

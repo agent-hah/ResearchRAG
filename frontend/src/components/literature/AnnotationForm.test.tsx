@@ -22,7 +22,7 @@ describe('AnnotationForm', () => {
     expect(screen.getByText('Add Annotation')).toBeInTheDocument();
     expect(screen.getByLabelText(/Type/i)).toHaveValue('highlight');
     expect(screen.getByLabelText(/Highlighted Text/i)).toHaveValue('');
-    expect(screen.getByLabelText(/Comment \/ Note/i)).toHaveValue('');
+    expect(screen.getByRole('textbox', { name: /Add your thoughts/i })).toHaveTextContent('');
   });
 
   it('populates initial text from window.getSelection', () => {
@@ -65,7 +65,7 @@ describe('AnnotationForm', () => {
     expect(screen.getByText('Edit Annotation')).toBeInTheDocument();
     expect(screen.getByLabelText(/Type/i)).toHaveValue('comment');
     expect(screen.getByLabelText(/Highlighted Text/i)).toHaveValue('Existing highlighted text');
-    expect(screen.getByLabelText(/Comment \/ Note/i)).toHaveValue('Existing comment');
+    expect(screen.getByRole('textbox', { name: /Add your thoughts/i })).toHaveTextContent('Existing comment');
   });
 
   it('updates form fields', async () => {
@@ -82,9 +82,9 @@ describe('AnnotationForm', () => {
     expect(highlightInput).toHaveValue('New highlighted text');
 
     // Change Content
-    const contentInput = screen.getByLabelText(/Comment \/ Note/i);
+    const contentInput = screen.getByRole('textbox', { name: /Add your thoughts/i });
     await userEvent.type(contentInput, 'New comment');
-    expect(contentInput).toHaveValue('New comment');
+    expect(contentInput).toHaveTextContent('New comment');
 
     // Change Color
     const blueColorButton = screen.getByTitle('Blue');
@@ -96,7 +96,7 @@ describe('AnnotationForm', () => {
     render(<AnnotationForm {...defaultProps} />);
 
     await userEvent.type(screen.getByLabelText(/Highlighted Text/i), 'Test highlight');
-    await userEvent.type(screen.getByLabelText(/Comment \/ Note/i), 'Test comment');
+    await userEvent.type(screen.getByRole('textbox', { name: /Add your thoughts/i }), 'Test comment');
     await userEvent.click(screen.getByRole('button', { name: /Save/i }));
 
     expect(defaultProps.onSave).toHaveBeenCalledWith({

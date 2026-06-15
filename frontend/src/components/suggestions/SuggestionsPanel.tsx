@@ -8,9 +8,10 @@ interface SuggestionsPanelProps {
   datasetIds?: number[]
   datasetNames?: string[]
   isGlobal?: boolean
+  disabled?: boolean
 }
 
-export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: SuggestionsPanelProps) {
+export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, disabled = false }: SuggestionsPanelProps) {
   const idParam = isGlobal ? 'global' : (datasetIds?.length ? datasetIds.join(',') : 'global')
   const [includeDismissed, setIncludeDismissed] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -105,8 +106,9 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: 
         <div className="flex items-center gap-2">
           <button
             onClick={handleGenerate}
-            disabled={isGenerating || generateMutation.isPending}
+            disabled={disabled || isGenerating || generateMutation.isPending}
             className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            title={disabled ? "Please upload data before generating suggestions" : ""}
           >
             <RefreshCw className={`w-4 h-4 ${(isGenerating || generateMutation.isPending) ? 'animate-spin' : ''}`} />
             {(isGenerating || generateMutation.isPending) ? 'Generating...' : 'Generate Suggestions'}
@@ -114,8 +116,19 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: 
         </div>
       </div>
 
+      {/* Blocked State */}
+      {disabled && (
+        <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300 px-4">
+          <Sparkles className="w-16 h-16 mx-auto text-gray-400 mb-4 opacity-50" />
+          <p className="text-gray-700 font-medium text-lg mb-2">Global Context Suggestions Unavailable</p>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
+            These suggestions rely on your uploaded data. Please upload at least one literature document or dataset to enable global context document suggestions.
+          </p>
+        </div>
+      )}
+
       {/* Progress Bar */}
-      {isGenerating && statusData && (
+      {!disabled && isGenerating && statusData && (
         <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
           <div className="flex justify-between text-sm mb-2">
             <span className="font-medium text-gray-700">{statusData.status}</span>
@@ -132,7 +145,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: 
 
 
       {/* Filter Toggle */}
-      {dismissedCount > 0 && (
+      {!disabled && dismissedCount > 0 && (
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIncludeDismissed(!includeDismissed)}
@@ -145,7 +158,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: 
       )}
 
       {/* Loading State */}
-      {isLoading && (
+      {!disabled && isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
@@ -156,7 +169,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: 
       )}
 
       {/* Error State */}
-      {error && (
+      {!disabled && error && (
         <div className="text-center py-8">
           <p className="text-red-600">Failed to load suggestions</p>
           <button
@@ -169,7 +182,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: 
       )}
 
       {/* Empty State */}
-      {!isLoading && !error && suggestions.length === 0 && (
+      {!disabled && !isLoading && !error && suggestions.length === 0 && (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <Sparkles className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 text-lg mb-2">No suggestions yet</p>
@@ -187,7 +200,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true }: 
       )}
 
       {/* Suggestions List */}
-      {!isLoading && !error && activeSuggestions.length > 0 && (
+      {!disabled && !isLoading && !error && activeSuggestions.length > 0 && (
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
             Showing {activeSuggestions.length} suggestion{activeSuggestions.length !== 1 ? 's' : ''}

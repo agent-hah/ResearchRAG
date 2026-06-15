@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Save } from 'lucide-react'
 import type { Annotation, AnnotationCreate } from '../../services/annotationsService'
+import { RichTextEditor } from '../common/RichTextEditor'
 
 interface AnnotationFormProps {
   literatureId: number
@@ -32,10 +33,10 @@ export function AnnotationForm({
   onSave,
   onCancel,
 }: AnnotationFormProps) {
-  const [annotationType, setAnnotationType] = useState('highlight')
-  const [content, setContent] = useState('')
-  const [highlightedText, setHighlightedText] = useState('')
-  const [color, setColor] = useState('yellow')
+  const [annotationType, setAnnotationType] = useState(editingAnnotation?.annotation_type || 'highlight')
+  const [content, setContent] = useState(editingAnnotation?.content || '')
+  const [highlightedText, setHighlightedText] = useState(editingAnnotation?.highlighted_text || '')
+  const [color, setColor] = useState(editingAnnotation?.color || 'yellow')
   const [rects, setRects] = useState<{x: number, y: number, width: number, height: number}[]>([])
 
   useEffect(() => {
@@ -144,13 +145,12 @@ export function AnnotationForm({
             <label htmlFor="annotation-content" className="block text-sm font-medium text-gray-700 mb-1">
               Comment / Note
             </label>
-            <textarea
-              id="annotation-content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <RichTextEditor
+              initialContent={content}
+              onChange={setContent}
               placeholder="Add your thoughts, comments, or notes..."
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              minHeight="100px"
+              maxHeight="250px"
             />
           </div>
 

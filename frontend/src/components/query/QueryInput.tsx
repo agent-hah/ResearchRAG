@@ -4,14 +4,16 @@ import { Send, Loader2 } from 'lucide-react'
 interface QueryInputProps {
   onSubmit: (question: string) => void
   isLoading: boolean
+  disabled?: boolean
 }
 
-export function QueryInput({ onSubmit, isLoading }: QueryInputProps) {
+export function QueryInput({ onSubmit, isLoading, disabled = false }: QueryInputProps) {
   const [question, setQuestion] = useState('')
+  const isDisabled = disabled || isLoading
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (question.trim() && !isLoading) {
+    if (question.trim() && !isDisabled) {
       onSubmit(question.trim())
     }
   }
@@ -35,14 +37,14 @@ export function QueryInput({ onSubmit, isLoading }: QueryInputProps) {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="e.g., What is the average temperature across all datasets? How does this compare to the findings in the uploaded papers?"
+            placeholder={disabled ? "Please upload at least one dataset or literature document to query your data" : "e.g., What is the average temperature across all datasets? How does this compare to the findings in the uploaded papers?"}
             className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
             rows={3}
-            disabled={isLoading}
+            disabled={isDisabled}
           />
           <button
             type="submit"
-            disabled={!question.trim() || isLoading}
+            disabled={!question.trim() || isDisabled}
             className="absolute right-2 bottom-2 p-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Submit query (Enter)"
           >
@@ -67,7 +69,7 @@ export function QueryInput({ onSubmit, isLoading }: QueryInputProps) {
               key={index}
               type="button"
               onClick={() => setQuestion(example)}
-              disabled={isLoading}
+              disabled={isDisabled}
               className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {example}

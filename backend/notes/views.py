@@ -49,6 +49,11 @@ class NoteViewSet(viewsets.ModelViewSet):
         graph_data = NotesService.get_note_graph(int(pk), depth)
         return Response(graph_data)
 
+    @action(detail=False, methods=['get'])
+    def tags(self, request):
+        tags = NotesService.get_all_tags()
+        return Response(tags)
+
     @action(detail=True, methods=['get'])
     def relationships(self, request, pk=None):
         relationships = NoteRelationship.objects.filter(note_id=pk)

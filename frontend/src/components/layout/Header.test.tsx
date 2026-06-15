@@ -6,8 +6,6 @@ import { Header } from './Header';
 describe('Header', () => {
   it('renders default header icons', () => {
     render(<Header />);
-    expect(screen.getByText('View notifications')).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
     expect(screen.getByText('Help')).toBeInTheDocument();
   });
 

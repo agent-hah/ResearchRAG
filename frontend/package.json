@@ -18,9 +18,12 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-query": "^5.100.14",
+    "@tiptap/pm": "^3.26.1",
+    "@tiptap/react": "^3.26.1",
+    "@tiptap/starter-kit": "^3.26.1",
     "axios": "^1.16.1",
     "clsx": "^2.1.1",
-    "html2canvas": "^1.4.1",
+    "html-to-image": "^1.11.13",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.17.0",
     "react": "^19.2.7",
@@ -33,7 +36,8 @@
     "react-pdf": "^10.4.1",
     "react-router-dom": "^7.16.0",
     "recharts": "^3.8.1",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "tiptap-markdown": "^0.9.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

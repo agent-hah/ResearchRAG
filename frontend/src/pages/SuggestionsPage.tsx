@@ -15,6 +15,15 @@ export function SuggestionsPage() {
     queryFn: fileService.listDatasets,
   })
 
+  // Fetch all files to check if any data is uploaded
+  const { data: filesData } = useQuery({
+    queryKey: ['files'],
+    queryFn: fileService.listFiles,
+  })
+
+  const hasData = filesData ? filesData.total_datasets > 0 || filesData.total_literature > 0 : true
+
+
   return (
     <div className="space-y-8">
       <div>
@@ -132,7 +141,7 @@ export function SuggestionsPage() {
       {isGlobal ? (
         <div className="card">
           <div className="card-content">
-            <SuggestionsPanel isGlobal={true} />
+            <SuggestionsPanel isGlobal={true} disabled={!hasData} />
           </div>
         </div>
       ) : selectedDatasetIds.length > 0 ? (

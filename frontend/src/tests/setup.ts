@@ -6,3 +6,47 @@ import { afterEach } from 'vitest';
 afterEach(() => {
   cleanup();
 });
+
+// Mock getClientRects for Prosemirror/Tiptap in JSDOM
+if (typeof window !== 'undefined' && typeof window.Range !== 'undefined') {
+  window.Range.prototype.getClientRects = function () {
+    return [] as unknown as DOMRectList;
+  };
+  window.Range.prototype.getBoundingClientRect = function () {
+    return {
+      bottom: 0,
+      height: 0,
+      left: 0,
+      right: 0,
+      top: 0,
+      width: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => {}
+    } as DOMRect;
+  };
+}
+
+// Mock getBoundingClientRect
+if (typeof window !== 'undefined' && typeof window.Element !== 'undefined') {
+  window.Element.prototype.getBoundingClientRect = function () {
+    return {
+      bottom: 0,
+      height: 0,
+      left: 0,
+      right: 0,
+      top: 0,
+      width: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => {}
+    } as DOMRect;
+  };
+}
+
+// Mock elementFromPoint and caretPositionFromPoint
+if (typeof document !== 'undefined') {
+  document.elementFromPoint = function () { return null; };
+  // @ts-ignore
+  document.caretPositionFromPoint = function () { return null; };
+}

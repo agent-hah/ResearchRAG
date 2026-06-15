@@ -89,6 +89,14 @@ export const notesService = {
   },
 
   /**
+   * Get all unique tags
+   */
+  async getTags(): Promise<string[]> {
+    const response = await api.get('/notes/notes/tags/')
+    return response.data
+  },
+
+  /**
    * Get a specific note
    */
   async getNote(noteId: number): Promise<Note> {

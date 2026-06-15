@@ -17,7 +17,7 @@ class QueryHistory(TimeStampedModel):
         return f"<QueryHistory(id={self.id}, query='{self.query_text[:50]}...')>"
 
 class DocumentSuggestion(TimeStampedModel):
-    dataset = models.ForeignKey('rag.Dataset', on_delete=models.SET_NULL, null=True, blank=True, related_name='suggestions')
+    dataset = models.ForeignKey('rag.Dataset', on_delete=models.CASCADE, null=True, blank=True, related_name='suggestions')
     title = models.CharField(max_length=500)
     authors = models.TextField(null=True, blank=True)
     publication_year = models.IntegerField(null=True, blank=True)

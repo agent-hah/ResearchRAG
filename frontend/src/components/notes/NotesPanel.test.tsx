@@ -170,7 +170,7 @@ describe('NotesPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: /new note/i }));
     
     // Type in editor
-    const textarea = screen.getByPlaceholderText(/Write your note here/i);
+    const textarea = screen.getByRole('textbox', { name: /Write your note here/i });
     await userEvent.type(textarea, 'New Note Content');
 
     await userEvent.click(screen.getByRole('button', { name: /save note/i }));
@@ -206,7 +206,7 @@ describe('NotesPanel', () => {
 
     expect(screen.getByText('Edit Note')).toBeInTheDocument();
 
-    const textarea = screen.getByPlaceholderText(/Write your note here/i);
+    const textarea = screen.getByRole('textbox', { name: /Write your note here/i });
     await userEvent.clear(textarea);
     await userEvent.type(textarea, 'Updated Note 1 content');
 
