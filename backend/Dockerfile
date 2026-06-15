@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy the environment.yml from the root directory to the container
 # (Assuming Docker build context is the root or backend, adjust paths if necessary)
-COPY ../environment.yml .
+COPY environment.yml .
 
 # Create the Conda environment
 RUN conda env create -f environment.yml
