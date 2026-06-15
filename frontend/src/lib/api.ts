@@ -10,17 +10,20 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 120000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // If sending FormData, remove Content-Type header to let browser set it with boundary
-    if (config.data instanceof FormData) {
-      delete config.headers['Content-Type']
+    // If sending FormData, ensure Content-Type is not set so the browser can add the boundary
+    if (config.data instanceof FormData && config.headers) {
+      if (typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type')
+        config.headers.delete('content-type')
+      } else {
+        delete config.headers['Content-Type']
+        delete config.headers['content-type']
+      }
     }
     
     // Add any auth headers here if needed in the future

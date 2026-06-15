@@ -22,7 +22,7 @@ export function HomePage() {
 
   const { data: ragStats } = useQuery({
     queryKey: ['rag-stats'],
-    queryFn: () => api.get<RAGStatsResponse>('/rag/stats').then(res => res.data),
+    queryFn: () => api.get<RAGStatsResponse>('/rag/stats/').then(res => res.data),
   })
 
   const { data: queryHistory } = useQuery({

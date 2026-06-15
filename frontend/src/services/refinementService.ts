@@ -1,7 +1,5 @@
-import axios from 'axios'
+import { api } from '@/lib/api'
 import type { ChartConfig } from './visualizationService'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface RefinementRequest {
   command: string
@@ -26,7 +24,7 @@ export const refinementService = {
     command: string,
     currentConfig: ChartConfig
   ): Promise<RefinementResponse> {
-    const response = await axios.post(`${API_BASE_URL}/api/refinement/refine`, {
+    const response = await api.post('/refinement/refine/', {
       command,
       current_config: currentConfig
     })
@@ -40,7 +38,7 @@ export const refinementService = {
     chartType: string,
     dataSummary: Record<string, any> = {}
   ): Promise<string[]> {
-    const response = await axios.post(`${API_BASE_URL}/api/refinement/suggestions`, {
+    const response = await api.post('/refinement/suggestions/', {
       chart_type: chartType,
       data_summary: dataSummary
     })

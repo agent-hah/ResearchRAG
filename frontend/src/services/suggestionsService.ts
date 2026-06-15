@@ -48,7 +48,7 @@ export const suggestionsService = {
    */
   async getGenerationStatus(datasetId?: string | number | 'global'): Promise<GenerationStatus> {
     const idParam = datasetId || 'global'
-    const response = await api.get(`/query/suggestions/dataset/${idParam}/status`)
+    const response = await api.get(`/query/suggestions/dataset/${idParam}/status/`)
     return response.data
   },
 
@@ -60,7 +60,7 @@ export const suggestionsService = {
       ...request,
       dataset_id: request.dataset_id || 'global'
     }
-    const response = await api.post(`/query/suggestions/generate`, payload)
+    const response = await api.post(`/query/suggestions/generate/`, payload)
     return response.data
   },
 
