@@ -28,7 +28,7 @@ dependencies:
       # Utilities & Data
       - plotly==5.18.0
       - pydantic==2.13.4
-      - python-dotenv==1.0.1
+      - django-environ
       - python-multipart==0.0.6
       - requests==2.34.2
       
