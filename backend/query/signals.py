@@ -34,7 +34,7 @@ def trigger_global_suggestion_generation():
         try:
             service = DocumentSuggestionService()
             service.generate_suggestions_for_dataset(
-                dataset_id=None,
+                dataset_ids=None,
             )
         except Exception as e:
             logger.error(f"Error in automated suggestion generation: {e}")
