@@ -65,11 +65,9 @@ describe('VisualizationPage', () => {
     fireEvent.click(screen.getByText('-- Select a dataset --'))
     fireEvent.click(screen.getByText('data1.csv (100 rows)'))
     
-    // Now chart tab should be visible
-    expect(screen.getByText('Chart')).toBeInTheDocument()
   })
 
-  it('loads and renders chart data when chart tab is active', () => {
+  it('loads and renders chart data when dataset is selected', () => {
     vi.mocked(useQuery).mockImplementation(({ queryKey }: any) => {
       if (queryKey[0] === 'datasets') {
         return { data: [{ id: 1, filename: 'data1.csv', row_count: 100 }], isLoading: false } as any

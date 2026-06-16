@@ -6,7 +6,6 @@ import { VisualizationPanel } from '../components/visualization/VisualizationPan
 
 export function VisualizationPage() {
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(null)
-  const [activeTab, setActiveTab] = useState<'chart'>('chart')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -30,7 +29,7 @@ export function VisualizationPage() {
   const { data: vizData, isLoading: vizLoading, error: vizError } = useQuery({
     queryKey: ['dataset-viz', selectedDatasetId],
     queryFn: () => fileService.getDatasetVizData(selectedDatasetId!, 1000),
-    enabled: selectedDatasetId !== null && activeTab === 'chart',
+    enabled: selectedDatasetId !== null,
   })
 
   const chartColumns = vizData?.columns || []
@@ -108,40 +107,20 @@ export function VisualizationPage() {
 
       {selectedDatasetId && (
         <div className="card">
-          <div className="border-b border-gray-200 px-6 pt-4">
-            <div className="flex space-x-8">
-              <button
-                onClick={() => setActiveTab('chart')}
-                className={`pb-4 flex items-center space-x-2 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'chart'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Chart</span>
-              </button>
-            </div>
-          </div>
-          
           <div className="p-6">
-            {activeTab === 'chart' && (
-              <>
-                {vizLoading && (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="loading-spinner h-8 w-8" />
-                    <span className="ml-3 text-gray-600">Loading chart data...</span>
-                  </div>
-                )}
-                {vizError && (
-                  <div className="text-center py-12">
-                    <p className="text-red-600">Failed to load chart data</p>
-                  </div>
-                )}
-                {vizData && chartColumns.length > 0 && chartRows.length > 0 && (
-                  <VisualizationPanel columns={chartColumns} rows={chartRows} />
-                )}
-              </>
+            {vizLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="loading-spinner h-8 w-8" />
+                <span className="ml-3 text-gray-600">Loading chart data...</span>
+              </div>
+            )}
+            {vizError && (
+              <div className="text-center py-12">
+                <p className="text-red-600">Failed to load chart data</p>
+              </div>
+            )}
+            {vizData && chartColumns.length > 0 && chartRows.length > 0 && (
+              <VisualizationPanel columns={chartColumns} rows={chartRows} />
             )}
           </div>
         </div>
