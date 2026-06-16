@@ -4,9 +4,8 @@ from unittest.mock import patch, MagicMock
 from query.services.viz_service import VizService
 
 def test_get_viz_data_not_found():
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=None):
-        with pytest.raises(ValueError, match="Dataset 1 not found"):
-            VizService.get_viz_data(1)
+    with pytest.raises(ValueError, match="Dataset not provided"):
+        VizService.get_viz_data(None)
 
 def test_get_viz_data_already_processed():
     mock_dataset = MagicMock()
@@ -27,11 +26,10 @@ def test_get_viz_data_already_processed():
         {"id": 2, "name": "B", "date": "2023-01-02", "is_active": False}
     ]
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows), \
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows), \
          patch('query.services.viz_service.CSVProcessor.get_table_schema', return_value=mock_schema):
          
-        res = VizService.get_viz_data(1)
+        res = VizService.get_viz_data(mock_dataset)
         assert res["dataset_id"] == 1
         assert "id" in res["columns"]
         assert res["column_types"]["id"] == "numeric"
@@ -46,13 +44,12 @@ def test_get_viz_data_needs_processing():
     mock_dataset.row_count = 0
     mock_dataset.file_path = "/tmp/fake.csv"
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.Path.exists', return_value=True), \
+    with patch('query.services.viz_service.Path.exists', return_value=True), \
          patch('query.services.viz_service.CSVProcessor.process_csv_file', return_value=mock_dataset), \
          patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=[]), \
          patch('query.services.viz_service.CSVProcessor.get_table_schema', return_value=[]):
          
-        res = VizService.get_viz_data(1)
+        res = VizService.get_viz_data(mock_dataset)
         assert res["dataset_id"] == 1
 
 def test_get_viz_data_needs_processing_file_missing():
@@ -62,25 +59,22 @@ def test_get_viz_data_needs_processing_file_missing():
     mock_dataset.row_count = 0
     mock_dataset.file_path = "/tmp/fake.csv"
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.Path.exists', return_value=False):
+    with patch('query.services.viz_service.Path.exists', return_value=False):
          
         with pytest.raises(ValueError, match="File not found on disk"):
-            VizService.get_viz_data(1)
+            VizService.get_viz_data(mock_dataset)
 
 def test_get_spatial_data_not_found():
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=None):
-        with pytest.raises(ValueError, match="Dataset 1 not found"):
-            VizService.get_spatial_data(1)
+    with pytest.raises(ValueError, match="Dataset not provided"):
+        VizService.get_spatial_data(None)
 
 def test_get_spatial_data_no_rows():
     mock_dataset = MagicMock()
     mock_dataset.table_name = "test"
     mock_dataset.row_count = 10
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=[]):
-        res = VizService.get_spatial_data(1)
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=[]):
+        res = VizService.get_spatial_data(mock_dataset)
         assert not res["is_spatial"]
 
 def test_get_spatial_data_exact_match():
@@ -93,9 +87,8 @@ def test_get_spatial_data_exact_match():
         {"latitude": 46.0, "longitude": -91.0, "label": "B", "val": 20}
     ]
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
-        res = VizService.get_spatial_data(1)
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
+        res = VizService.get_spatial_data(mock_dataset)
         assert res["is_spatial"]
         assert res["lat_column"] == "latitude"
         assert res["lng_column"] == "longitude"
@@ -114,9 +107,8 @@ def test_get_spatial_data_fallback_match():
         {"col1": 46.0, "col2": -91.0}
     ]
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
-        res = VizService.get_spatial_data(1)
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
+        res = VizService.get_spatial_data(mock_dataset)
         assert res["is_spatial"]
         assert res["lat_column"] == "col1"
         assert res["lng_column"] == "col2"
@@ -131,9 +123,8 @@ def test_get_spatial_data_missing_data():
         {"latitude": 46.0, "longitude": -91.0, "label": "B"}
     ]
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
-        res = VizService.get_spatial_data(1)
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
+        res = VizService.get_spatial_data(mock_dataset)
         assert res["is_spatial"]
         assert len(res["points"]) == 1 # First one skipped
         
@@ -144,11 +135,10 @@ def test_get_spatial_data_needs_processing_file_missing():
     mock_dataset.row_count = 0
     mock_dataset.file_path = "/tmp/fake.csv"
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.Path.exists', return_value=False):
+    with patch('query.services.viz_service.Path.exists', return_value=False):
          
         with pytest.raises(ValueError, match="File not found on disk"):
-            VizService.get_spatial_data(1)
+            VizService.get_spatial_data(mock_dataset)
 
 def test_get_spatial_data_not_spatial():
     mock_dataset = MagicMock()
@@ -160,9 +150,8 @@ def test_get_spatial_data_not_spatial():
         {"col1": "C", "col2": "D"}
     ]
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
-        res = VizService.get_spatial_data(1)
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
+        res = VizService.get_spatial_data(mock_dataset)
         assert not res["is_spatial"]
 
 def test_get_viz_data_datetime_and_error():
@@ -187,12 +176,11 @@ def test_get_viz_data_datetime_and_error():
     
     mock_rows = df.to_dict('records')
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows), \
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows), \
          patch('query.services.viz_service.CSVProcessor.get_table_schema', return_value=mock_schema), \
          patch('pandas.DataFrame', return_value=df):
          
-        res = VizService.get_viz_data(1)
+        res = VizService.get_viz_data(mock_dataset)
         assert res["column_types"]["real_date"] == "datetime"
         assert res["column_types"]["str_date"] == "datetime"
         assert res["column_types"]["bad_date"] == "categorical"
@@ -208,12 +196,11 @@ def test_get_spatial_data_needs_processing():
         {"latitude": 45.0, "longitude": -90.0, "label": "A"}
     ]
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.Path.exists', return_value=True), \
+    with patch('query.services.viz_service.Path.exists', return_value=True), \
          patch('query.services.viz_service.CSVProcessor.process_csv_file', return_value=mock_dataset), \
          patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
          
-        res = VizService.get_spatial_data(1)
+        res = VizService.get_spatial_data(mock_dataset)
         assert res["is_spatial"]
 
 def test_get_spatial_data_exception_in_row():
@@ -225,8 +212,7 @@ def test_get_spatial_data_exception_in_row():
         {"latitude": "invalid", "longitude": -90.0, "label": "A"} # Will cause float() to raise exception
     ]
     
-    with patch('query.services.viz_service.FileService.get_dataset_by_id', return_value=mock_dataset), \
-         patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
-        res = VizService.get_spatial_data(1)
+    with patch('query.services.viz_service.CSVProcessor.get_table_preview', return_value=mock_rows):
+        res = VizService.get_spatial_data(mock_dataset)
         assert res["is_spatial"]
         assert len(res["points"]) == 0

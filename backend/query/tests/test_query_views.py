@@ -561,8 +561,9 @@ class TestExecuteSQLServiceContract:
         mock_cursor.description = [("id",), ("name",)]
         mock_cursor.fetchall.return_value = [(1, "Alice"), (2, "Bob")]
 
-        service = QueryService()
-        result = service.execute_sql("SELECT id, name FROM dataset_1")
+        with patch.object(QueryService, "get_database_schema", return_value=[{"table_name": "dataset_1"}]):
+            service = QueryService()
+            result = service.execute_sql("SELECT id, name FROM dataset_1")
 
         assert result["row_count"] == 2
         assert result["columns"] == ["id", "name"]
@@ -584,8 +585,9 @@ class TestExecuteSQLServiceContract:
         mock_cursor.description = [("id",), ("name",)]
         mock_cursor.fetchall.return_value = []
 
-        service = QueryService()
-        result = service.execute_sql("SELECT id, name FROM dataset_1")
+        with patch.object(QueryService, "get_database_schema", return_value=[{"table_name": "dataset_1"}]):
+            service = QueryService()
+            result = service.execute_sql("SELECT id, name FROM dataset_1")
 
         assert "columns" in result
         assert result["columns"] == ["id", "name"]
