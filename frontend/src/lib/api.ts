@@ -10,16 +10,25 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 120000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 })
 
 // Get or create anonymous user ID
 export const getUserId = (): string => {
-  let userId = localStorage.getItem('user_id')
-  if (!userId) {
-    userId = crypto.randomUUID ? crypto.randomUUID() : 'user_' + Math.random().toString(36).substring(2, 15)
-    localStorage.setItem('user_id', userId)
+  let userId: string | null = null;
+  if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.getItem === 'function') {
+    userId = window.localStorage.getItem('user_id');
   }
-  return userId
+  
+  if (!userId) {
+    userId = crypto.randomUUID ? crypto.randomUUID() : 'user_' + Math.random().toString(36).substring(2, 15);
+    if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.setItem === 'function') {
+      window.localStorage.setItem('user_id', userId);
+    }
+  }
+  return userId;
 }
 
 // Request interceptor

@@ -1,3 +1,4 @@
+import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -5,12 +6,20 @@ import { Header } from './Header';
 
 describe('Header', () => {
   it('renders default header icons', () => {
-    render(<Header />);
+    render(
+      <BrowserRouter>
+        <Header />
+      </BrowserRouter>
+    );
     expect(screen.getByText('Help')).toBeInTheDocument();
   });
 
   it('toggles mobile menu', () => {
-    render(<Header />);
+    render(
+      <BrowserRouter>
+        <Header />
+      </BrowserRouter>
+    );
     
     // Initially mobile menu is closed (no "Menu" text, only the text inside buttons)
     expect(screen.queryByText('Menu')).not.toBeInTheDocument();
