@@ -97,7 +97,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
         try:
             from query.services.viz_service import VizService
             limit = int(request.query_params.get('limit', 1000))
-            data = VizService.get_viz_data(dataset.id, limit)
+            data = VizService.get_viz_data(dataset, limit)
             return Response(data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -108,7 +108,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
         try:
             from query.services.viz_service import VizService
             limit = int(request.query_params.get('limit', 1000))
-            data = VizService.get_spatial_data(dataset.id, limit)
+            data = VizService.get_spatial_data(dataset, limit)
             return Response(data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

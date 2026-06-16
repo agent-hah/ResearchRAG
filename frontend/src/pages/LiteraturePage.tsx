@@ -4,6 +4,7 @@ import { FileText, ArrowLeft } from 'lucide-react'
 import { fileService } from '../services/fileService'
 import { PDFViewer } from '../components/literature/PDFViewer'
 import { API_BASE_URL } from '../lib/api'
+import { getUserId } from '../lib/api'
 import type { Literature } from '@/types'
 
 export function LiteraturePage() {
@@ -25,7 +26,7 @@ export function LiteraturePage() {
 
   // If a literature is selected, show the PDF viewer
   if (selectedLiterature) {
-    const fileUrl = `${API_BASE_URL}/literature/${selectedLiterature.id}/download/`
+    const fileUrl = `${API_BASE_URL}/literature/${selectedLiterature.id}/download/?user_id=${getUserId()}`
     
     return (
       <div className="h-full flex flex-col">

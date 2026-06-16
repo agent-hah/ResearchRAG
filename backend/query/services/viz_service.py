@@ -16,20 +16,19 @@ class VizService:
     """Service for processing data for visualizations."""
     
     @staticmethod
-    def get_viz_data(dataset_id: int, limit: int = 1000) -> Dict[str, Any]:
+    def get_viz_data(dataset: Any, limit: int = 1000) -> Dict[str, Any]:
         """
         Get data for visualization from a dataset.
         
         Args:
-            dataset_id: ID of the dataset
+            dataset: The Dataset object
             limit: Maximum number of rows to retrieve
             
         Returns:
             Dictionary with columns and row data
         """
-        dataset = FileService.get_dataset_by_id(dataset_id)
         if not dataset:
-            raise ValueError(f"Dataset {dataset_id} not found")
+            raise ValueError("Dataset not provided")
             
         if not dataset.table_name or dataset.row_count == 0:
             # Try to process it if not already processed
@@ -37,7 +36,7 @@ class VizService:
             if not file_path.exists():
                 raise ValueError(f"File not found on disk: {dataset.file_path}")
             
-            logger.info(f"Dataset {dataset_id} not yet processed, processing now...")
+            logger.info(f"Dataset {dataset.id} not yet processed, processing now...")
             dataset = CSVProcessor.process_csv_file(file_path, dataset)
             
         # Get data from table
@@ -85,13 +84,12 @@ class VizService:
         }
 
     @staticmethod
-    def get_spatial_data(dataset_id: int, limit: int = 1000) -> Dict[str, Any]:
+    def get_spatial_data(dataset: Any, limit: int = 1000) -> Dict[str, Any]:
         """
         Extract geographic data from a dataset.
         """
-        dataset = FileService.get_dataset_by_id(dataset_id)
         if not dataset:
-            raise ValueError(f"Dataset {dataset_id} not found")
+            raise ValueError("Dataset not provided")
             
         if not dataset.table_name or dataset.row_count == 0:
             file_path = Path(dataset.file_path)
@@ -180,7 +178,7 @@ class VizService:
         logger.info(f"Extracted {len(points)} spatial points")
         
         return {
-            "dataset_id": dataset_id,
+            "dataset_id": dataset.id,
             "is_spatial": True,
             "lat_column": lat_col,
             "lng_column": lng_col,

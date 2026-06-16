@@ -12,8 +12,9 @@ class UserIsolationMiddleware:
 
     def __call__(self, request):
         # Extract X-User-ID from headers
-        # Django converts headers like X-User-ID to HTTP_X_USER_ID
         user_id = request.META.get('HTTP_X_USER_ID')
+        if not user_id:
+            user_id = request.GET.get('user_id')
         
         if not user_id:
             user_id = 'default'
