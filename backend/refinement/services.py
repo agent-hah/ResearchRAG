@@ -8,6 +8,7 @@ import json
 from typing import Dict, Any, List, Optional
 from google import genai
 from google.genai import types
+from google.genai import errors
 from django.conf import settings
 import logging
 
@@ -25,7 +26,38 @@ class RefinementService:
             types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
             types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE")
         ]
-        self.model_name = 'gemma-4-26b-a4b-it'
+        self.model_name = settings.GEMINI_MODEL
+        
+    def _generate_with_fallback(self, prompt: str) -> str:
+        """Generate content with fallback logic for rate limits."""
+        config = types.GenerateContentConfig(
+            system_instruction=self.system_instruction,
+            safety_settings=self.safety_settings,
+        )
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=config
+            )
+            return response.text
+        except errors.APIError as e:
+            if getattr(e, 'code', None) == 429 or "429" in str(e):
+                logger.warning(f"Rate limit hit on {self.model_name}, trying fallbacks")
+                for fallback_model in ["gemini-3.1-flash-lite", "gemma-4-26b-a4b-it"]:
+                    try:
+                        fallback_response = self.client.models.generate_content(
+                            model=fallback_model,
+                            contents=prompt,
+                            config=config
+                        )
+                        return fallback_response.text
+                    except errors.APIError as fallback_e:
+                        if getattr(fallback_e, 'code', None) == 429 or "429" in str(fallback_e):
+                            logger.warning(f"Rate limit hit on fallback {fallback_model}")
+                            continue
+                        raise fallback_e
+            raise
     
     def parse_refinement_command(
         self,
@@ -44,17 +76,10 @@ class RefinementService:
         """
         try:
             prompt = self._build_refinement_prompt(command, current_config)
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_instruction,
-                    safety_settings=self.safety_settings,
-                )
-            )
+            response_text = self._generate_with_fallback(prompt)
             
             # Extract JSON from response
-            response_text = response.text.strip()
+            response_text = response_text.strip()
             
             # Remove markdown code blocks if present
             if response_text.startswith('```json'):
