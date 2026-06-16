@@ -2,6 +2,7 @@ from django.db import models
 from literature.models import TimeStampedModel
 
 class Note(TimeStampedModel):
+    user_id = models.CharField(max_length=255, default='default', db_index=True)
     title = models.CharField(max_length=255, default='Untitled Note')
     content = models.TextField()
     tags = models.CharField(max_length=512, null=True, blank=True)
@@ -29,6 +30,7 @@ class EntityType(models.TextChoices):
     VISUALIZATION = 'visualization', 'Visualization'
 
 class NoteRelationship(TimeStampedModel):
+    user_id = models.CharField(max_length=255, default='default', db_index=True)
     note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name='relationships')
     target_type = models.CharField(max_length=20, choices=EntityType.choices)
     target_id = models.IntegerField()

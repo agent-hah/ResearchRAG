@@ -65,13 +65,15 @@ class FileService:
         return unique_filename
     
     @staticmethod
-    def save_uploaded_file(file: UploadedFile) -> Tuple[str, int]:
+    def save_uploaded_file(file: UploadedFile, user_id: str) -> Tuple[str, int]:
         """
-        Save uploaded file to default storage.
+        Save uploaded file to default storage, scoped to user_id.
         """
         try:
             from django.core.files.storage import default_storage
-            saved_path = default_storage.save(file.name, file)
+            # Prepend user_id to file path to prevent collisions between users
+            file_path = f"{user_id}/{file.name}"
+            saved_path = default_storage.save(file_path, file)
             logger.info(f"Saved file to cloud storage: {saved_path} ({file.size} bytes)")
             return saved_path, file.size
         except Exception as e:
@@ -79,7 +81,7 @@ class FileService:
             raise Exception(f"Failed to save file: {str(e)}")
     
     @staticmethod
-    def create_dataset_record(filename: str, file_path: str, file_size: int) -> Dataset:
+    def create_dataset_record(filename: str, file_path: str, file_size: int, user_id: str) -> Dataset:
         base_name = filename.rsplit('.', 1)[0]
         sanitized = re.sub(r'[^\w]+', '_', base_name.lower())
         timestamp = int(time.time() * 1000)
@@ -90,41 +92,43 @@ class FileService:
             filename=filename,
             file_path=file_path,
             file_size_bytes=file_size,
-            table_name=table_name
+            table_name=table_name,
+            user_id=user_id
         )
         logger.info(f"Created dataset record: {dataset.id} - {filename}")
         return dataset
     
     @staticmethod
-    def create_literature_record(filename: str, file_path: str, file_size: int) -> Literature:
+    def create_literature_record(filename: str, file_path: str, file_size: int, user_id: str) -> Literature:
         literature = Literature.objects.create(
             filename=filename,
             file_path=file_path,
             file_size=file_size,
-            processing_status=ProcessingStatus.PENDING
+            processing_status=ProcessingStatus.PENDING,
+            user_id=user_id
         )
         logger.info(f"Created literature record: {literature.id} - {filename}")
         return literature
     
     @staticmethod
-    def get_all_datasets():
-        return Dataset.objects.all().order_by('-created_at')
+    def get_all_datasets(user_id: str):
+        return Dataset.objects.filter(user_id=user_id).order_by('-created_at')
     
     @staticmethod
-    def get_all_literature():
-        return Literature.objects.all().order_by('-created_at')
+    def get_all_literature(user_id: str):
+        return Literature.objects.filter(user_id=user_id).order_by('-created_at')
     
     @staticmethod
-    def get_dataset_by_id(dataset_id: int) -> Optional[Dataset]:
-        return Dataset.objects.filter(id=dataset_id).first()
+    def get_dataset_by_id(dataset_id: int, user_id: str) -> Optional[Dataset]:
+        return Dataset.objects.filter(id=dataset_id, user_id=user_id).first()
     
     @staticmethod
-    def get_literature_by_id(literature_id: int) -> Optional[Literature]:
-        return Literature.objects.filter(id=literature_id).first()
+    def get_literature_by_id(literature_id: int, user_id: str) -> Optional[Literature]:
+        return Literature.objects.filter(id=literature_id, user_id=user_id).first()
     
     @staticmethod
-    def delete_dataset(dataset_id: int) -> bool:
-        dataset = FileService.get_dataset_by_id(dataset_id)
+    def delete_dataset(dataset_id: int, user_id: str) -> bool:
+        dataset = FileService.get_dataset_by_id(dataset_id, user_id)
         if not dataset:
             return False
         
@@ -136,8 +140,8 @@ class FileService:
         return True
     
     @staticmethod
-    def delete_literature(literature_id: int) -> bool:
-        literature = FileService.get_literature_by_id(literature_id)
+    def delete_literature(literature_id: int, user_id: str) -> bool:
+        literature = FileService.get_literature_by_id(literature_id, user_id)
         if not literature:
             return False
         

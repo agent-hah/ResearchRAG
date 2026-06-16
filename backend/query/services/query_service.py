@@ -64,7 +64,8 @@ def _extract_response_text(response) -> str:
 class QueryService:
     """Service for processing natural language queries."""
     
-    def __init__(self):
+    def __init__(self, user_id: str = 'default'):
+        self.user_id = user_id
         self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
         self.system_instruction = "You are a helpful research assistant. Respond safely and accurately without generating harmful content."
         self.safety_settings = [
@@ -79,7 +80,7 @@ class QueryService:
     def get_database_schema(self) -> List[Dict[str, Any]]:
         try:
             schemas = []
-            datasets = Dataset.objects.exclude(table_name__isnull=True).exclude(table_name__exact='')
+            datasets = Dataset.objects.filter(user_id=self.user_id).exclude(table_name__isnull=True).exclude(table_name__exact='')
             
             for dataset in datasets:
                 try:
@@ -247,7 +248,7 @@ RESPONSE FORMAT (JSON ONLY):
             if max_results <= 0:
                 return []
             
-            rag_service = get_rag_service()
+            rag_service = get_rag_service(self.user_id)
             results = rag_service.search_literature(query=query, top_k=max_results, literature_ids=literature_ids)
             
             context = []
@@ -362,6 +363,7 @@ Respond with valid JSON only:
     def save_query_history(self, query: str, sql_query: str, row_count: int, processing_time_ms: float, sql_confidence: float = None, data_results: dict = None, literature_context: list = None, synthesis: dict = None) -> QueryHistory:
         try:
             history = QueryHistory.objects.create(
+                user_id=self.user_id,
                 query_text=query,
                 sql_query=sql_query,
                 result_count=row_count,
@@ -379,8 +381,8 @@ Respond with valid JSON only:
     def get_query_history(self, page: int = 1, page_size: int = 20) -> Tuple[List[QueryHistory], int]:
         try:
             offset = (page - 1) * page_size
-            queries = list(QueryHistory.objects.order_by('-created_at')[offset:offset+page_size])
-            total_count = QueryHistory.objects.count()
+            queries = list(QueryHistory.objects.filter(user_id=self.user_id).order_by('-created_at')[offset:offset+page_size])
+            total_count = QueryHistory.objects.filter(user_id=self.user_id).count()
             return queries, total_count
         except Exception as e:
             logger.error(f"Error getting query history: {str(e)}")
@@ -401,10 +403,10 @@ Respond with valid JSON only:
             context += "\n"
         return context
 
-_query_service_instance = None
+_query_service_instances = {}
 
-def get_query_service() -> QueryService:
-    global _query_service_instance
-    if _query_service_instance is None:
-        _query_service_instance = QueryService()
-    return _query_service_instance
+def get_query_service(user_id: str = 'default') -> QueryService:
+    global _query_service_instances
+    if user_id not in _query_service_instances:
+        _query_service_instances[user_id] = QueryService(user_id)
+    return _query_service_instances[user_id]

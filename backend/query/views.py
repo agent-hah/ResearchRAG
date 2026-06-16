@@ -27,12 +27,13 @@ class DatasetUploadView(views.APIView):
         if not is_valid:
             return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         
-        saved_path, file_size = FileService.save_uploaded_file(file)
+        saved_path, file_size = FileService.save_uploaded_file(file, request.user_id)
         
         dataset = FileService.create_dataset_record(
             filename=file.name,
             file_path=saved_path,
-            file_size=file_size
+            file_size=file_size,
+            user_id=request.user_id
         )
         
         thread = threading.Thread(target=process_csv_background, args=(dataset.id, saved_path))
@@ -43,8 +44,10 @@ class DatasetUploadView(views.APIView):
 from rag.serializers import DatasetSerializer
 
 class DatasetViewSet(viewsets.ModelViewSet):
-    queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
+
+    def get_queryset(self):
+        return Dataset.objects.filter(user_id=self.request.user_id).order_by('-created_at')
 
     def perform_destroy(self, instance):
         try:
@@ -112,7 +115,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
 class DatabaseSchemaView(views.APIView):
     def get(self, request):
-        query_service = get_query_service()
+        query_service = get_query_service(request.user_id)
         schemas = query_service.get_database_schema()
         return Response(schemas)
 
@@ -122,13 +125,15 @@ class ExecuteSQLView(views.APIView):
         if not sql:
             return Response({"error": "No SQL query provided"}, status=status.HTTP_400_BAD_REQUEST)
         
-        query_service = get_query_service()
+        query_service = get_query_service(request.user_id)
         result = query_service.execute_sql(sql)
         return Response(result)
 
 class QueryHistoryViewSet(viewsets.ModelViewSet):
-    queryset = QueryHistory.objects.all().order_by('-created_at')
     serializer_class = QueryHistorySerializer
+
+    def get_queryset(self):
+        return QueryHistory.objects.filter(user_id=self.request.user_id).order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
         skip = int(request.query_params.get('skip', 0))
@@ -157,7 +162,7 @@ class QueryExecutionView(views.APIView):
         logger = logging.getLogger(__name__)
         logger.info(f"Received query execution request: {query}")
         
-        query_service = get_query_service()
+        query_service = get_query_service(request.user_id)
         logger.info("Fetching database schema...")
         schemas = query_service.get_database_schema()
         logger.info(f"Got {len(schemas)} schemas.")

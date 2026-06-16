@@ -9,7 +9,7 @@ import threading
 def index_literature_background(literature_id):
     literature = Literature.objects.get(id=literature_id)
     try:
-        rag_service = get_rag_service()
+        rag_service = get_rag_service(literature.user_id)
         # Ensure we have text content
         if literature.processing_status == ProcessingStatus.PENDING:
             from literature.services.pdf_processor import PDFProcessor
@@ -46,13 +46,13 @@ class RAGSearchView(views.APIView):
         top_k = request.data.get('top_k', 5)
         literature_ids = request.data.get('literature_ids', None)
         
-        rag_service = get_rag_service()
+        rag_service = get_rag_service(request.user_id)
         results = rag_service.search_literature(query=query, top_k=top_k, literature_ids=literature_ids)
         
         return Response({"results": results})
 
 class RAGStatsView(views.APIView):
     def get(self, request):
-        rag_service = get_rag_service()
+        rag_service = get_rag_service(request.user_id)
         stats = rag_service.get_stats()
         return Response(stats)

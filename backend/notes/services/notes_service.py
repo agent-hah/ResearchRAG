@@ -19,6 +19,7 @@ class NotesService:
         title: str,
         content: str,
         tags: Optional[List[str]] = None,
+        user_id: str,
         dataset_id: Optional[int] = None,
         literature_id: Optional[int] = None,
         query_id: Optional[int] = None
@@ -30,7 +31,8 @@ class NotesService:
                 tags=",".join(tags) if tags else None,
                 dataset_id=dataset_id,
                 literature_id=literature_id,
-                query_id=query_id
+                query_id=query_id,
+                user_id=user_id
             )
             logger.info(f"Created note {note.id}")
             return note
@@ -39,17 +41,18 @@ class NotesService:
             raise
 
     @staticmethod
-    def get_note(note_id: int) -> Optional[Note]:
-        return Note.objects.filter(id=note_id).first()
+    def get_note(note_id: int, user_id: str) -> Optional[Note]:
+        return Note.objects.filter(id=note_id, user_id=user_id).first()
 
     @staticmethod
     def list_notes(
         skip: int = 0,
         limit: int = 20,
         tags: Optional[List[str]] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        user_id: str = None
     ) -> List[Note]:
-        queryset = Note.objects.all()
+        queryset = Note.objects.filter(user_id=user_id)
         
         if tags:
             tag_query = Q()
@@ -68,10 +71,11 @@ class NotesService:
         note_id: int,
         title: Optional[str] = None,
         content: Optional[str] = None,
-        tags: Optional[List[str]] = None
+        tags: Optional[List[str]] = None,
+        user_id: str = None
     ) -> Optional[Note]:
         try:
-            note = NotesService.get_note(note_id)
+            note = NotesService.get_note(note_id, user_id)
             if not note:
                 return None
             
@@ -92,9 +96,9 @@ class NotesService:
             raise
 
     @staticmethod
-    def delete_note(note_id: int) -> bool:
+    def delete_note(note_id: int, user_id: str) -> bool:
         try:
-            note = NotesService.get_note(note_id)
+            note = NotesService.get_note(note_id, user_id)
             if not note:
                 return False
             
@@ -115,6 +119,7 @@ class NotesService:
         target_type: str,
         target_id: int,
         relationship_type: str,
+        user_id: str,
         description: Optional[str] = None
     ) -> NoteRelationship:
         try:
@@ -123,7 +128,8 @@ class NotesService:
                 target_type=target_type,
                 target_id=target_id,
                 relationship_type=relationship_type,
-                description=description
+                description=description,
+                user_id=user_id
             )
             logger.info(f"Created relationship: note {note_id} -> {target_type}:{target_id}")
             return relationship
@@ -132,14 +138,15 @@ class NotesService:
             raise
 
     @staticmethod
-    def get_note_relationships(note_id: int) -> List[NoteRelationship]:
-        return list(NoteRelationship.objects.filter(note_id=note_id))
+    def get_note_relationships(note_id: int, user_id: str) -> List[NoteRelationship]:
+        return list(NoteRelationship.objects.filter(note_id=note_id, user_id=user_id))
 
     @staticmethod
-    def get_related_notes(target_type: str, target_id: int) -> List[Note]:
+    def get_related_notes(target_type: str, target_id: int, user_id: str) -> List[Note]:
         relationships = NoteRelationship.objects.filter(
             target_type=target_type,
-            target_id=target_id
+            target_id=target_id,
+            user_id=user_id
         )
         note_ids = relationships.values_list('note_id', flat=True)
         if not note_ids:
@@ -147,9 +154,9 @@ class NotesService:
         return list(Note.objects.filter(id__in=note_ids))
 
     @staticmethod
-    def delete_relationship(relationship_id: int) -> bool:
+    def delete_relationship(relationship_id: int, user_id: str) -> bool:
         try:
-            relationship = NoteRelationship.objects.filter(id=relationship_id).first()
+            relationship = NoteRelationship.objects.filter(id=relationship_id, user_id=user_id).first()
             if not relationship:
                 return False
             
@@ -161,7 +168,7 @@ class NotesService:
             raise
 
     @staticmethod
-    def get_note_graph(note_id: int, depth: int = 2) -> Dict[str, Any]:
+    def get_note_graph(note_id: int, user_id: str, depth: int = 2) -> Dict[str, Any]:
         visited = set()
         nodes = []
         edges = []
@@ -171,7 +178,7 @@ class NotesService:
                 return
             
             visited.add(current_id)
-            note = NotesService.get_note(current_id)
+            note = NotesService.get_note(current_id, user_id)
             if note:
                 nodes.append({
                     "id": note.id,
@@ -181,7 +188,7 @@ class NotesService:
                     "tags": note.tags.split(",") if note.tags else []
                 })
             
-            relationships = NotesService.get_note_relationships(current_id)
+            relationships = NotesService.get_note_relationships(current_id, user_id)
             for rel in relationships:
                 edges.append({
                     "source": rel.note_id,
@@ -200,8 +207,8 @@ class NotesService:
         }
 
     @staticmethod
-    def search_notes(query: str, tags: Optional[List[str]] = None, limit: int = 10) -> List[Note]:
-        queryset = Note.objects.all()
+    def search_notes(query: str, user_id: str, tags: Optional[List[str]] = None, limit: int = 10) -> List[Note]:
+        queryset = Note.objects.filter(user_id=user_id)
         
         if query:
             queryset = queryset.filter(content__icontains=query)
@@ -216,9 +223,9 @@ class NotesService:
         return list(queryset[:limit])
 
     @staticmethod
-    def get_all_tags() -> List[str]:
+    def get_all_tags(user_id: str) -> List[str]:
         tags = set()
-        for note in Note.objects.exclude(tags__isnull=True).exclude(tags=""):
+        for note in Note.objects.filter(user_id=user_id).exclude(tags__isnull=True).exclude(tags=""):
             for tag in note.tags.split(','):
                 if tag.strip():
                     tags.add(tag.strip())

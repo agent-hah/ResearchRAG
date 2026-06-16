@@ -2,6 +2,7 @@ from django.db import models
 from literature.models import TimeStampedModel
 
 class QueryHistory(TimeStampedModel):
+    user_id = models.CharField(max_length=255, default='default', db_index=True)
     query_text = models.TextField()
     sql_query = models.TextField(null=True, blank=True)
     result_count = models.IntegerField(null=True, blank=True)
@@ -17,6 +18,7 @@ class QueryHistory(TimeStampedModel):
         return f"<QueryHistory(id={self.id}, query='{self.query_text[:50]}...')>"
 
 class DocumentSuggestion(TimeStampedModel):
+    user_id = models.CharField(max_length=255, default='default', db_index=True)
     dataset = models.ForeignKey('rag.Dataset', on_delete=models.CASCADE, null=True, blank=True, related_name='suggestions')
     title = models.CharField(max_length=500)
     authors = models.TextField(null=True, blank=True)

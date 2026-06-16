@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { NavLink } from 'react-router-dom'
 import { Menu, X, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { HelpGuide } from './HelpGuide'
+import { navigation } from './Sidebar'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -65,7 +67,50 @@ export function Header() {
                 <X className="h-6 w-6" aria-hidden="true" />
               </button>
             </div>
-            {/* Mobile navigation would go here */}
+            <nav className="mt-6">
+              <ul role="list" className="-mx-2 space-y-1">
+                {navigation.map((item) => (
+                  <li key={item.title}>
+                    <NavLink
+                      to={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium transition-colors',
+                          isActive
+                            ? 'bg-primary-50 text-primary-700'
+                            : 'text-gray-700 hover:text-primary-700 hover:bg-gray-50'
+                        )
+                      }
+                    >
+                      {({ isActive }) => {
+                        const Icon = item.icon
+                        return (
+                          <>
+                            {Icon && (
+                              <Icon
+                                className={cn(
+                                  'h-5 w-5 shrink-0 transition-colors',
+                                  isActive ? 'text-primary-700' : 'text-gray-400 group-hover:text-primary-700'
+                                )}
+                              />
+                            )}
+                            <div className="flex-1">
+                              <div>{item.title}</div>
+                              {item.description && (
+                                <div className="text-xs text-gray-500 mt-0.5">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )
+                      }}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         </div>
       )}

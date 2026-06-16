@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 class RAGService:
     """Service for RAG operations using LangChain and ChromaDB."""
     
-    def __init__(self):
+    def __init__(self, user_id: str):
+        self.user_id = user_id
         self.embeddings = GoogleGenerativeAIEmbeddings(
             model=settings.EMBEDDING_MODEL,
             google_api_key=settings.GOOGLE_API_KEY
@@ -40,9 +41,10 @@ class RAGService:
         self.vector_store = PineconeVectorStore(
             index_name="researchrag-index",
             embedding=self.embeddings,
-            pinecone_api_key=settings.PINECONE_API_KEY
+            pinecone_api_key=settings.PINECONE_API_KEY,
+            namespace=self.user_id
         )
-        logger.info("RAG service initialized with Pinecone")
+        logger.info(f"RAG service initialized with Pinecone (namespace: {self.user_id})")
     
     def index_literature(self, literature: Literature, text_content: str, force_reindex: bool = False) -> Dict[str, Any]:
         try:
@@ -189,13 +191,15 @@ class RAGService:
     
     def get_stats(self) -> Dict[str, Any]:
         try:
-            indexed_count = Literature.objects.filter(processing_status=ProcessingStatus.INDEXED).count()
+            indexed_count = Literature.objects.filter(processing_status=ProcessingStatus.INDEXED, user_id=self.user_id).count()
             
             # Fetch stats directly from the Pinecone client
             pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY", settings.PINECONE_API_KEY))
             index = pc.Index("researchrag-index")
             stats = index.describe_index_stats()
-            total_chunks = stats.total_vector_count
+            namespaces = stats.namespaces if hasattr(stats, 'namespaces') else {}
+            namespace_stats = namespaces.get(self.user_id, {})
+            total_chunks = namespace_stats.get('vector_count', 0) if isinstance(namespace_stats, dict) else getattr(namespace_stats, 'vector_count', 0)
             
             return {
                 "total_indexed": indexed_count,
@@ -233,7 +237,7 @@ class RAGService:
     
     def reindex_all(self) -> Dict[str, Any]:
         try:
-            literature_list = Literature.objects.all()
+            literature_list = Literature.objects.filter(user_id=self.user_id)
             
             results = {
                 "total": literature_list.count(),
@@ -272,10 +276,10 @@ class RAGService:
             logger.error(f"Error during reindex all: {str(e)}")
             raise
 
-_rag_service_instance = None
+_rag_service_instances = {}
 
-def get_rag_service() -> RAGService:
-    global _rag_service_instance
-    if _rag_service_instance is None:
-        _rag_service_instance = RAGService()
-    return _rag_service_instance
+def get_rag_service(user_id: str) -> RAGService:
+    global _rag_service_instances
+    if user_id not in _rag_service_instances:
+        _rag_service_instances[user_id] = RAGService(user_id)
+    return _rag_service_instances[user_id]

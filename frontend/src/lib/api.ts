@@ -12,6 +12,16 @@ export const api = axios.create({
   timeout: 120000,
 })
 
+// Get or create anonymous user ID
+export const getUserId = (): string => {
+  let userId = localStorage.getItem('user_id')
+  if (!userId) {
+    userId = crypto.randomUUID ? crypto.randomUUID() : 'user_' + Math.random().toString(36).substring(2, 15)
+    localStorage.setItem('user_id', userId)
+  }
+  return userId
+}
+
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
@@ -23,6 +33,15 @@ api.interceptors.request.use(
       } else {
         delete config.headers['Content-Type']
         delete config.headers['content-type']
+      }
+    }
+    
+    // Add User ID header
+    if (config.headers) {
+      if (typeof config.headers.set === 'function') {
+        config.headers.set('X-User-ID', getUserId())
+      } else {
+        config.headers['X-User-ID'] = getUserId()
       }
     }
     

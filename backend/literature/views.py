@@ -19,7 +19,7 @@ def process_pdf_background(literature_id, file_path):
         
         literature, text_content = PDFProcessor.process_pdf_file(file_path, literature)
         
-        rag_service = get_rag_service()
+        rag_service = get_rag_service(literature.user_id)
         rag_service.index_literature(literature, text_content)
     except Exception as e:
         print(f"Error in background processing: {e}")
@@ -28,7 +28,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     serializer_class = AnnotationSerializer
 
     def get_queryset(self):
-        queryset = Annotation.objects.all()
+        queryset = Annotation.objects.filter(user_id=self.request.user_id)
         literature_id = self.request.query_params.get('literature_id')
         page_number = self.request.query_params.get('page_number')
         if literature_id:
@@ -38,14 +38,16 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         return queryset
 
 class LiteratureViewSet(viewsets.ModelViewSet):
-    queryset = Literature.objects.all()
     serializer_class = LiteratureSerializer
+    
+    def get_queryset(self):
+        return Literature.objects.filter(user_id=self.request.user_id).order_by('-created_at')
 
     def perform_destroy(self, instance):
         try:
             from rag.services.rag_service import get_rag_service
             # Delete associated vector embeddings from Chroma DB
-            get_rag_service().delete_literature_index(instance.id)
+            get_rag_service(instance.user_id).delete_literature_index(instance.id)
         except Exception as e:
             print(f"Error deleting embeddings for literature {instance.id}: {e}")
             
@@ -87,12 +89,13 @@ class FileUploadView(views.APIView):
             if not is_valid:
                 return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
             
-            saved_path, file_size = FileService.save_uploaded_file(file)
+            saved_path, file_size = FileService.save_uploaded_file(file, request.user_id)
             
             literature = FileService.create_literature_record(
                 filename=file.name,
                 file_path=saved_path,
-                file_size=file_size
+                file_size=file_size,
+                user_id=request.user_id
             )
             
             # Start background thread

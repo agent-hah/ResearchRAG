@@ -8,11 +8,10 @@ from query.services.document_suggestion_service import DocumentSuggestionService
 import asyncio
 
 class SuggestionViewSet(viewsets.ModelViewSet):
-    queryset = DocumentSuggestion.objects.all().order_by('-created_at')
     serializer_class = DocumentSuggestionSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = DocumentSuggestion.objects.filter(user_id=self.request.user_id).order_by('-created_at')
         
         # Filter by dataset_id (optional)
         dataset_id = self.request.query_params.get('dataset_id', None)

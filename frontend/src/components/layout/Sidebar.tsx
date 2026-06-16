@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { NavItem } from '@/types'
 
-const navigation: NavItem[] = [
+export const navigation: NavItem[] = [
   { title: 'Home', href: '/', icon: Home, description: 'Dashboard and overview' },
   { title: 'Files', href: '/files', icon: Files, description: 'Upload and manage datasets' },
   { title: 'Literature', href: '/literature', icon: FileText, description: 'View and annotate PDFs' },

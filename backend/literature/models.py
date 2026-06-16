@@ -15,6 +15,7 @@ class ProcessingStatus(models.TextChoices):
     FAILED = 'failed', 'Failed'
 
 class Literature(TimeStampedModel):
+    user_id = models.CharField(max_length=255, default='default', db_index=True)
     filename = models.CharField(max_length=255, db_index=True)
     file_path = models.CharField(max_length=512)
     file_size = models.IntegerField()
@@ -38,6 +39,7 @@ class AnnotationType(models.TextChoices):
     BOOKMARK = 'bookmark', 'Bookmark'
 
 class Annotation(TimeStampedModel):
+    user_id = models.CharField(max_length=255, default='default', db_index=True)
     literature = models.ForeignKey(Literature, on_delete=models.CASCADE, related_name='annotations')
     annotation_type = models.CharField(max_length=20, choices=AnnotationType.choices)
     content = models.TextField(null=True, blank=True)
