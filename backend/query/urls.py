@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from query.views import QueryHistoryViewSet, QueryExecutionView, DatasetUploadView, DatasetViewSet, DatabaseSchemaView, ExecuteSQLView
 
 router = DefaultRouter()
-router.register(r'history', QueryHistoryViewSet)
+router.register(r'history', QueryHistoryViewSet, basename='queryhistory')
 router.register(r'datasets', DatasetViewSet, basename='dataset')
 
 urlpatterns = [

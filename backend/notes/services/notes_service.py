@@ -18,8 +18,8 @@ class NotesService:
     def create_note(
         title: str,
         content: str,
+        user_id: str = 'default',
         tags: Optional[List[str]] = None,
-        user_id: str,
         dataset_id: Optional[int] = None,
         literature_id: Optional[int] = None,
         query_id: Optional[int] = None
