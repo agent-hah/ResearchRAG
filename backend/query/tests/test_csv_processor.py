@@ -29,6 +29,12 @@ def sample_df():
 def dataset(db):
     return Dataset.objects.create(name="Test Dataset", filename="test.csv", table_name="", row_count=0, file_size_bytes=100)
 
+@pytest.fixture(autouse=True)
+def mock_storage_open(mocker):
+    # Just use builtin open to bypass Django's SuspiciousOperation for tmp_path
+    import builtins
+    mocker.patch('django.core.files.storage.default_storage.open', side_effect=builtins.open)
+
 def test_parse_csv(sample_csv):
     df = CSVProcessor.parse_csv(sample_csv)
     assert len(df) == 2

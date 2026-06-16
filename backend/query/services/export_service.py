@@ -25,6 +25,9 @@ class ExportService:
     Service for exporting data in various formats
     """
     
+    def __init__(self, user_id: Optional[str] = None):
+        self.user_id = user_id
+    
     def export_dataset_csv(self, dataset_id: int) -> str:
         """
         Export dataset as CSV
@@ -36,7 +39,10 @@ class ExportService:
             CSV string
         """
         try:
-            dataset = Dataset.objects.filter(id=dataset_id).first()
+            qs = Dataset.objects.filter(id=dataset_id)
+            if self.user_id:
+                qs = qs.filter(user_id=self.user_id)
+            dataset = qs.first()
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
@@ -80,7 +86,10 @@ class ExportService:
             JSON string
         """
         try:
-            dataset = Dataset.objects.filter(id=dataset_id).first()
+            qs = Dataset.objects.filter(id=dataset_id)
+            if self.user_id:
+                qs = qs.filter(user_id=self.user_id)
+            dataset = qs.first()
             if not dataset:
                 raise ValueError(f"Dataset {dataset_id} not found")
             
@@ -127,7 +136,10 @@ class ExportService:
             CSV string
         """
         try:
-            queries = QueryHistory.objects.filter(id__in=query_ids).order_by('-created_at')
+            qs = QueryHistory.objects.filter(id__in=query_ids)
+            if self.user_id:
+                qs = qs.filter(user_id=self.user_id)
+            queries = qs.order_by('-created_at')
             if not queries:
                 raise ValueError("No queries found")
             
@@ -167,7 +179,10 @@ class ExportService:
             JSON string
         """
         try:
-            queries = QueryHistory.objects.filter(id__in=query_ids).order_by('-created_at')
+            qs = QueryHistory.objects.filter(id__in=query_ids)
+            if self.user_id:
+                qs = qs.filter(user_id=self.user_id)
+            queries = qs.order_by('-created_at')
             if not queries:
                 raise ValueError("No queries found")
             
@@ -206,9 +221,13 @@ class ExportService:
     
     def export_notes_csv(self, note_ids: Optional[List[int]] = None) -> str:
         try:
-            query = Note.objects.all()
+            qs = Note.objects.all()
+            if self.user_id:
+                qs = qs.filter(user_id=self.user_id)
             if note_ids:
-                query = query.filter(id__in=note_ids)
+                query = qs.filter(id__in=note_ids)
+            else:
+                query = qs
             notes = query.order_by('-created_at')
             
             output = io.StringIO()
@@ -372,27 +391,33 @@ class ExportService:
             Tuple of (PDF bytes, filename)
         """
         try:
-            literature = Literature.objects.filter(id=literature_id).first()
+            qs = Literature.objects.filter(id=literature_id)
+            if self.user_id:
+                qs = qs.filter(user_id=self.user_id)
+            literature = qs.first()
             if not literature:
-                raise ValueError(f"Literature {literature_id} not found")
+                raise ValueError("Literature not found")
             
-            # Get the original PDF file path
-            file_path = literature.file_path
-            if not os.path.exists(file_path):
-                raise ValueError(f"PDF file not found at {file_path}")
-            
+            # Check if pdf exists
+            if not literature.file_path or not os.path.exists(literature.file_path):
+                raise ValueError("PDF file not found on server")
+                
             # Read the PDF file
-            with open(file_path, 'rb') as f:
+            with open(literature.file_path, 'rb') as f:
                 pdf_bytes = f.read()
             
             # If annotations are not requested, return original PDF
             if not include_annotations:
                 return pdf_bytes, literature.filename
             
-            # Get annotations for this literature
-            annotations = Annotation.objects.filter(
+            # Get annotations
+            from literature.models import Annotation
+            ann_qs = Annotation.objects.filter(
                 literature_id=literature_id
-            ).order_by('page_number', 'y_position')
+            )
+            if self.user_id:
+                ann_qs = ann_qs.filter(user_id=self.user_id)
+            annotations = ann_qs.order_by('page_number', '-created_at')
             
             if not annotations:
                 # No annotations, return original PDF

@@ -121,8 +121,10 @@ def test_generate_sql_json_error(query_service):
     assert res["sql_query"] == ""
     assert "Failed to generate SQL" in res["explanation"]
 
+@patch('query.services.query_service.QueryService.get_database_schema')
 @patch('query.services.query_service.connection.cursor')
-def test_execute_sql(mock_cursor_func, query_service):
+def test_execute_sql(mock_cursor_func, mock_get_schema, query_service):
+    mock_get_schema.return_value = [{"table_name": "dataset_1"}]
     mock_cursor = MagicMock()
     mock_cursor_func.return_value.__enter__.return_value = mock_cursor
     mock_cursor.description = [("id",), ("name",), ("date_col",)]
@@ -134,8 +136,10 @@ def test_execute_sql(mock_cursor_func, query_service):
     # Rows are arrays of values in column order
     assert res["rows"][0] == [1, "Test", "2023-01-01T00:00:00"]
 
+@patch('query.services.query_service.QueryService.get_database_schema')
 @patch('query.services.query_service.connection.cursor')
-def test_execute_sql_error(mock_cursor_func, query_service):
+def test_execute_sql_error(mock_cursor_func, mock_get_schema, query_service):
+    mock_get_schema.return_value = [{"table_name": "dataset_1"}]
     mock_cursor_func.side_effect = Exception("DB Error")
     res = query_service.execute_sql("SELECT * FROM dataset_1")
     assert res["row_count"] == 0

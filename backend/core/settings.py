@@ -190,6 +190,12 @@ STORAGES = {
     },
 }
 
+import sys
+if 'pytest' in sys.modules or 'test' in sys.argv:
+    STORAGES["default"] = {
+        "BACKEND": "django.core.files.storage.InMemoryStorage"
+    }
+
 DATA_DIR = BASE_DIR.parent / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
 

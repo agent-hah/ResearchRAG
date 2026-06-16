@@ -181,14 +181,14 @@ def test_export_visualization_json(export_service):
 @pytest.mark.django_db
 @patch('os.path.exists')
 def test_export_literature_pdf_not_found_literature(mock_exists, export_service):
-    with pytest.raises(ValueError, match="Literature 999 not found"):
+    with pytest.raises(ValueError, match="Literature not found"):
         export_service.export_literature_pdf(999)
 
 @pytest.mark.django_db
 def test_export_literature_pdf_not_found_file(mocker, export_service, lit_fixture):
     mock_exists = mocker.patch('os.path.exists')
     mock_exists.return_value = False
-    with pytest.raises(ValueError, match="PDF file not found at /test/path/test.pdf"):
+    with pytest.raises(ValueError, match="PDF file not found on server"):
         export_service.export_literature_pdf(lit_fixture.id)
 
 @pytest.mark.django_db

@@ -30,7 +30,7 @@ def test_create_note_exception():
 @pytest.mark.django_db
 def test_get_note():
     note = NotesService.create_note("Test title", "Test content")
-    fetched = NotesService.get_note(note.id)
+    fetched = NotesService.get_note(note.id, user_id="default")
     assert fetched.id == note.id
 
 @pytest.mark.django_db
@@ -38,14 +38,14 @@ def test_list_notes():
     NotesService.create_note("First note", "First note", tags=["a", "b"])
     NotesService.create_note("Second note", "Second note", tags=["b", "c"])
     
-    notes = NotesService.list_notes()
+    notes = NotesService.list_notes(user_id="default")
     assert len(notes) == 2
     
-    notes_with_tag = NotesService.list_notes(tags=["c"])
+    notes_with_tag = NotesService.list_notes(tags=["c"], user_id="default")
     assert len(notes_with_tag) == 1
     assert notes_with_tag[0].content == "Second note"
     
-    notes_with_search = NotesService.list_notes(search="First")
+    notes_with_search = NotesService.list_notes(search="First", user_id="default")
     assert len(notes_with_search) == 1
     assert notes_with_search[0].content == "First note"
 
@@ -53,44 +53,44 @@ def test_list_notes():
 def test_update_note():
     note = NotesService.create_note("Old title", "Old content", tags=["old"])
     
-    updated = NotesService.update_note(note.id, title="New title", content="New content", tags=["new"])
+    updated = NotesService.update_note(note.id, title="New title", content="New content", tags=["new"], user_id="default")
     assert updated.title == "New title"
     assert updated.content == "New content"
     assert updated.tags == "new"
     
     # Test update not found
-    assert NotesService.update_note(9999) is None
+    assert NotesService.update_note(9999, user_id="default") is None
 
 @pytest.mark.django_db
 def test_update_note_exception():
     note = NotesService.create_note("Old title", "Old content")
     with patch('notes.models.Note.save', side_effect=Exception("DB Error")):
         with pytest.raises(Exception):
-            NotesService.update_note(note.id, content="Error")
+            NotesService.update_note(note.id, content="Error", user_id="default")
 
 @pytest.mark.django_db
 def test_delete_note():
     note = NotesService.create_note("To delete", "To delete")
-    NotesService.create_relationship(note.id, EntityType.DATASET, 1, RelationshipType.REFERENCES)
+    NotesService.create_relationship(note.id, EntityType.DATASET, 1, RelationshipType.REFERENCES, user_id="default")
     
-    assert NotesService.delete_note(note.id) is True
-    assert NotesService.get_note(note.id) is None
-    assert len(NotesService.get_note_relationships(note.id)) == 0
+    assert NotesService.delete_note(note.id, user_id="default") is True
+    assert NotesService.get_note(note.id, user_id="default") is None
+    assert len(NotesService.get_note_relationships(note.id, user_id="default")) == 0
     
     # Delete non-existent
-    assert NotesService.delete_note(9999) is False
+    assert NotesService.delete_note(9999, user_id="default") is False
 
 @pytest.mark.django_db
 def test_delete_note_exception():
     note = NotesService.create_note("To delete", "To delete")
     with patch('notes.models.Note.delete', side_effect=Exception("DB Error")):
         with pytest.raises(Exception):
-            NotesService.delete_note(note.id)
+            NotesService.delete_note(note.id, user_id="default")
 
 @pytest.mark.django_db
 def test_create_relationship():
     note = NotesService.create_note("Note title", "Note")
-    rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS, "Test rel")
+    rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS, user_id="default", description="Test rel")
     assert rel.id is not None
     assert rel.target_type == EntityType.LITERATURE
     assert rel.target_id == 2
@@ -100,7 +100,7 @@ def test_create_relationship():
 def test_create_relationship_exception():
     with patch('notes.models.NoteRelationship.objects.create', side_effect=Exception("DB Error")):
         with pytest.raises(Exception):
-            NotesService.create_relationship(1, EntityType.DATASET, 1, RelationshipType.REFERENCES)
+            NotesService.create_relationship(1, EntityType.DATASET, 1, RelationshipType.REFERENCES, user_id="default")
 
 @pytest.mark.django_db
 def test_get_related_notes():
@@ -108,33 +108,33 @@ def test_get_related_notes():
     note2 = NotesService.create_note("Note 2", "Note 2")
     NotesService.create_note("Note 3", "Note 3") # Not related
     
-    NotesService.create_relationship(note1.id, EntityType.QUERY, 10, RelationshipType.REFERENCES)
-    NotesService.create_relationship(note2.id, EntityType.QUERY, 10, RelationshipType.REFERENCES)
+    NotesService.create_relationship(note1.id, EntityType.QUERY, 10, RelationshipType.REFERENCES, user_id="default")
+    NotesService.create_relationship(note2.id, EntityType.QUERY, 10, RelationshipType.REFERENCES, user_id="default")
     
-    related = NotesService.get_related_notes(EntityType.QUERY, 10)
+    related = NotesService.get_related_notes(EntityType.QUERY, 10, user_id="default")
     assert len(related) == 2
     
-    empty_related = NotesService.get_related_notes(EntityType.QUERY, 99)
+    empty_related = NotesService.get_related_notes(EntityType.QUERY, 99, user_id="default")
     assert len(empty_related) == 0
 
 @pytest.mark.django_db
 def test_delete_relationship():
     note = NotesService.create_note("Note", "Note")
-    rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS)
+    rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS, user_id="default")
     
-    assert NotesService.delete_relationship(rel.id) is True
-    assert len(NotesService.get_note_relationships(note.id)) == 0
+    assert NotesService.delete_relationship(rel.id, user_id="default") is True
+    assert len(NotesService.get_note_relationships(note.id, user_id="default")) == 0
     
-    assert NotesService.delete_relationship(9999) is False
+    assert NotesService.delete_relationship(9999, user_id="default") is False
 
 @pytest.mark.django_db
 def test_delete_relationship_exception():
     note = NotesService.create_note("Note", "Note")
-    rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS)
+    rel = NotesService.create_relationship(note.id, EntityType.LITERATURE, 2, RelationshipType.SUPPORTS, user_id="default")
     
     with patch('notes.models.NoteRelationship.delete', side_effect=Exception("DB Error")):
         with pytest.raises(Exception):
-            NotesService.delete_relationship(rel.id)
+            NotesService.delete_relationship(rel.id, user_id="default")
 
 @pytest.mark.django_db
 def test_get_note_graph():
@@ -143,20 +143,20 @@ def test_get_note_graph():
     note3 = NotesService.create_note("Note 3", "Note 3")
     
     # note1 references literature 1
-    NotesService.create_relationship(note1.id, EntityType.LITERATURE, 1, RelationshipType.REFERENCES)
+    NotesService.create_relationship(note1.id, EntityType.LITERATURE, 1, RelationshipType.REFERENCES, user_id="default")
     # note1 references note2
-    NotesService.create_relationship(note1.id, EntityType.NOTE, note2.id, RelationshipType.SUPPORTS)
+    NotesService.create_relationship(note1.id, EntityType.NOTE, note2.id, RelationshipType.SUPPORTS, user_id="default")
     # note2 references note3
-    NotesService.create_relationship(note2.id, EntityType.NOTE, note3.id, RelationshipType.CONTRADICTS)
+    NotesService.create_relationship(note2.id, EntityType.NOTE, note3.id, RelationshipType.CONTRADICTS, user_id="default")
     # Circular reference to trigger `current_id in visited`
-    NotesService.create_relationship(note3.id, EntityType.NOTE, note1.id, RelationshipType.RELATED_TO)
+    NotesService.create_relationship(note3.id, EntityType.NOTE, note1.id, RelationshipType.RELATED_TO, user_id="default")
     
-    graph = NotesService.get_note_graph(note1.id, depth=2)
+    graph = NotesService.get_note_graph(note1.id, depth=2, user_id="default")
     assert len(graph['nodes']) == 3
     assert len(graph['edges']) == 4
     
     # Test depth limit
-    graph_depth_1 = NotesService.get_note_graph(note1.id, depth=1)
+    graph_depth_1 = NotesService.get_note_graph(note1.id, depth=1, user_id="default")
     assert len(graph_depth_1['nodes']) > 0
 
 @pytest.mark.django_db
@@ -165,11 +165,11 @@ def test_search_notes():
     NotesService.create_note("Unique pattern B", "Unique pattern B", tags=["t1"])
     NotesService.create_note("Other text", "Other text", tags=["t2"])
     
-    res1 = NotesService.search_notes("Unique", tags=["t1"])
+    res1 = NotesService.search_notes("Unique", tags=["t1"], user_id="default")
     assert len(res1) == 2
     
-    res2 = NotesService.search_notes("pattern B")
+    res2 = NotesService.search_notes("pattern B", user_id="default")
     assert len(res2) == 1
     
-    res3 = NotesService.search_notes("", tags=["t2"])
+    res3 = NotesService.search_notes("", tags=["t2"], user_id="default")
     assert len(res3) == 1

@@ -37,6 +37,9 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(page_number=page_number)
         return queryset
 
+    def perform_create(self, serializer):
+        serializer.save(user_id=self.request.user_id)
+
 class LiteratureViewSet(viewsets.ModelViewSet):
     serializer_class = LiteratureSerializer
     

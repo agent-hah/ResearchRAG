@@ -14,7 +14,7 @@ class ExportDatasetView(APIView):
             return Response({"error": "dataset_id is required"}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            dataset = Dataset.objects.get(id=dataset_id)
+            dataset = Dataset.objects.get(id=dataset_id, user_id=request.user_id)
             base_name = dataset.filename
             if base_name.lower().endswith('.csv'):
                 base_name = base_name[:-4]
@@ -23,7 +23,7 @@ class ExportDatasetView(APIView):
         except Dataset.DoesNotExist:
             base_name = f"dataset_{dataset_id}"
             
-        export_service = ExportService()
+        export_service = ExportService(user_id=request.user_id)
         try:
             if format_type == 'csv':
                 content = export_service.export_dataset_csv(dataset_id)
@@ -48,7 +48,7 @@ class ExportQueryView(APIView):
         if not query_ids or not isinstance(query_ids, list):
             return Response({"error": "A list of query_ids is required"}, status=status.HTTP_400_BAD_REQUEST)
             
-        export_service = ExportService()
+        export_service = ExportService(user_id=request.user_id)
         try:
             if format_type == 'json':
                 content = export_service.export_query_results_json(query_ids)
@@ -70,7 +70,7 @@ class ExportNotesView(APIView):
         format_type = request.data.get('format', 'markdown')
         note_ids = request.data.get('note_ids', None)
         
-        export_service = ExportService()
+        export_service = ExportService(user_id=request.user_id)
         try:
             if format_type == 'markdown':
                 content = export_service.export_notes_markdown(note_ids)
@@ -100,7 +100,7 @@ class ExportLiteraturePDFView(APIView):
         if not literature_id:
             return Response({"error": "literature_id is required"}, status=status.HTTP_400_BAD_REQUEST)
             
-        export_service = ExportService()
+        export_service = ExportService(user_id=request.user_id)
         try:
             pdf_bytes, filename = export_service.export_literature_pdf(literature_id, include_annotations)
             response = HttpResponse(pdf_bytes, content_type='application/pdf')

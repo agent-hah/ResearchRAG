@@ -236,6 +236,24 @@ RESPONSE FORMAT (JSON ONLY):
     
     def execute_sql(self, sql_query: str) -> Dict[str, Any]:
         try:
+            import re
+            allowed_tables = {schema['table_name'].lower() for schema in self.get_database_schema()}
+            
+            # Simple check: extract all words
+            words = set(re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', sql_query.lower()))
+            
+            # Django and system tables that shouldn't be queried
+            blocked_prefixes = ('auth_', 'django_', 'sqlite_', 'rag_', 'literature_', 'query_', 'notes_', 'refinement_')
+            
+            for word in words:
+                if word.startswith(blocked_prefixes):
+                    raise ValueError(f"Unauthorized access to system table: {word}")
+                
+                # If it looks like a dataset table (dataset_1_...)
+                if word.startswith('dataset_') or word.startswith('d_dataset_'):
+                    if word not in allowed_tables:
+                        raise ValueError(f"Unauthorized access to dataset table: {word}")
+                        
             start_time = time.time()
             with connection.cursor() as cursor:
                 cursor.execute(sql_query)

@@ -4,6 +4,15 @@ from literature.services.pdf_processor import PDFProcessor
 from literature.models import Literature, ProcessingStatus
 from pathlib import Path
 
+@pytest.fixture(autouse=True)
+def mock_storage_open(mocker):
+    mock_file = mocker.MagicMock()
+    mock_file.read.return_value = b"dummy content"
+    
+    mock_open = mocker.patch('django.core.files.storage.default_storage.open')
+    mock_open.return_value.__enter__.return_value = mock_file
+    return mock_open
+
 @pytest.fixture
 def mock_pdfplumber(mocker):
     # Mock pdfplumber open
@@ -44,7 +53,8 @@ def test_process_pdf_file(mock_pdfplumber):
     literature = Literature.objects.create(
         filename="dummy.pdf",
         file_path="dummy.pdf",
-        file_size=1024
+        file_size=1024,
+        user_id='test_user'
     )
     
     updated_lit, text = PDFProcessor.process_pdf_file(Path("dummy.pdf"), literature)
@@ -71,7 +81,8 @@ def test_process_pdf_file_exception(mocker):
     literature = Literature.objects.create(
         filename="dummy.pdf",
         file_path="dummy.pdf",
-        file_size=1024
+        file_size=1024,
+        user_id='test_user'
     )
     with pytest.raises(Exception, match="Process Error"):
         PDFProcessor.process_pdf_file(Path("dummy.pdf"), literature)

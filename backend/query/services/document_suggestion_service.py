@@ -21,7 +21,8 @@ class DocumentSuggestionService:
     Service for generating and managing document suggestions
     """
     
-    def __init__(self):
+    def __init__(self, user_id=None):
+        self.user_id = user_id
         self.client = genai.Client(
             api_key=settings.GOOGLE_API_KEY,
             http_options={'timeout': 120000.0}
@@ -123,6 +124,8 @@ class DocumentSuggestionService:
             if dataset_ids:
                 # Get datasets
                 datasets = Dataset.objects.filter(id__in=dataset_ids)
+                if self.user_id:
+                    datasets = datasets.filter(user_id=self.user_id)
                 if not datasets:
                     raise ValueError(f"Datasets {dataset_ids} not found")
                 dataset_names = [d.filename for d in datasets]
@@ -138,13 +141,20 @@ class DocumentSuggestionService:
             
             # 1. Notes
             if dataset_ids:
-                recent_notes = Note.objects.filter(dataset_id__in=dataset_ids).order_by('-created_at')[:10]
+                note_qs = Note.objects.filter(dataset_id__in=dataset_ids)
             else:
-                recent_notes = Note.objects.all().order_by('-created_at')[:5]
+                note_qs = Note.objects.all()
+                
+            if self.user_id:
+                note_qs = note_qs.filter(user_id=self.user_id)
+            recent_notes = note_qs.order_by('-created_at')[:10 if dataset_ids else 5]
             note_texts = [n.content[:200] for n in recent_notes if n.content]
             
             # 2. Uploaded literature
-            recent_literature = Literature.objects.all().order_by('-created_at')[:5]
+            lit_qs = Literature.objects.all()
+            if self.user_id:
+                lit_qs = lit_qs.filter(user_id=self.user_id)
+            recent_literature = lit_qs.order_by('-created_at')[:5]
             literature_titles = [l.filename for l in recent_literature if l.filename]
             
             if not dataset_ids and not literature_titles and not note_texts:
@@ -360,6 +370,7 @@ Return ONLY valid JSON, no additional text."""
                     primary_dataset_id = dataset_ids[0] if dataset_ids else None
                     # Create suggestion
                     suggestion = DocumentSuggestion(
+                        user_id=self.user_id or 'default',
                         dataset_id=primary_dataset_id,
                         title=article.get('title', ''),
                         authors=article.get('authors', ''),
@@ -456,7 +467,10 @@ Return ONLY valid JSON, no additional text."""
         Returns:
             Number of suggestions deleted
         """
-        count, _ = DocumentSuggestion.objects.filter(dataset_id=dataset_id).delete()
+        qs = DocumentSuggestion.objects.filter(dataset_id=dataset_id)
+        if self.user_id:
+            qs = qs.filter(user_id=self.user_id)
+        count, _ = qs.delete()
         
         logger.info(f"Deleted {count} suggestions for context/dataset {dataset_id}")
         return count

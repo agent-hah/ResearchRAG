@@ -33,7 +33,7 @@ class SuggestionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['delete'], url_path=r'dataset/(?P<dataset_id>[\d,]+)')
     def delete_by_dataset(self, request, dataset_id=None):
-        service = DocumentSuggestionService()
+        service = DocumentSuggestionService(user_id=request.user_id)
         try:
             ids = [int(id.strip()) for id in str(dataset_id).split(',')]
         except ValueError:
@@ -45,13 +45,13 @@ class SuggestionViewSet(viewsets.ModelViewSet):
         
     @action(detail=False, methods=['delete'], url_path=r'global')
     def delete_global(self, request):
-        service = DocumentSuggestionService()
+        service = DocumentSuggestionService(user_id=request.user_id)
         count = service.delete_suggestions_for_dataset(dataset_id=None)
         return Response({"deleted_count": count, "message": f"Deleted {count} global suggestions."})
 
     @action(detail=True, methods=['put'])
     def feedback(self, request, pk=None):
-        service = DocumentSuggestionService()
+        service = DocumentSuggestionService(user_id=request.user_id)
         
         suggestion_id = int(pk)
         is_relevant = request.data.get('is_relevant')
@@ -85,7 +85,7 @@ class SuggestionGenerateView(APIView):
             except ValueError:
                 return Response({"error": "Invalid dataset_id"}, status=status.HTTP_400_BAD_REQUEST)
                 
-        service = DocumentSuggestionService()
+        service = DocumentSuggestionService(user_id=request.user_id)
         
         # Start generation in a background thread since it's async and takes time
         import threading
@@ -118,7 +118,7 @@ class SuggestionKeywordsView(APIView):
             except ValueError:
                 dataset_ids = []
             
-        service = DocumentSuggestionService()
+        service = DocumentSuggestionService(user_id=request.user_id)
         
         # Getting keywords is sync
         keywords = service.analyze_dataset_for_keywords(dataset_ids=dataset_ids)

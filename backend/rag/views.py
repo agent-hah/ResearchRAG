@@ -28,7 +28,7 @@ class RAGIndexView(views.APIView):
         force_reindex = request.data.get('force_reindex', False)
         
         try:
-            literature = Literature.objects.get(id=literature_id)
+            literature = Literature.objects.get(id=literature_id, user_id=request.user_id)
         except Literature.DoesNotExist:
             return Response({"error": "Literature not found"}, status=status.HTTP_404_NOT_FOUND)
             
