@@ -44,13 +44,36 @@ class CSVProcessor:
     @staticmethod
     def store_in_database(df: pd.DataFrame, table_name: str) -> Dict[str, Any]:
         try:
-            # For sqlite3, we can use Django's underlying sqlite connection or just sqlalchemy if needed.
-            # Pandas to_sql supports sqlite3 connection object.
-            # However, using sqlalchemy is more robust if we switch DBs. We will use django's connection.
-            with connection.cursor() as cursor:
-                # To make it compatible with pandas we get the raw connection
-                raw_conn = connection.connection
-                df.to_sql(name=table_name, con=raw_conn, if_exists="replace", index=False)
+            from django.conf import settings
+            from sqlalchemy import create_engine
+            
+            db_settings = settings.DATABASES['default']
+            engine_url = ""
+            
+            if db_settings['ENGINE'] == 'django.db.backends.sqlite3':
+                engine_url = f"sqlite:///{db_settings['NAME']}"
+            elif db_settings['ENGINE'] == 'django.db.backends.postgresql':
+                user = db_settings.get('USER', '')
+                password = db_settings.get('PASSWORD', '')
+                host = db_settings.get('HOST', 'localhost')
+                port = db_settings.get('PORT', '5432')
+                name = db_settings['NAME']
+                
+                auth = f"{user}:{password}" if user else ""
+                auth = f"{auth}@" if auth else ""
+                host_port = f"{host}:{port}" if port else host
+                
+                engine_url = f"postgresql://{auth}{host_port}/{name}"
+            
+            # If using dj-database-url, the environment variable might also just be accessible
+            import os
+            if os.getenv("DATABASE_URL") and db_settings['ENGINE'] == 'django.db.backends.postgresql':
+                # Use raw DATABASE_URL if available for maximum compatibility (e.g. Neon, Render)
+                # Ensure the scheme starts with postgresql:// instead of postgres://
+                engine_url = os.getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1)
+                
+            engine = create_engine(engine_url)
+            df.to_sql(name=table_name, con=engine, if_exists="replace", index=False)
             
             logger.info(f"Stored DataFrame in table: {table_name}")
             return {
@@ -109,18 +132,35 @@ class CSVProcessor:
                 if not table_name.isidentifier():
                     raise ValueError("Invalid table name")
                 
-                # Using PRAGMA table_info for SQLite
-                cursor.execute(f"PRAGMA table_info({table_name})")
-                columns = cursor.fetchall()
-                # Pragma columns: cid, name, type, notnull, dflt_value, pk
-                return [
-                    {
-                        "name": col[1],
-                        "type": col[2],
-                        "nullable": not col[3]
-                    }
-                    for col in columns
-                ]
+                if connection.vendor == 'sqlite':
+                    cursor.execute(f"PRAGMA table_info({table_name})")
+                    columns = cursor.fetchall()
+                    return [
+                        {
+                            "name": col[1],
+                            "type": col[2],
+                            "nullable": not col[3]
+                        }
+                        for col in columns
+                    ]
+                elif connection.vendor == 'postgresql':
+                    cursor.execute(
+                        "SELECT column_name, data_type, is_nullable "
+                        "FROM information_schema.columns "
+                        "WHERE table_name = %s",
+                        [table_name]
+                    )
+                    columns = cursor.fetchall()
+                    return [
+                        {
+                            "name": col[0],
+                            "type": col[1],
+                            "nullable": col[2] == 'YES'
+                        }
+                        for col in columns
+                    ]
+                else:
+                    raise ValueError(f"Unsupported database vendor: {connection.vendor}")
         except Exception as e:
             logger.error(f"Error getting table schema: {str(e)}")
             raise ValueError(f"Failed to get table schema: {str(e)}")
