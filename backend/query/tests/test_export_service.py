@@ -179,39 +179,39 @@ def test_export_visualization_json(export_service):
     assert "exported_at" in data
 
 @pytest.mark.django_db
-@patch('os.path.exists')
+@patch('django.core.files.storage.default_storage.exists')
 def test_export_literature_pdf_not_found_literature(mock_exists, export_service):
     with pytest.raises(ValueError, match="Literature not found"):
         export_service.export_literature_pdf(999)
 
 @pytest.mark.django_db
 def test_export_literature_pdf_not_found_file(mocker, export_service, lit_fixture):
-    mock_exists = mocker.patch('os.path.exists')
+    mock_exists = mocker.patch('django.core.files.storage.default_storage.exists')
     mock_exists.return_value = False
     with pytest.raises(ValueError, match="PDF file not found on server"):
         export_service.export_literature_pdf(lit_fixture.id)
 
 @pytest.mark.django_db
-@patch('os.path.exists')
+@patch('django.core.files.storage.default_storage.exists')
 def test_export_literature_pdf_no_annotations(mock_exists, export_service, lit_fixture):
     mock_exists.return_value = True
-    with patch("builtins.open", mock_open(read_data=b"pdf_content")):
+    with patch("django.core.files.storage.default_storage.open", mock_open(read_data=b"pdf_content")):
         pdf_bytes, filename = export_service.export_literature_pdf(lit_fixture.id, include_annotations=False)
         assert pdf_bytes == b"pdf_content"
         assert filename == "test.pdf"
 
 @pytest.mark.django_db
-@patch('os.path.exists')
+@patch('django.core.files.storage.default_storage.exists')
 def test_export_literature_pdf_with_annotations_but_none_exist(mock_exists, export_service, lit_fixture):
     mock_exists.return_value = True
-    with patch("builtins.open", mock_open(read_data=b"pdf_content")):
+    with patch("django.core.files.storage.default_storage.open", mock_open(read_data=b"pdf_content")):
         pdf_bytes, filename = export_service.export_literature_pdf(lit_fixture.id, include_annotations=True)
         assert pdf_bytes == b"pdf_content"
         assert filename == "test.pdf"
 
 @pytest.mark.django_db
 def test_export_literature_pdf_with_annotations(mocker, export_service, lit_fixture):
-    mock_exists = mocker.patch('os.path.exists')
+    mock_exists = mocker.patch('django.core.files.storage.default_storage.exists')
     mock_reader = mocker.patch('PyPDF2.PdfReader')
     mock_writer = mocker.patch('PyPDF2.PdfWriter')
     mock_canvas = mocker.patch('reportlab.pdfgen.canvas.Canvas')
@@ -240,7 +240,7 @@ def test_export_literature_pdf_with_annotations(mocker, export_service, lit_fixt
     
     mock_writer_instance = mock_writer.return_value
     
-    with patch("builtins.open", mock_open(read_data=b"pdf_content")):
+    with patch("django.core.files.storage.default_storage.open", mock_open(read_data=b"pdf_content")):
         pdf_bytes, filename = export_service.export_literature_pdf(lit_fixture.id, include_annotations=True)
         
         # Test basic success since we mocked out the PDF manipulation
@@ -254,6 +254,8 @@ def test_export_literature_pdf_with_annotations_integration(export_service, lit_
     import io
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter
+    from django.core.files.storage import default_storage
+    from django.core.files.base import ContentFile
     
     # Create real dummy PDF
     packet = io.BytesIO()
@@ -262,15 +264,12 @@ def test_export_literature_pdf_with_annotations_integration(export_service, lit_
     can.showPage()
     can.save()
     
-    import tempfile
-    import os
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
-        tmp.write(packet.getvalue())
-        tmp_path = tmp.name
+    # Save to default_storage to simulate the actual upload
+    file_path = default_storage.save('test_integration.pdf', ContentFile(packet.getvalue()))
         
     try:
         # Update literature to point to real file
-        lit_fixture.file_path = tmp_path
+        lit_fixture.file_path = file_path
         lit_fixture.save()
         
         # Create an annotation
@@ -298,4 +297,4 @@ def test_export_literature_pdf_with_annotations_integration(export_service, lit_
         reader = PdfReader(io.BytesIO(pdf_bytes))
         assert len(reader.pages) == 1
     finally:
-        os.unlink(tmp_path)
+        default_storage.delete(file_path)

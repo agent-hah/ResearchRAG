@@ -398,12 +398,14 @@ class ExportService:
             if not literature:
                 raise ValueError("Literature not found")
             
+            from django.core.files.storage import default_storage
+            
             # Check if pdf exists
-            if not literature.file_path or not os.path.exists(literature.file_path):
+            if not literature.file_path or not default_storage.exists(literature.file_path):
                 raise ValueError("PDF file not found on server")
                 
             # Read the PDF file
-            with open(literature.file_path, 'rb') as f:
+            with default_storage.open(literature.file_path, 'rb') as f:
                 pdf_bytes = f.read()
             
             # If annotations are not requested, return original PDF
