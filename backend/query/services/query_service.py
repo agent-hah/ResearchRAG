@@ -8,6 +8,7 @@ from datetime import datetime
 
 from google import genai
 from google.genai import types
+from google.genai import errors
 from django.conf import settings
 from django.db import connection
 
@@ -76,7 +77,39 @@ class QueryService:
         ]
         self.model_name = settings.GEMINI_MODEL
         logger.info("Query service initialized")
-    
+        
+    def _generate_with_fallback(self, prompt: str) -> str:
+        """Generate content with fallback logic for rate limits."""
+        config = types.GenerateContentConfig(
+            system_instruction=self.system_instruction,
+            safety_settings=self.safety_settings,
+            response_mime_type="application/json",
+        )
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=config
+            )
+            return response.text
+        except errors.APIError as e:
+            if getattr(e, 'code', None) == 429 or "429" in str(e):
+                logger.warning(f"Rate limit hit on {self.model_name}, trying fallbacks")
+                for fallback_model in ["gemini-3.1-flash-lite", "gemma-4-26b-a4b-it"]:
+                    try:
+                        fallback_response = self.client.models.generate_content(
+                            model=fallback_model,
+                            contents=prompt,
+                            config=config
+                        )
+                        return fallback_response.text
+                    except errors.APIError as fallback_e:
+                        if getattr(fallback_e, 'code', None) == 429 or "429" in str(fallback_e):
+                            logger.warning(f"Rate limit hit on fallback {fallback_model}")
+                            continue
+                        raise fallback_e
+            raise
+
     def get_database_schema(self) -> List[Dict[str, Any]]:
         try:
             schemas = []
@@ -171,18 +204,10 @@ RESPONSE FORMAT (JSON ONLY):
     "confidence": 0.95
 }}
 """
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_instruction,
-                    safety_settings=self.safety_settings,
-                    response_mime_type="application/json",
-                )
-            )
+            response_text = self._generate_with_fallback(prompt)
             
             try:
-                result = json.loads(response.text)
+                result = json.loads(response_text)
                 required_fields = ["sql_query", "explanation", "tables_used", "columns_used", "confidence"]
                 for field in required_fields:
                     if field not in result:
@@ -315,18 +340,10 @@ RESPONSE FORMAT (JSON):
 
 Respond with valid JSON only:
 """
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_instruction,
-                    safety_settings=self.safety_settings,
-                    response_mime_type="application/json",
-                )
-            )
+            response_text = self._generate_with_fallback(prompt)
             
             try:
-                result = json.loads(response.text)
+                result = json.loads(response_text)
                 default_result = {
                     "summary": "Analysis completed",
                     "key_findings": [],

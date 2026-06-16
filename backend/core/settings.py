@@ -200,7 +200,7 @@ DATA_DIR.mkdir(exist_ok=True)
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-GEMINI_MODEL = "gemma-4-26b-a4b-it"
+GEMINI_MODEL = "gemini-3.5-flash"
 EMBEDDING_MODEL = "models/gemini-embedding-2"
 LLM_TEMPERATURE = 0.1
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))

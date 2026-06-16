@@ -68,7 +68,33 @@ class DocumentSuggestionService:
                 )
             except Exception as e:
                 error_msg = str(e).lower()
-                if "504" in error_msg or "deadline" in error_msg or "503" in error_msg or "timeout" in error_msg or "429" in error_msg or "resource_exhausted" in error_msg or "500" in error_msg or "internal" in error_msg:
+                if getattr(e, 'code', None) == 429 or "429" in error_msg or "resource_exhausted" in error_msg:
+                    logger.warning(f"Rate limit hit on {self.model_name}, trying fallbacks")
+                    fallback_success = False
+                    for fallback_model in ["gemini-3.1-flash-lite", "gemma-4-26b-a4b-it"]:
+                        try:
+                            return self.client.models.generate_content(
+                                model=fallback_model,
+                                contents=prompt,
+                                config=config
+                            )
+                        except Exception as fallback_e:
+                            fallback_error_msg = str(fallback_e).lower()
+                            if getattr(fallback_e, 'code', None) == 429 or "429" in fallback_error_msg or "resource_exhausted" in fallback_error_msg:
+                                logger.warning(f"Rate limit hit on fallback {fallback_model}")
+                                continue
+                            if attempt == max_retries - 1:
+                                raise fallback_e
+                            logger.warning(f"Gemini API fallback error (attempt {attempt+1}): {fallback_e}. Retrying...")
+                            time.sleep(2 ** (attempt + 1))
+                            fallback_success = True
+                            break
+                    if not fallback_success:
+                        if attempt == max_retries - 1:
+                            raise e
+                        logger.warning(f"All fallbacks exhausted (attempt {attempt+1}). Retrying...")
+                        time.sleep(2 ** (attempt + 1))
+                elif "504" in error_msg or "deadline" in error_msg or "503" in error_msg or "timeout" in error_msg or "500" in error_msg or "internal" in error_msg:
                     if attempt == max_retries - 1:
                         raise e
                     logger.warning(f"Gemini API timeout/error (attempt {attempt+1}): {e}. Retrying...")
