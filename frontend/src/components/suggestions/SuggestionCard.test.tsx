@@ -29,14 +29,12 @@ describe('SuggestionCard', () => {
   const mockOnMarkRelevant = vi.fn();
   const mockOnMarkIrrelevant = vi.fn();
   const mockOnDismiss = vi.fn();
-  const mockOnImport = vi.fn();
 
   const defaultProps = {
     suggestion: mockSuggestion,
     onMarkRelevant: mockOnMarkRelevant,
     onMarkIrrelevant: mockOnMarkIrrelevant,
     onDismiss: mockOnDismiss,
-    onImport: mockOnImport,
   };
 
   it('renders all details correctly', () => {
@@ -108,16 +106,6 @@ describe('SuggestionCard', () => {
 
     fireEvent.click(screen.getByTitle('Dismiss this suggestion'));
     expect(mockOnDismiss).toHaveBeenCalledWith(1);
-
-    fireEvent.click(screen.getByTitle('Import this article'));
-    expect(mockOnImport).toHaveBeenCalledWith(1);
-  });
-
-  it('renders imported state', () => {
-    render(<SuggestionCard {...defaultProps} suggestion={{ ...mockSuggestion, is_imported: true }} />);
-    
-    expect(screen.getByText('Imported')).toBeInTheDocument();
-    expect(screen.queryByTitle('Import this article')).not.toBeInTheDocument();
   });
 
   it('renders relevant state', () => {

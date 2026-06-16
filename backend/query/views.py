@@ -102,16 +102,6 @@ class DatasetViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['get'])
-    def spatial_data(self, request, pk=None):
-        dataset = self.get_object()
-        try:
-            from query.services.viz_service import VizService
-            limit = int(request.query_params.get('limit', 1000))
-            data = VizService.get_spatial_data(dataset, limit)
-            return Response(data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class DatabaseSchemaView(views.APIView):
     def get(self, request):

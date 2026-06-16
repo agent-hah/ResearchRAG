@@ -104,11 +104,7 @@ describe('fileService', () => {
     expect(api.get).toHaveBeenCalledWith('/query/datasets/2/viz_data/', { params: { limit: 1000 } });
   });
 
-  it('getDatasetSpatialData uses default limit', async () => {
-    vi.mocked(api.get).mockResolvedValueOnce({ data: { features: [] } });
-    await fileService.getDatasetSpatialData(3);
-    expect(api.get).toHaveBeenCalledWith('/query/datasets/3/spatial_data/', { params: { limit: 1000 } });
-  });
+
 
   it('deleteDataset calls delete API', async () => {
     vi.mocked(api.delete).mockResolvedValueOnce({});

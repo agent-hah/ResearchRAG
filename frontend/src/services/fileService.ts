@@ -80,13 +80,6 @@ export const fileService = {
     return response.data
   },
 
-  getDatasetSpatialData: async (id: number, limit: number = 1000) => {
-    const response = await api.get(`/query/datasets/${id}/spatial_data/`, {
-      params: { limit },
-    })
-    return response.data
-  },
-
   // Delete files
   deleteDataset: async (id: number): Promise<void> => {
     await api.delete(`/query/datasets/${id}/`)

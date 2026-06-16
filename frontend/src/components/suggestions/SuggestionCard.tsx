@@ -6,7 +6,6 @@ interface SuggestionCardProps {
   onMarkRelevant: (id: number) => void
   onMarkIrrelevant: (id: number) => void
   onDismiss: (id: number) => void
-  onImport: (id: number) => void
 }
 
 export function SuggestionCard({
@@ -14,7 +13,6 @@ export function SuggestionCard({
   onMarkRelevant,
   onMarkIrrelevant,
   onDismiss,
-  onImport,
 }: SuggestionCardProps) {
   const relevanceColor = suggestion.relevance_score
     ? suggestion.relevance_score >= 0.7
@@ -91,25 +89,6 @@ export function SuggestionCard({
             <ExternalLink className="w-4 h-4" />
             View
           </a>
-        )}
-
-        {/* Import Button */}
-        {!suggestion.is_imported && (
-          <button
-            onClick={() => onImport(suggestion.id)}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded transition-colors"
-            title="Import this article"
-          >
-            <Download className="w-4 h-4" />
-            Import
-          </button>
-        )}
-
-        {suggestion.is_imported && (
-          <span className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-600 bg-green-50 rounded">
-            <Download className="w-4 h-4" />
-            Imported
-          </span>
         )}
 
         <div className="flex-1"></div>

@@ -15,13 +15,12 @@ vi.mock('../../services/suggestionsService', () => ({
 }));
 
 vi.mock('./SuggestionCard', () => ({
-  SuggestionCard: ({ suggestion, onMarkRelevant, onMarkIrrelevant, onDismiss, onImport }: any) => (
+  SuggestionCard: ({ suggestion, onMarkRelevant, onMarkIrrelevant, onDismiss }: any) => (
     <div data-testid="suggestion-card">
       {suggestion.title}
       <button onClick={() => onMarkRelevant(suggestion.id)}>Relevant</button>
       <button onClick={() => onMarkIrrelevant(suggestion.id)}>Irrelevant</button>
       <button onClick={() => onDismiss(suggestion.id)}>Dismiss</button>
-      <button onClick={() => onImport(suggestion.id)}>Import</button>
     </div>
   )
 }));
@@ -117,13 +116,6 @@ describe('SuggestionsPanel', () => {
     await waitFor(() => {
       expect(suggestionsService.updateFeedback).toHaveBeenCalledWith(1, { is_dismissed: true });
     });
-
-    const importBtn = screen.getByText('Import');
-    fireEvent.click(importBtn);
-    await waitFor(() => {
-      expect(suggestionsService.updateFeedback).toHaveBeenCalledWith(1, { is_imported: true });
-    });
-    expect(window.alert).toHaveBeenCalled();
   });
 
   it('toggles include dismissed', async () => {

@@ -9,7 +9,6 @@ vi.mock('@/services/fileService', () => ({
   fileService: {
     getDatasetPreview: vi.fn(),
     getDatasetVizData: vi.fn(),
-    getDatasetSpatialData: vi.fn(),
   },
 }));
 
@@ -17,9 +16,7 @@ vi.mock('../visualization/VisualizationPanel', () => ({
   VisualizationPanel: () => <div data-testid="visualization-panel">Visualization Panel</div>
 }));
 
-vi.mock('../visualization/SpatialMap', () => ({
-  SpatialMap: () => <div data-testid="spatial-map">Spatial Map</div>
-}));
+
 
 const createTestQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -121,54 +118,7 @@ describe('DataPreviewModal', () => {
     });
   });
 
-  it('switches to map tab and loads spatial data', async () => {
-    (fileService.getDatasetPreview as any).mockResolvedValue({ row_count: 0, schema: [], rows: [] });
-    (fileService.getDatasetSpatialData as any).mockResolvedValue({
-      is_spatial: true,
-      total_points: 10,
-      points: [{ lat: 0, lng: 0, tooltip: 'A' }]
-    });
 
-    renderComponent();
-
-    const mapTab = screen.getByText('Map');
-    fireEvent.click(mapTab);
-
-    await waitFor(() => {
-      expect(fileService.getDatasetSpatialData).toHaveBeenCalledWith(1, 1000);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId('spatial-map')).toBeInTheDocument();
-      expect(screen.getByText('Visualizing 10 geographic data points')).toBeInTheDocument();
-    });
-  });
-
-  it('renders non-spatial data message in map tab', async () => {
-    (fileService.getDatasetPreview as any).mockResolvedValue({ row_count: 0, schema: [], rows: [] });
-    (fileService.getDatasetSpatialData as any).mockResolvedValue({
-      is_spatial: false
-    });
-
-    renderComponent();
-    fireEvent.click(screen.getByText('Map'));
-
-    await waitFor(() => {
-      expect(screen.getByText('No Spatial Data Detected')).toBeInTheDocument();
-    });
-  });
-
-  it('renders map error state', async () => {
-    (fileService.getDatasetPreview as any).mockResolvedValue({ row_count: 0, schema: [], rows: [] });
-    (fileService.getDatasetSpatialData as any).mockRejectedValue(new Error('Map Error'));
-    
-    renderComponent();
-    fireEvent.click(screen.getByText('Map'));
-
-    await waitFor(() => {
-      expect(screen.getByText('Failed to load spatial data')).toBeInTheDocument();
-    });
-  });
 
   it('calls onClose when close button is clicked', () => {
     (fileService.getDatasetPreview as any).mockResolvedValue({ row_count: 0, schema: [], rows: [] });

@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, Map as MapIcon, Database, ChevronDown } from 'lucide-react'
+import { BarChart3, Database, ChevronDown } from 'lucide-react'
 import { fileService } from '../services/fileService'
 import { VisualizationPanel } from '../components/visualization/VisualizationPanel'
-import { SpatialMap } from '../components/visualization/SpatialMap'
-import { calculateBounds, getCenter, calculateZoom } from '../services/spatialVisualizationService'
 
 export function VisualizationPage() {
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(null)
-  const [activeTab, setActiveTab] = useState<'chart' | 'map'>('chart')
+  const [activeTab, setActiveTab] = useState<'chart'>('chart')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -33,12 +31,6 @@ export function VisualizationPage() {
     queryKey: ['dataset-viz', selectedDatasetId],
     queryFn: () => fileService.getDatasetVizData(selectedDatasetId!, 1000),
     enabled: selectedDatasetId !== null && activeTab === 'chart',
-  })
-
-  const { data: spatialData, isLoading: spatialLoading, error: spatialError } = useQuery({
-    queryKey: ['dataset-spatial', selectedDatasetId],
-    queryFn: () => fileService.getDatasetSpatialData(selectedDatasetId!, 1000),
-    enabled: selectedDatasetId !== null && activeTab === 'map',
   })
 
   const chartColumns = vizData?.columns || []
@@ -129,17 +121,6 @@ export function VisualizationPage() {
                 <BarChart3 className="w-4 h-4" />
                 <span>Chart</span>
               </button>
-              <button
-                onClick={() => setActiveTab('map')}
-                className={`pb-4 flex items-center space-x-2 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'map'
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <MapIcon className="w-4 h-4" />
-                <span>Spatial Map</span>
-              </button>
             </div>
           </div>
           
@@ -159,49 +140,6 @@ export function VisualizationPage() {
                 )}
                 {vizData && chartColumns.length > 0 && chartRows.length > 0 && (
                   <VisualizationPanel columns={chartColumns} rows={chartRows} />
-                )}
-              </>
-            )}
-
-            {activeTab === 'map' && (
-              <>
-                {spatialLoading && (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="loading-spinner h-8 w-8" />
-                    <span className="ml-3 text-gray-600">Loading spatial data...</span>
-                  </div>
-                )}
-                {spatialError && (
-                  <div className="text-center py-12">
-                    <p className="text-red-600">Failed to load spatial data</p>
-                  </div>
-                )}
-                {spatialData && !spatialData.is_spatial && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <MapIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-medium text-amber-800">
-                          No Spatial Data Detected
-                        </h3>
-                        <p className="text-sm text-amber-700 mt-1">
-                          This dataset does not contain recognizable geographic coordinates (latitude/longitude).
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {spatialData && spatialData.is_spatial && spatialData.points && (
-                  <div className="space-y-4">
-                    <SpatialMap 
-                      points={spatialData.points} 
-                      center={getCenter(calculateBounds(spatialData.points))} 
-                      zoom={calculateZoom(calculateBounds(spatialData.points))} 
-                    />
-                    <div className="text-sm text-gray-500 text-center">
-                      Visualizing {spatialData.total_points} geographic data points
-                    </div>
-                  </div>
                 )}
               </>
             )}

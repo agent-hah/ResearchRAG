@@ -5,13 +5,11 @@ import { QueryInput } from '../components/query/QueryInput'
 import { QueryResults } from '../components/query/QueryResults'
 import { QueryHistory } from '../components/query/QueryHistory'
 import { VisualizationPanel } from '../components/visualization/VisualizationPanel'
-import { SpatialVisualizationPanel } from '../components/visualization/SpatialVisualizationPanel'
 import { queryService } from '../services/queryService'
 import { fileService } from '../services/fileService'
-import { detectSpatialData } from '../services/spatialVisualizationService'
 import type { QueryResult } from '../services/queryService'
 import type { QueryHistoryItem } from '@/types'
-import { AlertCircle, BarChart3, Map } from 'lucide-react'
+import { AlertCircle, BarChart3 } from 'lucide-react'
 
 export function QueryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -20,7 +18,6 @@ export function QueryPage() {
   const [currentResult, setCurrentResult] = useState<QueryResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showVisualization, setShowVisualization] = useState(false)
-  const [showSpatialViz, setShowSpatialViz] = useState(false)
 
   // Fetch query history
   const { data: historyData, isLoading: historyLoading } = useQuery({
@@ -49,7 +46,6 @@ export function QueryPage() {
       setCurrentResult(data)
       setError(null)
       setShowVisualization(false) // Reset visualization on new query
-      setShowSpatialViz(false) // Reset spatial viz on new query
       queryClient.invalidateQueries({ queryKey: ['queryHistory'] })
     },
     onError: (error: any) => {
@@ -110,7 +106,6 @@ export function QueryPage() {
         })
         setError(null)
         setShowVisualization(false)
-        setShowSpatialViz(false)
       } else if (query.query && query.query.trim()) {
         // Fallback: Re-execute the query if cached results are not fully available (old queries)
         executeMutation.mutate({ query: query.query })
@@ -132,24 +127,10 @@ export function QueryPage() {
 
   const handleToggleVisualization = () => {
     setShowVisualization(!showVisualization)
-    setShowSpatialViz(false) // Hide spatial viz when showing regular viz
-  }
-
-  const handleToggleSpatialViz = () => {
-    setShowSpatialViz(!showSpatialViz)
-    setShowVisualization(false) // Hide regular viz when showing spatial viz
   }
 
   const isLoading = executeMutation.isPending
   const hasDataResults = currentResult?.data_results && currentResult.data_results.row_count > 0
-  
-  // Check if data has spatial information
-  const hasSpatialData = hasDataResults
-    ? detectSpatialData(
-        currentResult.data_results.columns,
-        currentResult.data_results.rows
-      ).isSpatial
-    : false
 
   return (
     <div className="space-y-8">
@@ -216,27 +197,7 @@ export function QueryPage() {
                 <BarChart3 className="w-5 h-5" />
                 {showVisualization ? 'Hide Charts' : 'Show Charts'}
               </button>
-              
-              {hasSpatialData && (
-                <button
-                  onClick={handleToggleSpatialViz}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  <Map className="w-5 h-5" />
-                  {showSpatialViz ? 'Hide Map' : 'Show Map'}
-                </button>
-              )}
             </div>
-          )}
-
-          {/* Spatial Visualization Panel */}
-          {showSpatialViz && hasDataResults && !isLoading && (
-            <SpatialVisualizationPanel
-              columns={currentResult.data_results.columns}
-              rows={currentResult.data_results.rows}
-              question={currentResult.question}
-              onClose={() => setShowSpatialViz(false)}
-            />
           )}
 
           {/* Visualization Panel */}
@@ -250,7 +211,7 @@ export function QueryPage() {
           )}
 
           {/* Query Results */}
-          {currentResult && !isLoading && !showVisualization && !showSpatialViz && (
+          {currentResult && !isLoading && !showVisualization && (
             <QueryResults result={currentResult} />
           )}
 

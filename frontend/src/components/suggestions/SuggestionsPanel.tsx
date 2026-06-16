@@ -77,12 +77,6 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, di
     updateFeedbackMutation.mutate({ id, feedback: { is_dismissed: true } })
   }
 
-  const handleImport = (id: number) => {
-    // TODO: Implement PDF import functionality
-    updateFeedbackMutation.mutate({ id, feedback: { is_imported: true } })
-    alert('Import functionality coming soon! This will download and process the PDF.')
-  }
-
   const activeSuggestions = Array.from(new Map(
     suggestions.filter(s => !s.is_dismissed).map(s => [s.title, s])
   ).values())
@@ -212,7 +206,6 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, di
               onMarkRelevant={handleMarkRelevant}
               onMarkIrrelevant={handleMarkIrrelevant}
               onDismiss={handleDismiss}
-              onImport={handleImport}
             />
           ))}
         </div>

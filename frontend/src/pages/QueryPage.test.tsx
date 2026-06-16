@@ -3,7 +3,6 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryPage } from './QueryPage'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { detectSpatialData } from '../services/spatialVisualizationService'
 
 
 // Mock dependencies
@@ -19,9 +18,6 @@ vi.mock('../services/queryService', () => ({
   },
 }))
 
-vi.mock('../services/spatialVisualizationService', () => ({
-  detectSpatialData: vi.fn(),
-}))
 
 vi.mock('../components/query/QueryInput', () => ({
   QueryInput: ({ onSubmit, isLoading }: any) => (
@@ -54,18 +50,10 @@ vi.mock('../components/visualization/VisualizationPanel', () => ({
   ),
 }))
 
-vi.mock('../components/visualization/SpatialVisualizationPanel', () => ({
-  SpatialVisualizationPanel: ({ onClose }: any) => (
-    <div data-testid="spatial-viz-panel">
-      <button onClick={onClose}>Close Spatial</button>
-    </div>
-  ),
-}))
 
 vi.mock('lucide-react', () => ({
   AlertCircle: () => <div data-testid="icon-alert" />,
   BarChart3: () => <div data-testid="icon-chart" />,
-  Map: () => <div data-testid="icon-map" />,
 }))
 
 describe('QueryPage', () => {
@@ -88,11 +76,7 @@ describe('QueryPage', () => {
       isPending: false,
     } as any)
 
-    vi.mocked(detectSpatialData).mockReturnValue({
-      isSpatial: false,
-      latIndex: -1,
-      lngIndex: -1,
-    })
+
   })
 
   it('renders initial state correctly', () => {
@@ -167,30 +151,6 @@ describe('QueryPage', () => {
     expect(screen.getByTestId('query-results')).toBeInTheDocument()
   })
 
-  it('handles spatial visualization toggling when spatial data is present', () => {
-    vi.mocked(detectSpatialData).mockReturnValue({ isSpatial: true } as any)
-    
-    let onSuccessCb: any;
-    vi.mocked(useMutation).mockImplementation(({ onSuccess }: any) => {
-      onSuccessCb = onSuccess;
-      return { mutate: mockMutate, isPending: false } as any;
-    })
-
-    render(<MemoryRouter><QueryPage /></MemoryRouter>)
-    act(() => {
-      onSuccessCb({ question: 'test question', data_results: { row_count: 5, columns: [], rows: [] } })
-    })
-
-    expect(screen.getByText('Show Map')).toBeInTheDocument()
-
-    // Open Spatial Viz
-    fireEvent.click(screen.getByText('Show Map'))
-    expect(screen.getByTestId('spatial-viz-panel')).toBeInTheDocument()
-
-    // Close Spatial Viz
-    fireEvent.click(screen.getByText('Close Spatial'))
-    expect(screen.queryByTestId('spatial-viz-panel')).not.toBeInTheDocument()
-  })
 
   it('handles mutation error', () => {
     let onErrorCb: any;
