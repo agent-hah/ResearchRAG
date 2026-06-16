@@ -20,7 +20,7 @@ describe('suggestionsService', () => {
   it('getGenerationStatus gets status for a dataset', async () => {
     mockedApi.get.mockResolvedValueOnce({ data: { status: 'COMPLETED', progress: 100 } });
     const res = await suggestionsService.getGenerationStatus(10);
-    expect(mockedApi.get).toHaveBeenCalledWith('/query/suggestions/dataset/10/status');
+    expect(mockedApi.get).toHaveBeenCalledWith('/query/suggestions/dataset/10/status/');
     expect(res.status).toBe('COMPLETED');
   });
 
@@ -28,7 +28,7 @@ describe('suggestionsService', () => {
     mockedApi.post.mockResolvedValueOnce({ data: { success: true } });
     await suggestionsService.generateSuggestions({ dataset_id: '5', max_per_keyword: 2 });
     expect(mockedApi.post).toHaveBeenCalledWith(
-      '/query/suggestions/generate',
+      '/query/suggestions/generate/',
       { dataset_id: '5', max_per_keyword: 2 }
     );
   });
@@ -45,7 +45,7 @@ describe('suggestionsService', () => {
   it('getDatasetKeywords gets keywords', async () => {
     mockedApi.get.mockResolvedValueOnce({ data: { keywords: ['quantum'] } });
     await suggestionsService.getDatasetKeywords('global' as any);
-    expect(mockedApi.get).toHaveBeenCalledWith('/query/suggestions/dataset/global/keywords');
+    expect(mockedApi.get).toHaveBeenCalledWith('/query/suggestions/dataset/global/keywords/');
   });
 
   it('updateFeedback puts feedback', async () => {

@@ -97,7 +97,7 @@ export function ExportPage() {
     try {
       setExporting(true)
       const response = await api.post(
-        '/export/dataset',
+        '/export/dataset/',
         { dataset_id: datasetId, format },
         { responseType: 'blob' }
       )
@@ -133,7 +133,7 @@ export function ExportPage() {
     try {
       setExporting(true)
       const response = await api.post(
-        '/export/query',
+        '/export/query/',
         { query_ids: queryIds, format },
         { responseType: 'blob' }
       )
@@ -200,7 +200,7 @@ export function ExportPage() {
       }
 
       const response = await api.post(
-        '/export/notes',
+        '/export/notes/',
         payload,
         { responseType: 'blob' }
       )
@@ -225,7 +225,7 @@ export function ExportPage() {
     try {
       setExporting(true)
       const response = await api.post(
-        '/export/literature/pdf',
+        '/export/literature/pdf/',
         { literature_id: literatureId, include_annotations: includeAnnotations },
         { responseType: 'blob' }
       )

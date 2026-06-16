@@ -80,14 +80,14 @@ describe('ExportPage', () => {
     fireEvent.click(screen.getAllByText('CSV')[0])
     
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/dataset', { dataset_id: 1, format: 'csv' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/dataset/', { dataset_id: 1, format: 'csv' }, { responseType: 'blob' })
     })
 
     // Test Dataset JSON export
     fireEvent.click(screen.getAllByText('JSON')[0])
     
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/dataset', { dataset_id: 1, format: 'json' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/dataset/', { dataset_id: 1, format: 'json' }, { responseType: 'blob' })
     })
   })
 
@@ -112,7 +112,7 @@ describe('ExportPage', () => {
     fireEvent.click(screen.getByText('Export Selected as CSV'))
     
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/query', { query_ids: [1], format: 'csv' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/query/', { query_ids: [1], format: 'csv' }, { responseType: 'blob' })
     })
   })
 
@@ -135,7 +135,7 @@ describe('ExportPage', () => {
     fireEvent.click(screen.getByText('Export CSV'))
     
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/notes', { format: 'csv' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/notes/', { format: 'csv' }, { responseType: 'blob' })
     })
   })
 
@@ -160,7 +160,7 @@ describe('ExportPage', () => {
     fireEvent.click(screen.getByText('Download'))
     
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/literature/pdf', { literature_id: 1, include_annotations: true }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/literature/pdf/', { literature_id: 1, include_annotations: true }, { responseType: 'blob' })
     })
   })
 
@@ -205,13 +205,13 @@ describe('ExportPage', () => {
     // Test Query JSON export
     fireEvent.click(screen.getByText('Export Selected as JSON'))
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/query', { query_ids: [1], format: 'json' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/query/', { query_ids: [1], format: 'json' }, { responseType: 'blob' })
     })
 
     // Test Notes JSON export
     fireEvent.click(screen.getByText('Export JSON'))
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/export/notes', { format: 'json' }, { responseType: 'blob' })
+      expect(api.post).toHaveBeenCalledWith('/export/notes/', { format: 'json' }, { responseType: 'blob' })
     })
   })
 

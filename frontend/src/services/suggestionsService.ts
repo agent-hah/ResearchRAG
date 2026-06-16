@@ -88,7 +88,7 @@ export const suggestionsService = {
   async getDatasetKeywords(datasetId?: string | number): Promise<KeywordsResponse> {
     const idParam = datasetId || 'global'
     const response = await api.get(
-      `/query/suggestions/dataset/${idParam}/keywords`
+      `/query/suggestions/dataset/${idParam}/keywords/`
     )
     return response.data
   },
