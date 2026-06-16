@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, Database, ChevronDown } from 'lucide-react'
+import { Database, ChevronDown } from 'lucide-react'
 import { fileService } from '../services/fileService'
 import { VisualizationPanel } from '../components/visualization/VisualizationPanel'
 

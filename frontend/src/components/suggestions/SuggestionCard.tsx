@@ -1,4 +1,4 @@
-import { ExternalLink, ThumbsUp, ThumbsDown, Download, X, BookOpen } from 'lucide-react'
+import { ExternalLink, ThumbsUp, ThumbsDown, X, BookOpen } from 'lucide-react'
 import type { DocumentSuggestion } from '../../services/suggestionsService'
 
 interface SuggestionCardProps {
