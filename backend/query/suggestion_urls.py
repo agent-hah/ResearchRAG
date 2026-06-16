@@ -6,8 +6,8 @@ router = DefaultRouter()
 router.register(r'', SuggestionViewSet, basename='suggestion')
 
 urlpatterns = [
-    path('generate', SuggestionGenerateView.as_view(), name='suggestion-generate'),
-    path('dataset/<str:dataset_id>/keywords', SuggestionKeywordsView.as_view(), name='suggestion-keywords'),
-    path('dataset/<str:dataset_id>/status', SuggestionStatusView.as_view(), name='suggestion-status'),
+    path('generate/', SuggestionGenerateView.as_view(), name='suggestion-generate'),
+    path('dataset/<str:dataset_id>/keywords/', SuggestionKeywordsView.as_view(), name='suggestion-keywords'),
+    path('dataset/<str:dataset_id>/status/', SuggestionStatusView.as_view(), name='suggestion-status'),
     path('', include(router.urls)),
 ]

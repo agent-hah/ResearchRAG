@@ -38,7 +38,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
   return (
     <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 bg-gray-50 rounded-t-lg">
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleBold().run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleBold().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('bold'))}
         title="Bold"
@@ -46,7 +47,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <Bold size={16} />
       </button>
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleItalic().run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleItalic().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('italic'))}
         title="Italic"
@@ -54,7 +56,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <Italic size={16} />
       </button>
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleStrike().run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleStrike().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('strike'))}
         title="Strikethrough"
@@ -63,7 +66,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
       </button>
       <div className="w-px h-6 bg-gray-300 mx-1 self-center" />
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('heading', { level: 1 }))}
         title="Heading 1"
@@ -71,7 +75,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <Heading1 size={16} />
       </button>
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('heading', { level: 2 }))}
         title="Heading 2"
@@ -80,7 +85,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
       </button>
       <div className="w-px h-6 bg-gray-300 mx-1 self-center" />
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleBulletList().run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleBulletList().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('bulletList'))}
         title="Bullet List"
@@ -88,7 +94,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <List size={16} />
       </button>
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleOrderedList().run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleOrderedList().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('orderedList'))}
         title="Ordered List"
@@ -97,7 +104,8 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
       </button>
       <div className="w-px h-6 bg-gray-300 mx-1 self-center" />
       <button
-        onClick={toggleAction(() => editor.chain().focus().toggleBlockquote().run())}
+        type="button"
+        onMouseDown={toggleAction(() => editor.chain().focus().toggleBlockquote().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('blockquote'))}
         title="Blockquote"
