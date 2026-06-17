@@ -235,57 +235,47 @@ RESPONSE FORMAT (JSON ONLY):
             }
     
     def execute_sql(self, sql_query: str) -> Dict[str, Any]:
-        try:
-            import re
-            allowed_tables = {schema['table_name'].lower() for schema in self.get_database_schema()}
+        import re
+        allowed_tables = {schema['table_name'].lower() for schema in self.get_database_schema()}
+        
+        # Simple check: extract all words
+        words = set(re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', sql_query.lower()))
+        
+        # Django and system tables that shouldn't be queried
+        blocked_prefixes = ('auth_', 'django_', 'sqlite_', 'rag_', 'literature_', 'query_', 'notes_', 'refinement_')
+        
+        for word in words:
+            if word.startswith(blocked_prefixes):
+                raise ValueError(f"Unauthorized access to system table: {word}")
             
-            # Simple check: extract all words
-            words = set(re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', sql_query.lower()))
-            
-            # Django and system tables that shouldn't be queried
-            blocked_prefixes = ('auth_', 'django_', 'sqlite_', 'rag_', 'literature_', 'query_', 'notes_', 'refinement_')
-            
-            for word in words:
-                if word.startswith(blocked_prefixes):
-                    raise ValueError(f"Unauthorized access to system table: {word}")
-                
-                # If it looks like a dataset table (dataset_1_...)
-                if word.startswith('dataset_') or word.startswith('d_dataset_'):
-                    if word not in allowed_tables:
-                        raise ValueError(f"Unauthorized access to dataset table: {word}")
-                        
-            start_time = time.time()
-            with connection.cursor() as cursor:
-                # codeql[py/sql-injection] Intended execution of dynamic SQL
-                cursor.execute(sql_query)
-                columns = [col[0] for col in cursor.description] if cursor.description else []
-                rows = []
-                for row in cursor.fetchall():
-                    row_values = []
-                    for value in row:
-                        if isinstance(value, datetime):
-                            row_values.append(value.isoformat())
-                        else:
-                            row_values.append(value)
-                    rows.append(row_values)
-            
-            execution_time = (time.time() - start_time) * 1000
-            
-            return {
-                "rows": rows,
-                "row_count": len(rows),
-                "columns": columns,
-                "execution_time_ms": execution_time
-            }
-        except Exception as e:
-            logger.error(f"Error executing SQL: {str(e)}")
-            return {
-                "rows": [],
-                "row_count": 0,
-                "columns": [],
-                "execution_time_ms": 0.0,
-                "error": str(e)
-            }
+            # If it looks like a dataset table (dataset_1_...)
+            if word.startswith('dataset_') or word.startswith('d_dataset_'):
+                if word not in allowed_tables:
+                    raise ValueError(f"Unauthorized access to dataset table: {word}")
+                    
+        start_time = time.time()
+        with connection.cursor() as cursor:
+            # codeql[py/sql-injection] Intended execution of dynamic SQL
+            cursor.execute(sql_query)
+            columns = [col[0] for col in cursor.description] if cursor.description else []
+            rows = []
+            for row in cursor.fetchall():
+                row_values = []
+                for value in row:
+                    if isinstance(value, datetime):
+                        row_values.append(value.isoformat())
+                    else:
+                        row_values.append(value)
+                rows.append(row_values)
+        
+        execution_time = (time.time() - start_time) * 1000
+        
+        return {
+            "rows": rows,
+            "row_count": len(rows),
+            "columns": columns,
+            "execution_time_ms": execution_time
+        }
     
     def get_literature_context(self, query: str, max_results: int = 10000, literature_ids: Optional[List[int]] = None) -> List[Dict[str, Any]]:
         try:

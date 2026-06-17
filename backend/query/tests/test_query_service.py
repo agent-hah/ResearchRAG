@@ -141,9 +141,9 @@ def test_execute_sql(mock_cursor_func, mock_get_schema, query_service):
 def test_execute_sql_error(mock_cursor_func, mock_get_schema, query_service):
     mock_get_schema.return_value = [{"table_name": "dataset_1"}]
     mock_cursor_func.side_effect = Exception("DB Error")
-    res = query_service.execute_sql("SELECT * FROM dataset_1")
-    assert res["row_count"] == 0
-    assert "DB Error" in res["error"]
+    import pytest
+    with pytest.raises(Exception, match="DB Error"):
+        query_service.execute_sql("SELECT * FROM dataset_1")
 
 @patch('query.services.query_service.get_rag_service')
 def test_get_literature_context(mock_get_rag, query_service):

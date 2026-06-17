@@ -351,7 +351,7 @@ class TestQueryExecutionViewResponseContract:
         ]
         
         mock_svc.execute_sql.side_effect = [
-            {"error": "no such column: ranking", "rows": [], "row_count": 0, "columns": []},
+            Exception("no such column: ranking"),
             {"rows": [[1, "Alice"]], "row_count": 1, "columns": ["id", "name"], "execution_time_ms": 5.0}
         ]
         

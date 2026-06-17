@@ -170,15 +170,23 @@ class QueryExecutionView(views.APIView):
                 break
                 
             logger.info(f"Executing SQL: {sql_query}")
-            sql_result = query_service.execute_sql(sql_query)
-            if "error" in sql_result and any(err in sql_result["error"].lower() for err in ["no such column", "no such table", "syntax error", "operationalerror"]):
-                logger.warning(f"SQL error: {sql_result['error']}")
-                previous_query = sql_query
-                previous_error = sql_result["error"]
-                continue
-            else:
+            try:
+                sql_result = query_service.execute_sql(sql_query)
                 logger.info("SQL executed successfully.")
                 break
+            except Exception as e:
+                err_str = str(e)
+                if any(err in err_str.lower() for err in ["no such column", "no such table", "syntax error", "operationalerror"]):
+                    logger.warning(f"SQL error: {err_str}")
+                    previous_query = sql_query
+                    previous_error = err_str
+                    if attempt == 2:
+                        sql_result = {"rows": [], "row_count": 0, "columns": [], "execution_time_ms": 0.0, "error": "Database execution failed due to an invalid query."}
+                    continue
+                else:
+                    logger.error(f"Error executing SQL: {err_str}")
+                    sql_result = {"rows": [], "row_count": 0, "columns": [], "execution_time_ms": 0.0, "error": "Database execution failed due to an invalid query."}
+                    break
             
         logger.info("Getting literature context...")
         literature_context = query_service.get_literature_context(query, max_literature, literature_ids)
