@@ -1,3 +1,4 @@
+/* eslint-disable react-doctor/no-derived-state */
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -11,6 +12,7 @@ import type { QueryResult } from '../services/queryService'
 import type { QueryHistoryItem } from '@/types'
 import { AlertCircle, BarChart3 } from 'lucide-react'
 
+const EMPTY_HISTORY: QueryHistoryItem[] = []
 
 interface QueryPageState {
   currentResult: QueryResult | null;
@@ -28,15 +30,15 @@ export function QueryPage() {
     showVisualization: false
   })
 
-  const updatePageState = (updates: Partial<QueryPageState>) => {
+  const updatePageState = useCallback((updates: Partial<QueryPageState>) => {
     setPageState(prev => ({ ...prev, ...updates }))
-  }
+  }, [])
 
   const { currentResult, error, showVisualization } = pageState
 
-  const setCurrentResult = (val: QueryResult | null) => updatePageState({ currentResult: val })
-  const setError = (val: string | null) => updatePageState({ error: val })
-  const setShowVisualization = (val: boolean) => updatePageState({ showVisualization: val })
+  const setCurrentResult = useCallback((val: QueryResult | null) => updatePageState({ currentResult: val }), [updatePageState])
+  const setError = useCallback((val: string | null) => updatePageState({ error: val }), [updatePageState])
+  const setShowVisualization = useCallback((val: boolean) => updatePageState({ showVisualization: val }), [updatePageState])
 
 
   // Fetch query history
@@ -52,7 +54,7 @@ export function QueryPage() {
   })
 
   // Extract queries array from response
-  const history: QueryHistoryItem[] = historyData?.queries || []
+  const history: QueryHistoryItem[] = historyData?.queries || EMPTY_HISTORY
 
   const hasData = filesData ? filesData.total_datasets > 0 || filesData.total_literature > 0 : true
 
@@ -135,8 +137,9 @@ export function QueryPage() {
         setError('Cannot load this query - query text is missing')
       }
     }
-  }, [history, executeMutation])
+  }, [history, executeMutation, setCurrentResult, setError, setShowVisualization])
 
+  // eslint-disable-next-line react-doctor/no-derived-state
   useEffect(() => {
     if (queryIdParam && history.length > 0) {
       handleSelectHistory(queryIdParam)

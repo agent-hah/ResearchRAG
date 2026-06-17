@@ -39,7 +39,7 @@ export function AnnotationsList({ annotations, onEdit, onDelete }: AnnotationsLi
               </div>
               
               {annotation.highlighted_text && (
-                <p className="text-sm text-gray-900 mb-2 italic bg-yellow-50 p-2 rounded border-l-2 border-yellow-400">
+                <p className="text-sm text-yellow-900 mb-2 italic bg-yellow-50 p-2 rounded border-l-2 border-yellow-400">
                   "{annotation.highlighted_text}"
                 </p>
               )}

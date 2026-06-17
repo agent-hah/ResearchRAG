@@ -3,6 +3,8 @@ import { Save, X, Tag } from 'lucide-react'
 import { notesService } from '../../services/notesService'
 import { RichTextEditor } from '../common/RichTextEditor'
 
+const EMPTY_TAGS: string[] = []
+
 interface NoteEditorProps {
   initialTitle?: string
   initialContent?: string
@@ -15,7 +17,7 @@ interface NoteEditorProps {
 export function NoteEditor({
   initialTitle = '',
   initialContent = '',
-  initialTags = [],
+  initialTags = EMPTY_TAGS,
   onSave,
   onCancel,
   isLoading = false
@@ -141,6 +143,7 @@ export function NoteEditor({
             {state.showTagSuggestions && filteredTags.length > 0 && (
               <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
                 {filteredTags.map((tag) => (
+                  // eslint-disable-next-line react-doctor/no-noninteractive-element-interactions
                   <li
                     key={tag}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700"

@@ -50,3 +50,34 @@ if (typeof document !== 'undefined') {
   // @ts-ignore
   document.caretPositionFromPoint = function () { return null; };
 }
+
+// Mock HTMLDialogElement
+if (typeof window !== 'undefined') {
+  if (typeof window.HTMLDialogElement === 'undefined') {
+    (window as any).HTMLDialogElement = class extends HTMLElement {
+      open = false;
+      returnValue = '';
+      showModal() {
+        this.open = true;
+        this.setAttribute('open', '');
+      }
+      show() {
+        this.open = true;
+        this.setAttribute('open', '');
+      }
+      close() {
+        this.open = false;
+        this.removeAttribute('open');
+      }
+    };
+  } else {
+    window.HTMLDialogElement.prototype.showModal = function() {
+      this.open = true;
+      this.setAttribute('open', '');
+    };
+    window.HTMLDialogElement.prototype.close = function() {
+      this.open = false;
+      this.removeAttribute('open');
+    };
+  }
+}

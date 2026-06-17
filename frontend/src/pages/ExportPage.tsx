@@ -7,6 +7,10 @@ import { notesService } from '../services/notesService'
 import { api } from '@/lib/api'
 import type { Dataset, Literature } from '@/types'
 
+const EMPTY_QUERIES: any[] = []
+const EMPTY_NOTES: any[] = []
+
+// eslint-disable-next-line react-doctor/no-giant-component
 export function ExportPage() {
   type ExportMode = 'all' | 'tag' | 'custom'
 
@@ -28,9 +32,9 @@ export function ExportPage() {
     let savedTags: string[] = []
     let savedMode: ExportMode = 'all'
     if (typeof localStorage !== 'undefined') {
-      try { const n = localStorage.getItem('selectedNotes:v1'); if (n) savedNotes = JSON.parse(n) } catch {}
-      try { const t = localStorage.getItem('selectedTags:v1'); if (t) savedTags = JSON.parse(t) } catch {}
-      try { const m = localStorage.getItem('noteExportMode:v1'); if (m) savedMode = m as ExportMode } catch {}
+      try { const n = localStorage.getItem('selectedNotes:v1'); if (n) savedNotes = JSON.parse(n) } catch { }
+      try { const t = localStorage.getItem('selectedTags:v1'); if (t) savedTags = JSON.parse(t) } catch { }
+      try { const m = localStorage.getItem('noteExportMode:v1'); if (m) savedMode = m as ExportMode } catch { }
     }
     return {
       exporting: false,
@@ -71,15 +75,15 @@ export function ExportPage() {
   const setTagsSearchQuery = (val: string | ((p: string) => string)) => setState(s => ({ ...s, tagsSearchQuery: typeof val === 'function' ? val(s.tagsSearchQuery) : val }))
 
   useEffect(() => {
-    try { localStorage.setItem('selectedNotes:v1', JSON.stringify(selectedNotes)) } catch {}
+    try { localStorage.setItem('selectedNotes:v1', JSON.stringify(selectedNotes)) } catch { }
   }, [selectedNotes])
 
   useEffect(() => {
-    try { localStorage.setItem('selectedTags:v1', JSON.stringify(selectedTags)) } catch {}
+    try { localStorage.setItem('selectedTags:v1', JSON.stringify(selectedTags)) } catch { }
   }, [selectedTags])
 
   useEffect(() => {
-    try { localStorage.setItem('noteExportMode:v1', exportMode) } catch {}
+    try { localStorage.setItem('noteExportMode:v1', exportMode) } catch { }
   }, [exportMode])
 
   // Fetch datasets
@@ -98,7 +102,7 @@ export function ExportPage() {
   })
 
   // Extract queries array from response object
-  const queries = queryHistoryData?.queries || []
+  const queries = queryHistoryData?.queries || EMPTY_QUERIES
 
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -109,7 +113,7 @@ export function ExportPage() {
   }, [queries, searchQuery])
 
   // Fetch notes
-  const { data: notes = [] } = useQuery({
+  const { data: notes = EMPTY_NOTES } = useQuery({
     queryKey: ['notes'],
     queryFn: () => notesService.listNotes(0, 100),
   })
@@ -221,7 +225,12 @@ export function ExportPage() {
           setExporting(false)
           return
         }
-        const tagNoteIds = notes.filter((n: any) => n.tags?.some((t: string) => selectedTags.includes(t))).map((n: any) => n.id)
+        const tagNoteIds = notes.reduce((acc: number[], n: any) => {
+          if (n.tags?.some((t: string) => selectedTags.includes(t))) {
+            acc.push(n.id);
+          }
+          return acc;
+        }, [])
         if (tagNoteIds.length === 0) {
           alert('No notes found for these tags.')
           setExporting(false)
@@ -372,6 +381,7 @@ export function ExportPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="Search queries..."
+                  aria-label="Search queries"
                 />
               </div>
               <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
@@ -391,15 +401,16 @@ export function ExportPage() {
                           checked={selectedQueries.includes(query.id)}
                           onChange={() => toggleQuerySelection(query.id)}
                           className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
+                          aria-label={`Select query: ${query.query}`}
                         />
-                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleQuerySelection(query.id)}>
+                        <button type="button" className="flex-1 min-w-0 text-left" onClick={() => toggleQuerySelection(query.id)}>
                           <h3 className="font-medium text-gray-900 truncate" title={query.query}>
                             {query.query}
                           </h3>
                           <p className="text-sm text-gray-500 mt-1">
                             {new Date(query.created_at).toLocaleDateString()}
                           </p>
-                        </div>
+                        </button>
                       </div>
                     </div>
                   ))
@@ -448,31 +459,30 @@ export function ExportPage() {
                 </h3>
 
                 <div className="mt-3 space-y-3">
-                  <div
+                  <button type="button"
                     onClick={() => setExportMode('all')}
-                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${exportMode === 'all' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-gray-200 hover:border-gray-300'}`}
+                    className={`flex items-center justify-between w-full text-left p-4 border rounded-lg transition-colors ${exportMode === 'all' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-gray-200 hover:border-gray-300'}`}
                   >
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-bold text-gray-900">All Notes</h3>
                       <p className="text-sm text-gray-500 mt-1">Export all {notes.length} note(s)</p>
                     </div>
-                  </div>
+                  </button>
 
-                  <div
-                    onClick={() => setExportMode('tag')}
-                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${exportMode === 'tag' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900">By Tag</h3>
-                      <p className="text-sm text-gray-500 mt-1">Export notes containing specific tags</p>
-                    </div>
+                  <div>
+                    <button type="button"
+                      onClick={() => setExportMode('tag')}
+                      className={`flex items-center justify-between w-full text-left p-4 border rounded-lg transition-colors ${exportMode === 'tag' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-gray-200 hover:border-gray-300'}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-gray-900">By Tag</h3>
+                        <p className="text-sm text-gray-500 mt-1">Export notes containing specific tags</p>
+                      </div>
+                    </button>
                     {exportMode === 'tag' && (
-                      <div className="ml-4">
+                      <div className="mt-2 ml-4">
                         <button type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setShowTagsModal(true)
-                          }}
+                          onClick={() => setShowTagsModal(true)}
                           className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"
                         >
                           Choose Tags ({selectedTags.length} selected)
@@ -481,21 +491,20 @@ export function ExportPage() {
                     )}
                   </div>
 
-                  <div
-                    onClick={() => setExportMode('custom')}
-                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${exportMode === 'custom' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900">Custom</h3>
-                      <p className="text-sm text-gray-500 mt-1">Hand-pick exactly which notes to export</p>
-                    </div>
+                  <div>
+                    <button type="button"
+                      onClick={() => setExportMode('custom')}
+                      className={`flex items-center justify-between w-full text-left p-4 border rounded-lg transition-colors ${exportMode === 'custom' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-gray-200 hover:border-gray-300'}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-gray-900">Custom</h3>
+                        <p className="text-sm text-gray-500 mt-1">Hand-pick exactly which notes to export</p>
+                      </div>
+                    </button>
                     {exportMode === 'custom' && (
-                      <div className="ml-4">
+                      <div className="mt-2 ml-4">
                         <button type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setShowNotesModal(true)
-                          }}
+                          onClick={() => setShowNotesModal(true)}
                           className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"
                         >
                           Choose Notes ({selectedNotes.length} selected)
@@ -612,40 +621,45 @@ export function ExportPage() {
                   onChange={(e) => setNotesSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="Search notes..."
+                  aria-label="Search notes"
                 />
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-3">
-                {notes
-                  .filter((n: any) =>
-                    (n.title || '').toLowerCase().includes(notesSearchQuery.toLowerCase()) ||
-                    n.content.toLowerCase().includes(notesSearchQuery.toLowerCase())
-                  )
-                  .map((note: any) => (
-                    <div
-                      key={note.id}
-                      className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors cursor-pointer"
-                      onClick={() => toggleNoteSelection(note.id)}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNotes.includes(note.id)}
-                        onChange={() => toggleNoteSelection(note.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="mt-1 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {note.title || 'Untitled Note'}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                          {note.content}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                {notes.reduce((acc: any[], note: any) => {
+                  if (
+                    (note.title || '').toLowerCase().includes(notesSearchQuery.toLowerCase()) ||
+                    note.content.toLowerCase().includes(notesSearchQuery.toLowerCase())
+                  ) {
+                    acc.push(
+                      <button type="button"
+                        key={note.id}
+                        className="flex items-start w-full text-left gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                        onClick={() => toggleNoteSelection(note.id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNotes.includes(note.id)}
+                          onChange={() => toggleNoteSelection(note.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
+                          aria-label={`Select note: ${note.title || 'Untitled Note'}`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 truncate">
+                            {note.title || 'Untitled Note'}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                            {note.content}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  }
+                  return acc;
+                }, [])}
               </div>
             </div>
 
@@ -683,20 +697,20 @@ export function ExportPage() {
                   onChange={(e) => setTagsSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="Search tags..."
+                  aria-label="Search tags"
                 />
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-3">
-                {allTags
-                  .filter((t: string) => t.toLowerCase().includes(tagsSearchQuery.toLowerCase()))
-                  .map((tag: string) => {
+                {allTags.reduce((acc: any[], tag: string) => {
+                  if (tag.toLowerCase().includes(tagsSearchQuery.toLowerCase())) {
                     const tagNotesCount = notes.filter((n: any) => n.tags?.includes(tag)).length;
-                    return (
-                      <div
+                    acc.push(
+                      <button type="button"
                         key={tag}
-                        className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors cursor-pointer"
+                        className="flex items-start w-full text-left gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
                         onClick={() => toggleTagSelection(tag)}
                       >
                         <input
@@ -705,6 +719,7 @@ export function ExportPage() {
                           onChange={() => toggleTagSelection(tag)}
                           onClick={(e) => e.stopPropagation()}
                           className="mt-1 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
+                          aria-label={`Select tag: ${tag}`}
                         />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 truncate">
@@ -714,9 +729,11 @@ export function ExportPage() {
                             {tagNotesCount} note(s) associated with this tag
                           </p>
                         </div>
-                      </div>
+                      </button>
                     )
-                  })}
+                  }
+                  return acc;
+                }, [])}
               </div>
             </div>
 

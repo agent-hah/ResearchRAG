@@ -131,10 +131,10 @@ describe('ChartRenderer', () => {
     expect(screen.getByText('Test Chart')).toBeInTheDocument();
   });
 
-  it('renders unsupported chart type', () => {
+  it('renders unsupported chart type', async () => {
     const config = { ...mockConfig, type: 'unknown' as any };
     render(<ChartRenderer data={mockData} config={config} />);
-    expect(screen.getByText('Unsupported chart type')).toBeInTheDocument();
+    expect(await screen.findByText('Unsupported chart type')).toBeInTheDocument();
   });
 
   it('handles empty data gracefully', () => {

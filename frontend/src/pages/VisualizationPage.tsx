@@ -75,19 +75,19 @@ export function VisualizationPage() {
 
               {isDropdownOpen && (
                 <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                  <div
-                    className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 transition-colors ${!selectedDatasetId ? 'text-primary-600 bg-primary-50' : 'text-gray-900'}`}
+                  <button type="button"
+                    className={`w-full text-left cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 transition-colors ${!selectedDatasetId ? 'text-primary-600 bg-primary-50' : 'text-gray-900'}`}
                     onClick={() => {
                       setSelectedDatasetId(null)
                       setIsDropdownOpen(false)
                     }}
                   >
                     <span className={`block truncate ${!selectedDatasetId ? 'font-semibold' : 'font-normal'}`}>-- Select a dataset --</span>
-                  </div>
+                  </button>
                   {datasets?.map((dataset) => (
-                    <div
+                    <button type="button"
                       key={dataset.id}
-                      className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 transition-colors ${selectedDatasetId === dataset.id ? 'text-primary-600 bg-primary-50' : 'text-gray-900'}`}
+                      className={`w-full text-left cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 transition-colors ${selectedDatasetId === dataset.id ? 'text-primary-600 bg-primary-50' : 'text-gray-900'}`}
                       onClick={() => {
                         setSelectedDatasetId(dataset.id)
                         setIsDropdownOpen(false)
@@ -96,7 +96,7 @@ export function VisualizationPage() {
                       <span className={`block truncate ${selectedDatasetId === dataset.id ? 'font-semibold' : 'font-normal'}`}>
                         {dataset.filename} ({dataset.row_count} rows)
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

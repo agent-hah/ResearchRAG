@@ -136,6 +136,7 @@ export function NotesPanel({ queryId, datasetId, literatureId }: NotesPanelProps
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search notes..."
+              aria-label="Search notes"
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>

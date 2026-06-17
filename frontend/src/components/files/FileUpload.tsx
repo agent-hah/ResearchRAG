@@ -170,6 +170,7 @@ export function FileUpload({ type, onUploadComplete }: FileUploadProps) {
         <input
           type="file"
           id={`file-upload-${type}`}
+          aria-label={`Upload ${fileTypeLabel} files`}
           className="sr-only"
           accept={acceptedTypes}
           multiple

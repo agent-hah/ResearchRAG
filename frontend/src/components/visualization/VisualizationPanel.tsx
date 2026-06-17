@@ -26,7 +26,7 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
   
   // Auto-detect chart type and generate initial config
   const initialChartType = detectChartType(columns, rows, rows.length)
-  const [config, setConfig] = useState<ChartConfig>(
+  const [config, setConfig] = useState<ChartConfig>(() =>
     generateChartConfig(columns, initialChartType, question)
   )
   

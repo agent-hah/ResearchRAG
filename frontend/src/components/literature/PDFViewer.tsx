@@ -10,6 +10,24 @@ import { ConfirmDialog } from '../common/ConfirmDialog'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 
+import 'react-pdf/dist/Page/AnnotationLayer.css'
+import 'react-pdf/dist/Page/TextLayer.css'
+
+const LoadingFallback = (
+  <div className="flex items-center justify-center p-12">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+  </div>
+)
+
+const ErrorFallback = (
+  <div className="p-12 text-center">
+    <p className="text-red-600">Failed to load PDF</p>
+    <p className="text-sm text-gray-500 mt-2">
+      Please check the file and try again
+    </p>
+  </div>
+)
+
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
@@ -18,6 +36,7 @@ interface PDFViewerProps {
   literatureId: number
 }
 
+// eslint-disable-next-line react-doctor/no-giant-component
 export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
   interface PDFViewerState {
     numPages: number
@@ -232,19 +251,8 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
             <Document
               file={fileUrl}
               onLoadSuccess={onDocumentLoadSuccess}
-              loading={
-                <div className="flex items-center justify-center p-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-                </div>
-              }
-              error={
-                <div className="p-12 text-center">
-                  <p className="text-red-600">Failed to load PDF</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Please check the file and try again
-                  </p>
-                </div>
-              }
+              loading={LoadingFallback}
+              error={ErrorFallback}
             >
               <Page
                 pageNumber={pageNumber}
@@ -261,9 +269,10 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
                     return (
                       <div key={ann.id}>
                         {(ann as any).rects.map((rect: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="absolute mix-blend-multiply cursor-pointer"
+                          <button type="button"
+                            key={`${idx}-${rect.x}-${rect.y}`}
+                            aria-label={`Highlight: ${ann.content || 'No text'}`}
+                            className="absolute mix-blend-multiply text-left"
                             style={{
                               left: `${rect.x * scale}px`,
                               top: `${rect.y * scale}px`,
@@ -280,9 +289,10 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
                     )
                   } else if (ann.x_position != null && ann.y_position != null) {
                     return (
-                      <div
+                      <button type="button"
                         key={ann.id}
-                        className="absolute mix-blend-multiply cursor-pointer"
+                        aria-label={`Highlight: ${ann.content || 'No text'}`}
+                        className="absolute mix-blend-multiply text-left"
                         style={{
                           left: `${ann.x_position * 100}%`,
                           top: `${ann.y_position * 100}%`,

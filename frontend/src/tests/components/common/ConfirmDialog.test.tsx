@@ -14,7 +14,8 @@ describe('ConfirmDialog', () => {
         onCancel={vi.fn()}
       />
     )
-    expect(screen.queryByText('Test Title')).not.toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { hidden: true });
+    expect(dialog).not.toHaveAttribute('open');
   })
 
   it('renders correctly when isOpen is true', () => {
@@ -75,14 +76,9 @@ describe('ConfirmDialog', () => {
       />
     )
     
-    // The overlay is the first div inside the dialog container with bg-black
-    // We can find it by looking for the fixed inset-0 class
-    // Since it's a portal, it renders to document.body
-    const overlay = document.querySelector('.bg-black.bg-opacity-50')
-    if (overlay) {
-      fireEvent.click(overlay)
-      expect(onCancelMock).toHaveBeenCalledTimes(1)
-    }
+    const dialog = screen.getByRole('dialog', { hidden: true });
+    fireEvent.click(dialog);
+    expect(onCancelMock).toHaveBeenCalledTimes(1);
   })
 
   it('uses custom confirm and cancel text if provided', () => {

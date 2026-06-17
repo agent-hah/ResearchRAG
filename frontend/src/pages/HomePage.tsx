@@ -112,9 +112,9 @@ export function HomePage() {
             {queryHistory?.queries?.length ? (
               <div className="space-y-4">
                 {queryHistory.queries.map((query) => (
-                  <div 
-                    key={query.id} 
-                    className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                  <button type="button"
+                    key={query.id}
+                    className="w-full text-left flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
                     onClick={() => navigate(`/query?id=${query.id}`)}
                   >
                     <Search className="h-4 w-4 text-gray-400 mt-1 flex-shrink-0" />
@@ -127,7 +127,7 @@ export function HomePage() {
                         <span>{query.literature_count} literature</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (

@@ -74,9 +74,9 @@ export function CanvasNoteCard({ note, onEdit, onDelete }: CanvasNoteCardProps) 
           <ReactMarkdown
             components={{
               // Customize rendering to fit sticky note style
-              h1: ({ node, ...props }) => <h1 className="text-base font-bold mb-2" {...props} />,
-              h2: ({ node, ...props }) => <h2 className="text-sm font-bold mb-1" {...props} />,
-              h3: ({ node, ...props }) => <h3 className="text-sm font-semibold mb-1" {...props} />,
+              h1: ({ node, children, ...props }) => <h1 className="text-base font-bold mb-2" {...props}>{children}</h1>,
+              h2: ({ node, children, ...props }) => <h2 className="text-sm font-bold mb-1" {...props}>{children}</h2>,
+              h3: ({ node, children, ...props }) => <h3 className="text-sm font-semibold mb-1" {...props}>{children}</h3>,
               p: ({ node, ...props }) => <p className="text-sm leading-relaxed mb-2 last:mb-0" {...props} />,
               ul: ({ node, ...props }) => <ul className="text-sm list-disc list-inside mb-2" {...props} />,
               ol: ({ node, ...props }) => <ol className="text-sm list-decimal list-inside mb-2" {...props} />,

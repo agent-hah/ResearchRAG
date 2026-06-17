@@ -52,6 +52,7 @@ function DraggableNoteWrapper({ note, position, zoom, onDragStop, onEdit, onDele
   )
 }
 
+// eslint-disable-next-line react-doctor/no-giant-component
 export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProps) {
   const queryClient = useQueryClient()
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -270,6 +271,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
       }
     };
 
+    // eslint-disable-next-line react-doctor/client-passive-event-listeners
     canvas.addEventListener('wheel', handleNativeWheel, { passive: false });
     return () => {
       canvas.removeEventListener('wheel', handleNativeWheel);
@@ -370,6 +372,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
         <div
           ref={canvasRef}
           id="canvas-container"
+          role="presentation"
           className="w-full h-full overflow-hidden select-none"
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}

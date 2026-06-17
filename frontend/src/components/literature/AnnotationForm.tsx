@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { X, Save } from 'lucide-react'
 import type { Annotation, AnnotationCreate } from '../../services/annotationsService'
 import { RichTextEditor } from '../common/RichTextEditor'
@@ -41,12 +41,43 @@ export function AnnotationForm({
     rects: {x: number, y: number, width: number, height: number}[]
   }
 
-  const [state, setState] = useState<AnnotationFormState>({
-    annotationType: (editingAnnotation?.annotation_type as 'note' | 'highlight' | 'question') || 'highlight',
-    content: editingAnnotation?.content || '',
-    highlightedText: editingAnnotation?.highlighted_text || '',
-    color: editingAnnotation?.color || 'yellow',
-    rects: []
+  const [state, setState] = useState<AnnotationFormState>(() => {
+    let initialHighlightedText = editingAnnotation?.highlighted_text || ''
+    let initialRects: {x: number, y: number, width: number, height: number}[] = []
+
+    if (!editingAnnotation) {
+      const selection = window.getSelection()
+      if (selection && selection.toString().trim() && selection.rangeCount > 0) {
+        initialHighlightedText = selection.toString().trim()
+        
+        const pageElement = document.querySelector('.react-pdf__Page') as HTMLElement
+        if (pageElement) {
+          const pageRect = pageElement.getBoundingClientRect()
+          const scale = parseFloat(pageElement.getAttribute('data-scale') || '1')
+          
+          const range = selection.getRangeAt(0)
+          const clientRects = range.getClientRects()
+          
+          for (let i = 0; i < clientRects.length; i++) {
+            const rect = clientRects[i]
+            initialRects.push({
+              x: (rect.left - pageRect.left) / scale,
+              y: (rect.top - pageRect.top) / scale,
+              width: rect.width / scale,
+              height: rect.height / scale
+            })
+          }
+        }
+      }
+    }
+
+    return {
+      annotationType: (editingAnnotation?.annotation_type as 'note' | 'highlight' | 'question') || 'highlight',
+      content: editingAnnotation?.content || '',
+      highlightedText: initialHighlightedText,
+      color: editingAnnotation?.color || 'yellow',
+      rects: initialRects
+    }
   })
 
   const { annotationType, content, highlightedText, color, rects } = state
@@ -55,39 +86,6 @@ export function AnnotationForm({
   const setContent = (val: string | ((p: string) => string)) => setState(s => ({ ...s, content: typeof val === 'function' ? val(s.content) : val }))
   const setHighlightedText = useCallback((val: string | ((p: string) => string)) => setState(s => ({ ...s, highlightedText: typeof val === 'function' ? val(s.highlightedText) : val })), [])
   const setColor = (val: string | ((p: string) => string)) => setState(s => ({ ...s, color: typeof val === 'function' ? val(s.color) : val }))
-  const setRects = useCallback((val: {x: number, y: number, width: number, height: number}[] | ((p: {x: number, y: number, width: number, height: number}[]) => {x: number, y: number, width: number, height: number}[])) => setState(s => ({ ...s, rects: typeof val === 'function' ? val(s.rects) : val })), [])
-
-  useEffect(() => {
-    if (!editingAnnotation) {
-      // Try to get selected text from the document
-      const selection = window.getSelection()
-      if (selection && selection.toString().trim() && selection.rangeCount > 0) {
-        setHighlightedText(selection.toString().trim())
-        
-        const pageElement = document.querySelector('.react-pdf__Page') as HTMLElement
-        if (pageElement) {
-          const pageRect = pageElement.getBoundingClientRect()
-          // Get scale from data-scale attribute set by react-pdf, default to 1
-          const scale = parseFloat(pageElement.getAttribute('data-scale') || '1')
-          
-          const range = selection.getRangeAt(0)
-          const clientRects = range.getClientRects()
-          const newRects = []
-          
-          for (let i = 0; i < clientRects.length; i++) {
-            const rect = clientRects[i]
-            newRects.push({
-              x: (rect.left - pageRect.left) / scale,
-              y: (rect.top - pageRect.top) / scale,
-              width: rect.width / scale,
-              height: rect.height / scale
-            })
-          }
-          setRects(newRects)
-        }
-      }
-    }
-  }, [editingAnnotation, setHighlightedText, setRects])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -175,6 +173,7 @@ export function AnnotationForm({
                 <button
                   key={c.value}
                   type="button"
+                  aria-label={`Select color ${c.label}`}
                   onClick={() => setColor(c.value)}
                   className={`w-8 h-8 rounded-full border-2 transition-all ${
                     color === c.value

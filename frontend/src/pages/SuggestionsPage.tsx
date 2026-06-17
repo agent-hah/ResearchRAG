@@ -199,6 +199,7 @@ export function SuggestionsPage() {
           <div className="flex min-h-screen items-center justify-center p-4">
             <div 
               className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+              aria-hidden="true"
               onClick={() => setIsModalOpen(false)}
             />
             

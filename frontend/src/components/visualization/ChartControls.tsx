@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { Download, Settings, ChevronDown } from 'lucide-react'
 import type { ChartType, ChartConfig } from '../../services/visualizationService'
 
+const EMPTY_OPTIONS: string[] = []
+const EMPTY_COLUMNS: string[] = []
+
 interface ChartControlsProps {
   config: ChartConfig
   columns?: string[]
@@ -9,7 +12,7 @@ interface ChartControlsProps {
   onExport: (format: 'png' | 'json' | 'csv') => void
 }
 
-function CheckboxDropdown({ options = [], value = '', onChange, placeholder = 'Select...' }: { options: string[], value: string, onChange: (val: string) => void, placeholder?: string }) {
+function CheckboxDropdown({ options = EMPTY_OPTIONS, value = '', onChange, placeholder = 'Select...' }: { options: string[], value: string, onChange: (val: string) => void, placeholder?: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -38,13 +41,13 @@ function CheckboxDropdown({ options = [], value = '', onChange, placeholder = 'S
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <div 
-        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white cursor-pointer flex justify-between items-center"
+      <button type="button"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white flex justify-between items-center text-left"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="truncate">{value || placeholder}</span>
         <ChevronDown className="w-4 h-4 text-gray-500" />
-      </div>
+      </button>
       {isOpen && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
           {options.map(opt => (
@@ -73,7 +76,7 @@ const chartTypes: { value: ChartType; label: string }[] = [
   { value: 'heatmap', label: 'Heat Map' },
 ]
 
-export function ChartControls({ config, columns = [], onConfigChange, onExport }: ChartControlsProps) {
+export function ChartControls({ config, columns = EMPTY_COLUMNS, onConfigChange, onExport }: ChartControlsProps) {
   return (
     <div className="space-y-4">
       {/* Chart Type Selection */}
@@ -197,6 +200,7 @@ export function ChartControls({ config, columns = [], onConfigChange, onExport }
                     onChange={(e) => onConfigChange({ colorScheme: e.target.value })}
                     className="sr-only"
                   />
+                  <span className="sr-only">{scheme.name}</span>
                   <span 
                     className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${(config.colorScheme || 'blue') === scheme.id ? 'border-gray-900 ring-2 ring-gray-900 ring-offset-2 scale-110' : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105 shadow-sm'}`} 
                     style={{ background: config.type === 'heatmap' ? scheme.gradient : scheme.solid }}

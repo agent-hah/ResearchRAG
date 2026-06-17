@@ -100,8 +100,13 @@ export function transformToChartData(
   // Determine y-axis indices
   let yIndices: number[] = []
   if (config.yAxisLabel) {
-    const selectedYCols = config.yAxisLabel.split(', ').filter(Boolean)
-    yIndices = selectedYCols.map(col => columns.indexOf(col)).filter(i => i !== -1)
+    yIndices = config.yAxisLabel.split(', ').reduce((acc: number[], col) => {
+      if (col) {
+        const idx = columns.indexOf(col);
+        if (idx !== -1) acc.push(idx);
+      }
+      return acc;
+    }, [])
   }
   
   const chartType = config.type
@@ -161,16 +166,22 @@ export function transformToChartData(
   
   if (yIndices.length === 0) {
     // Default: find numeric columns to auto-select, max 10
-    const numericIndices = columns.map((_, i) => i).filter(i => {
-      if (i === xIndex) return false;
+    const numericIndices = columns.reduce((acc: number[], _, i) => {
+      if (i === xIndex) return acc;
       const firstVal = rows.find(r => r[i] !== null && r[i] !== undefined)?.[i];
-      return typeof firstVal === 'number' || (typeof firstVal === 'string' && !isNaN(Number(firstVal)));
-    });
+      if (typeof firstVal === 'number' || (typeof firstVal === 'string' && !isNaN(Number(firstVal)))) {
+        acc.push(i);
+      }
+      return acc;
+    }, []);
     
     if (numericIndices.length > 0) {
       yIndices = numericIndices.slice(0, 10);
     } else {
-      yIndices = columns.map((_, i) => i).filter(i => i !== xIndex).slice(0, 5);
+      yIndices = columns.reduce((acc: number[], _, i) => {
+        if (i !== xIndex) acc.push(i);
+        return acc;
+      }, []).slice(0, 5);
     }
   }
 
@@ -187,11 +198,11 @@ export function transformToChartData(
   }
 
   // Sort rows alphabetically by X-axis if it's a string variable
-  const processingRows = isXNumeric ? sampledRows : [...sampledRows].sort((a, b) => {
+  const sortedRows = !isXNumeric ? sampledRows.slice().sort((a: any[], b: any[]) => {
     const valA = String(a[xIndex] || '');
     const valB = String(b[xIndex] || '');
     return valA.localeCompare(valB);
-  });
+  }) : sampledRows;
 
 
 
@@ -200,17 +211,17 @@ export function transformToChartData(
   if (chartType === 'pie') {
     const yIdx = yIndices[0] || 1
     return {
-      labels: processingRows.map(row => String(row[xIndex])),
+      labels: sortedRows.map((row: any[]) => String(row[xIndex])),
       datasets: [{
         label: columns[yIdx] || 'Value',
-        data: processingRows.map(row => Number(row[yIdx]) || 0),
+        data: sortedRows.map((row: any[]) => Number(row[yIdx]) || 0),
         color: colors[0]
       }]
     }
   }
   
   // For other charts, xIndex is x-axis (labels)
-  const labels = processingRows.map(row => {
+  const labels = sortedRows.map((row: any[]) => {
     if (chartType === 'scatter' && isXNumeric) {
       return Number(row[xIndex])
     }
@@ -220,7 +231,7 @@ export function transformToChartData(
   // Remaining columns are datasets
   const datasets = yIndices.map((idx, i) => ({
     label: columns[idx],
-    data: processingRows.map(row => Number(row[idx]) || 0),
+    data: sortedRows.map((row: any[]) => Number(row[idx]) || 0),
     color: colors[i % colors.length]
   }))
 

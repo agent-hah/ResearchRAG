@@ -34,6 +34,7 @@ export function DataPreviewModal({ datasetId, onClose }: DataPreviewModalProps) 
         {/* Backdrop */}
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          aria-hidden="true"
           onClick={onClose}
         />
         
