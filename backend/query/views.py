@@ -193,7 +193,7 @@ class QueryExecutionView(views.APIView):
         logger.info(f"Got {len(literature_context)} literature snippets.")
         
         logger.info("Synthesizing results...")
-        synthesis = query_service.synthesize_results(query, sql_result, literature_context)
+        synthesis = query_service.synthesize_results(query, sql_result, literature_context, schemas)
         logger.info("Synthesis complete.")
         
         # Sanitize error to prevent stack trace exposure before saving to db

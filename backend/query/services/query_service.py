@@ -300,7 +300,7 @@ RESPONSE FORMAT (JSON ONLY):
             logger.error(f"Error getting literature context: {str(e)}")
             return []
     
-    def synthesize_results(self, query: str, sql_result: Dict[str, Any], literature_context: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def synthesize_results(self, query: str, sql_result: Dict[str, Any], literature_context: List[Dict[str, Any]], schemas: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         try:
             data_summary = f"Query returned {sql_result['row_count']} rows"
             if sql_result['row_count'] > 0:
@@ -309,6 +309,12 @@ RESPONSE FORMAT (JSON ONLY):
                     data_summary += f"\nSample data: {json.dumps(sql_result['rows'][:5], indent=2)}"
                 else:
                     data_summary += f"\nFirst 3 rows: {json.dumps(sql_result['rows'][:3], indent=2)}"
+            
+            if schemas:
+                schema_context = "\n\nAvailable Datasets (for context, mapping table names to actual dataset names):\n"
+                for schema in schemas:
+                    schema_context += f"- Table: {schema['table_name']} corresponds to Dataset Name: '{schema.get('dataset_name', 'Unknown')}' (File: {schema['original_filename']})\n"
+                data_summary += schema_context
             
             literature_summary = ""
             if literature_context:
