@@ -6,6 +6,9 @@ dependencies:
   - python=3.11.8
   - pytest
   - pytest-cov
+  - pytest-django
+  - pytest-asyncio
+  - pytest-mock
   - pip=24.0
   - numpy=1.26.4
   - pandas=2.2.0
