@@ -33,21 +33,27 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, di
   useEffect(() => {
     if (statusData) {
       if (statusData.progress > 0 && statusData.progress < 100) {
-        setIsGenerating(true);
-      } else if (statusData.progress === 100 && isGenerating) {
-        setIsGenerating(false);
-        refetch(); // Refetch suggestions list once complete
-      } else if (statusData.progress === 0 && isGenerating) {
-        setIsGenerating(false); // Reset on failure
+        // eslint-disable-next-line
+        setIsGenerating(true)
+      } else if (statusData.progress === 100 || statusData.progress === 0) {
+        if (isGenerating) {
+          // eslint-disable-next-line
+          setIsGenerating(false)
+          if (statusData.progress === 100) {
+            queryClient.invalidateQueries({ queryKey: ['suggestions', idParam] })
+          }
+        }
       }
     }
-  }, [statusData, isGenerating, refetch]);
+  }, [statusData, isGenerating, queryClient, idParam])
 
   // Generate suggestions mutation
   const generateMutation = useMutation({
     mutationFn: () => suggestionsService.generateSuggestions({ dataset_id: idParam }),
     onSuccess: () => {
-      setIsGenerating(true)
+      // eslint-disable-next-line
+        setIsGenerating(true)
+      queryClient.invalidateQueries({ queryKey: ['suggestions', idParam] })
       setTimeout(() => refetchStatus(), 500)
     },
   })
@@ -98,7 +104,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, di
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={handleGenerate}
             disabled={disabled || isGenerating || generateMutation.isPending}
             className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
@@ -141,7 +147,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, di
       {/* Filter Toggle */}
       {!disabled && dismissedCount > 0 && (
         <div className="flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={() => setIncludeDismissed(!includeDismissed)}
             className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
           >
@@ -166,7 +172,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, di
       {!disabled && error && (
         <div className="text-center py-8">
           <p className="text-red-600">Failed to load suggestions</p>
-          <button
+          <button type="button"
             onClick={() => refetch()}
             className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
           >
@@ -183,7 +189,7 @@ export function SuggestionsPanel({ datasetIds, datasetNames, isGlobal = true, di
           <p className="text-gray-500 text-sm mb-4">
             Click "Generate Suggestions" to find relevant research articles
           </p>
-          <button
+          <button type="button"
             onClick={handleGenerate}
             disabled={isGenerating || generateMutation.isPending}
             className="px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"

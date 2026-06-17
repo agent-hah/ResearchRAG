@@ -22,8 +22,8 @@ vi.mock('@/services/queryService', () => ({
 vi.mock('@/components/query/QueryInput', () => ({
   QueryInput: ({ onSubmit, isLoading }: any) => (
     <div data-testid="query-input">
-      <button onClick={() => onSubmit('test question')} disabled={isLoading}>Submit</button>
-      <button onClick={() => onSubmit('')} disabled={isLoading}>Submit Empty</button>
+      <button type="button" onClick={() => onSubmit('test question')} disabled={isLoading}>Submit</button>
+      <button type="button" onClick={() => onSubmit('')} disabled={isLoading}>Submit Empty</button>
     </div>
   ),
 }))
@@ -36,7 +36,7 @@ vi.mock('@/components/query/QueryHistory', () => ({
   QueryHistory: ({ history, onSelectQuery }: any) => (
     <div data-testid="query-history">
       {history.map((h: any) => (
-        <button key={h.id} onClick={() => onSelectQuery(h.id.toString())}>{h.query}</button>
+        <button type="button" key={h.id} onClick={() => onSelectQuery(h.id.toString())}>{h.query}</button>
       ))}
     </div>
   ),
@@ -45,7 +45,7 @@ vi.mock('@/components/query/QueryHistory', () => ({
 vi.mock('@/components/visualization/VisualizationPanel', () => ({
   VisualizationPanel: ({ onClose }: any) => (
     <div data-testid="viz-panel">
-      <button onClick={onClose}>Close Viz</button>
+      <button type="button" onClick={onClose}>Close Viz</button>
     </div>
   ),
 }))

@@ -13,6 +13,26 @@ interface FileListProps {
   onPreview?: (id: number, type: 'dataset' | 'literature') => void
 }
 
+const getStatusBadge = (status: ProcessingStatus) => {
+  const badges = {
+    pending: { class: 'badge-warning', icon: Clock, text: 'Pending' },
+    processing: { class: 'badge-warning', icon: RefreshCw, text: 'Processing' },
+    completed: { class: 'badge-success', icon: CheckCircle, text: 'Upload Complete' },
+    indexed: { class: 'badge-success', icon: CheckCircle, text: 'Indexed' },
+    failed: { class: 'badge-error', icon: AlertCircle, text: 'Failed' },
+  }
+  
+  const badge = badges[status] || badges.pending
+  const Icon = badge.icon
+  
+  return (
+    <span className={cn('badge', badge.class)}>
+      <Icon className="h-3 w-3 mr-1" />
+      {badge.text}
+    </span>
+  )
+}
+
 export function FileList({ datasets, literature, onPreview }: FileListProps) {
   const [activeTab, setActiveTab] = useState<'datasets' | 'literature'>('datasets')
   const [datasetToDelete, setDatasetToDelete] = useState<number | null>(null)
@@ -69,32 +89,12 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
     },
   })
 
-  const getStatusBadge = (status: ProcessingStatus) => {
-    const badges = {
-      pending: { class: 'badge-warning', icon: Clock, text: 'Pending' },
-      processing: { class: 'badge-warning', icon: RefreshCw, text: 'Processing' },
-      completed: { class: 'badge-success', icon: CheckCircle, text: 'Upload Complete' },
-      indexed: { class: 'badge-success', icon: CheckCircle, text: 'Indexed' },
-      failed: { class: 'badge-error', icon: AlertCircle, text: 'Failed' },
-    }
-    
-    const badge = badges[status] || badges.pending
-    const Icon = badge.icon
-    
-    return (
-      <span className={cn('badge', badge.class)}>
-        <Icon className="h-3 w-3 mr-1" />
-        {badge.text}
-      </span>
-    )
-  }
-
   return (
     <div className="space-y-4">
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          <button
+          <button type="button"
             onClick={() => setActiveTab('datasets')}
             className={cn(
               'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -107,7 +107,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
             Datasets ({datasets.length})
           </button>
           
-          <button
+          <button type="button"
             onClick={() => setActiveTab('literature')}
             className={cn(
               'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -165,7 +165,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                     
                     <div className="flex items-center space-x-2 ml-4">
                       {dataset.table_name && onPreview && (
-                        <button
+                        <button type="button"
                           onClick={() => onPreview(dataset.id, 'dataset')}
                           className="btn btn-sm btn-ghost"
                           title="Preview data"
@@ -174,7 +174,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                         </button>
                       )}
                       
-                      <button
+                      <button type="button"
                         onClick={() => reprocessDatasetMutation.mutate(dataset.id)}
                         disabled={reprocessDatasetMutation.isPending}
                         className="btn btn-sm btn-ghost"
@@ -186,7 +186,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                         )} />
                       </button>
                       
-                      <button
+                      <button type="button"
                         onClick={() => setDatasetToDelete(dataset.id)}
                         disabled={deleteDatasetMutation.isPending}
                         className="btn btn-sm btn-ghost text-red-600 hover:text-red-700"
@@ -260,7 +260,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                     </div>
                     
                     <div className="flex items-center space-x-2 ml-4">
-                      <button
+                      <button type="button"
                         onClick={() => reprocessLiteratureMutation.mutate(lit.id)}
                         disabled={reprocessLiteratureMutation.isPending}
                         className="btn btn-sm btn-ghost"
@@ -272,7 +272,7 @@ export function FileList({ datasets, literature, onPreview }: FileListProps) {
                         )} />
                       </button>
                       
-                      <button
+                      <button type="button"
                         onClick={() => setLiteratureToDelete(lit.id)}
                         disabled={deleteLiteratureMutation.isPending}
                         className="btn btn-sm btn-ghost text-red-600 hover:text-red-700"

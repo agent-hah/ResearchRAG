@@ -41,7 +41,7 @@ export function QueryHistory({ history, onSelectQuery, onDeleteQuery, isLoading 
     <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
       {history.map((query) => (
         <div key={query.id} className="relative group">
-          <button
+          <button type="button"
             onClick={() => onSelectQuery(query.id.toString())}
             className="w-full text-left p-4 pr-10 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-sm transition-all"
           >
@@ -63,12 +63,12 @@ export function QueryHistory({ history, onSelectQuery, onDeleteQuery, isLoading 
             </div>
           </button>
           {onDeleteQuery && (
-            <button
+            <button type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setQueryToDelete(query.id.toString());
               }}
-              className="absolute right-2 top-2 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+              className="absolute right-2 top-2 p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-md transition-colors opacity-0 group-hover:opacity-100"
               title="Delete query"
             >
               <Trash2 className="w-4 h-4" />

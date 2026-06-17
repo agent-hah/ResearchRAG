@@ -8,6 +8,8 @@ import { CanvasNoteCard } from './CanvasNoteCard'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { notesService, type Note, type NoteCreate, type NoteUpdate } from '../../services/notesService'
 
+const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
 interface NotePosition {
   x: number
   y: number
@@ -54,15 +56,36 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
   const queryClient = useQueryClient()
   const canvasRef = useRef<HTMLDivElement>(null)
   
-  const [showEditor, setShowEditor] = useState(false)
-  const [editingNote, setEditingNote] = useState<Note | null>(null)
-  const [showGrid, setShowGrid] = useState(true)
-  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false)
-  const [noteToDelete, setNoteToDelete] = useState<number | null>(null)
-  const [{ zoom, pan }, setView] = useState({ zoom: 0.75, pan: { x: 0, y: 0 } })
-  
-  // Store note positions in local state (could be persisted to backend)
-  const [notePositions, setNotePositions] = useState<Record<number, NotePosition>>({})
+  interface NotesCanvasState {
+    showEditor: boolean
+    editingNote: Note | null
+    showGrid: boolean
+    isDraggingCanvas: boolean
+    noteToDelete: number | null
+    view: { zoom: number; pan: { x: number; y: number } }
+    notePositions: Record<number, NotePosition>
+  }
+
+  const [state, setState] = useState<NotesCanvasState>({
+    showEditor: false,
+    editingNote: null,
+    showGrid: true,
+    isDraggingCanvas: false,
+    noteToDelete: null,
+    view: { zoom: 0.75, pan: { x: 0, y: 0 } },
+    notePositions: {}
+  })
+
+  const { showEditor, editingNote, showGrid, isDraggingCanvas, noteToDelete, view, notePositions } = state
+  const { zoom, pan } = view
+
+  const setShowEditor = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, showEditor: typeof val === 'function' ? val(s.showEditor) : val }))
+  const setEditingNote = (val: Note | null | ((p: Note | null) => Note | null)) => setState(s => ({ ...s, editingNote: typeof val === 'function' ? val(s.editingNote) : val }))
+  const setShowGrid = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, showGrid: typeof val === 'function' ? val(s.showGrid) : val }))
+  const setIsDraggingCanvas = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, isDraggingCanvas: typeof val === 'function' ? val(s.isDraggingCanvas) : val }))
+  const setNoteToDelete = (val: number | null | ((p: number | null) => number | null)) => setState(s => ({ ...s, noteToDelete: typeof val === 'function' ? val(s.noteToDelete) : val }))
+  const setView = (val: { zoom: number; pan: { x: number; y: number } } | ((p: { zoom: number; pan: { x: number; y: number } }) => { zoom: number; pan: { x: number; y: number } })) => setState(s => ({ ...s, view: typeof val === 'function' ? val(s.view) : val }))
+  const setNotePositions = (val: Record<number, NotePosition> | ((p: Record<number, NotePosition>) => Record<number, NotePosition>)) => setState(s => ({ ...s, notePositions: typeof val === 'function' ? val(s.notePositions) : val }))
 
   // Fetch notes
   const { data: notes = [], isLoading } = useQuery({
@@ -172,8 +195,6 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
       y: 50 + row * 250
     }
   }
-
-  const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
   const updateZoom = (direction: 'in' | 'out' | null, absolute?: number) => {
     setView(prevView => {
@@ -294,7 +315,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
 
         <div className="flex items-center gap-2">
           {/* Grid Toggle */}
-          <button
+          <button type="button"
             onClick={() => setShowGrid(!showGrid)}
             className={`p-2 rounded-lg transition-colors ${
               showGrid
@@ -308,7 +329,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
 
           {/* Zoom Controls */}
           <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg">
-            <button
+            <button type="button"
               onClick={handleZoomOut}
               disabled={zoom <= 0.25}
               className="p-1 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
@@ -316,14 +337,14 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
             >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <button
+            <button type="button"
               onClick={handleResetZoom}
               className="px-2 py-1 text-sm font-medium hover:bg-gray-200 rounded min-w-[3rem] text-center"
               title="Reset zoom"
             >
               {Math.round(zoom * 100)}%
             </button>
-            <button
+            <button type="button"
               onClick={handleZoomIn}
               disabled={zoom >= 2}
               className="p-1 hover:bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed"
@@ -334,7 +355,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
           </div>
 
           {/* New Note Button */}
-          <button
+          <button type="button"
             onClick={() => setShowEditor(!showEditor)}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
           >
@@ -395,7 +416,7 @@ export function NotesCanvas({ queryId, datasetId, literatureId }: NotesPanelProp
                   <p className="text-gray-600 mb-6">
                     Create notes and arrange them spatially to organize your research
                   </p>
-                  <button
+                  <button type="button"
                     onClick={() => setShowEditor(true)}
                     className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                   >

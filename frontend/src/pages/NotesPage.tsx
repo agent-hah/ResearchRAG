@@ -22,7 +22,7 @@ export function NotesPage() {
 
           {/* View Mode Tabs */}
           <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-            <button
+            <button type="button"
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                 viewMode === 'list'
@@ -33,7 +33,7 @@ export function NotesPage() {
               <List className="w-4 h-4" />
               <span className="font-medium">List</span>
             </button>
-            <button
+            <button type="button"
               onClick={() => setViewMode('canvas')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                 viewMode === 'canvas'

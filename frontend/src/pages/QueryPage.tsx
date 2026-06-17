@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QueryInput } from '../components/query/QueryInput'
@@ -11,13 +11,33 @@ import type { QueryResult } from '../services/queryService'
 import type { QueryHistoryItem } from '@/types'
 import { AlertCircle, BarChart3 } from 'lucide-react'
 
+
+interface QueryPageState {
+  currentResult: QueryResult | null;
+  error: string | null;
+  showVisualization: boolean;
+}
+
 export function QueryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const queryIdParam = searchParams.get('id')
 
-  const [currentResult, setCurrentResult] = useState<QueryResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [showVisualization, setShowVisualization] = useState(false)
+  const [pageState, setPageState] = useState<QueryPageState>({
+    currentResult: null,
+    error: null,
+    showVisualization: false
+  })
+
+  const updatePageState = (updates: Partial<QueryPageState>) => {
+    setPageState(prev => ({ ...prev, ...updates }))
+  }
+
+  const { currentResult, error, showVisualization } = pageState
+
+  const setCurrentResult = (val: QueryResult | null) => updatePageState({ currentResult: val })
+  const setError = (val: string | null) => updatePageState({ error: val })
+  const setShowVisualization = (val: boolean) => updatePageState({ showVisualization: val })
+
 
   // Fetch query history
   const { data: historyData, isLoading: historyLoading } = useQuery({
@@ -43,9 +63,11 @@ export function QueryPage() {
   const executeMutation = useMutation({
     mutationFn: queryService.executeQuery,
     onSuccess: (data) => {
-      setCurrentResult(data)
-      setError(null)
-      setShowVisualization(false) // Reset visualization on new query
+      updatePageState({
+        currentResult: data,
+        error: null,
+        showVisualization: false
+      }) // Reset visualization on new query
       queryClient.invalidateQueries({ queryKey: ['queryHistory'] })
     },
     onError: (error: any) => {
@@ -88,7 +110,7 @@ export function QueryPage() {
     executeMutation.mutate({ query: question.trim() })
   }
 
-  const handleSelectHistory = (queryId: string) => {
+  const handleSelectHistory = useCallback((queryId: string) => {
     // Find the query in history
     const query = history.find(q => q.id.toString() === queryId)
     if (query) {
@@ -113,7 +135,7 @@ export function QueryPage() {
         setError('Cannot load this query - query text is missing')
       }
     }
-  }
+  }, [history, executeMutation])
 
   useEffect(() => {
     if (queryIdParam && history.length > 0) {
@@ -122,8 +144,7 @@ export function QueryPage() {
       searchParams.delete('id')
       setSearchParams(searchParams, { replace: true })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryIdParam, history])
+  }, [queryIdParam, history, handleSelectHistory, searchParams, setSearchParams])
 
   const handleToggleVisualization = () => {
     setShowVisualization(!showVisualization)
@@ -190,7 +211,7 @@ export function QueryPage() {
           {/* Visualization Toggle Buttons */}
           {hasDataResults && !isLoading && (
             <div className="flex justify-center gap-3">
-              <button
+              <button type="button"
                 onClick={handleToggleVisualization}
                 className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 shadow-sm"
               >

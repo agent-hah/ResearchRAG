@@ -12,7 +12,7 @@ export function Header() {
   return (
     <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
       <button
-        type="button"
+ type="button"
         className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
@@ -35,7 +35,7 @@ export function Header() {
         <div className="flex items-center gap-x-4 lg:gap-x-6">
           {/* Help */}
           <button
-            type="button"
+ type="button"
             className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
             onClick={() => setHelpOpen(true)}
           >
@@ -59,7 +59,7 @@ export function Header() {
             <div className="flex items-center justify-between">
               <span className="text-lg font-semibold">Menu</span>
               <button
-                type="button"
+ type="button"
                 className="-m-2.5 rounded-md p-2.5 text-gray-700"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -68,7 +68,7 @@ export function Header() {
               </button>
             </div>
             <nav className="mt-6">
-              <ul role="list" className="-mx-2 space-y-1">
+              <ul className="-mx-2 space-y-1">
                 {navigation.map((item) => (
                   <li key={item.title}>
                     <NavLink

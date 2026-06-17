@@ -22,15 +22,17 @@ interface RichTextEditorProps {
   maxHeight?: string
 }
 
+const toggleAction = (action: () => void) => (e: React.MouseEvent) => {
+  e.preventDefault()
+  action()
+}
+
 const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
   if (!editor) {
     return null
   }
 
-  const toggleAction = (action: () => void) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    action()
-  }
+
 
   const buttonClass = (isActive: boolean) => 
     `p-1.5 rounded transition-colors ${isActive ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`
@@ -38,7 +40,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
   return (
     <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 bg-gray-50 rounded-t-lg">
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleBold().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('bold'))}
@@ -47,7 +49,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <Bold size={16} />
       </button>
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleItalic().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('italic'))}
@@ -56,7 +58,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <Italic size={16} />
       </button>
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleStrike().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('strike'))}
@@ -66,7 +68,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
       </button>
       <div className="w-px h-6 bg-gray-300 mx-1 self-center" />
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('heading', { level: 1 }))}
@@ -75,7 +77,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <Heading1 size={16} />
       </button>
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('heading', { level: 2 }))}
@@ -85,7 +87,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
       </button>
       <div className="w-px h-6 bg-gray-300 mx-1 self-center" />
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleBulletList().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('bulletList'))}
@@ -94,7 +96,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
         <List size={16} />
       </button>
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleOrderedList().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('orderedList'))}
@@ -104,7 +106,7 @@ const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
       </button>
       <div className="w-px h-6 bg-gray-300 mx-1 self-center" />
       <button
-        type="button"
+ type="button"
         onMouseDown={toggleAction(() => editor.chain().focus().toggleBlockquote().run())}
         disabled={disabled}
         className={buttonClass(editor.isActive('blockquote'))}
@@ -152,7 +154,10 @@ export function RichTextEditor({
   // Update editor if disabled state changes
   useEffect(() => {
     if (editor) {
-      editor.setEditable(!disabled)
+      const timer = setTimeout(() => {
+        editor.setEditable(!disabled)
+      }, 0)
+      return () => clearTimeout(timer)
     }
   }, [editor, disabled])
 

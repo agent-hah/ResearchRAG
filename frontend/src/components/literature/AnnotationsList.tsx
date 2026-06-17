@@ -11,7 +11,7 @@ export function AnnotationsList({ annotations, onEdit, onDelete }: AnnotationsLi
   if (annotations.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-500" />
         <p>No annotations on this page</p>
         <p className="text-sm mt-1">Click "Annotate" to add one</p>
       </div>
@@ -39,7 +39,7 @@ export function AnnotationsList({ annotations, onEdit, onDelete }: AnnotationsLi
               </div>
               
               {annotation.highlighted_text && (
-                <p className="text-sm text-gray-700 mb-2 italic bg-yellow-50 p-2 rounded border-l-2 border-yellow-400">
+                <p className="text-sm text-gray-900 mb-2 italic bg-yellow-50 p-2 rounded border-l-2 border-yellow-400">
                   "{annotation.highlighted_text}"
                 </p>
               )}
@@ -48,22 +48,22 @@ export function AnnotationsList({ annotations, onEdit, onDelete }: AnnotationsLi
                 <p className="text-sm text-gray-900">{annotation.content}</p>
               )}
               
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-gray-500 mt-2">
                 Page {annotation.page_number} • {new Date(annotation.created_at).toLocaleDateString()}
               </p>
             </div>
             
             <div className="flex items-center gap-1">
-              <button
+              <button type="button"
                 onClick={() => onEdit(annotation)}
                 className="p-1.5 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded transition-colors"
                 title="Edit annotation"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
-              <button
+              <button type="button"
                 onClick={() => onDelete(annotation.id)}
-                className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
                 title="Delete annotation"
               >
                 <Trash2 className="w-4 h-4" />

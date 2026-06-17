@@ -22,7 +22,7 @@ export function NotFoundPage() {
             Go home
           </Link>
           
-          <button
+          <button type="button"
             onClick={() => window.history.back()}
             className="btn btn-outline"
           >

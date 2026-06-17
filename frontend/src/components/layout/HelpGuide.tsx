@@ -30,7 +30,7 @@ export function HelpGuide({ isOpen, onClose }: HelpGuideProps) {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">User Guide</h2>
           <button
-            type="button"
+ type="button"
             className="-m-2.5 rounded-md p-2.5 text-gray-700 hover:bg-gray-100"
             onClick={onClose}
           >

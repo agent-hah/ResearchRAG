@@ -86,3 +86,7 @@ frontend/fix-tests-tsmorph.cjs
 # Generated PDFs
 test_merged.pdf
 test_reportlab.pdf
+
+# Doctor outputs
+*doc*
+rd_report.json

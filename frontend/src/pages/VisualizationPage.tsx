@@ -63,7 +63,7 @@ export function VisualizationPage() {
           ) : (
             <div className="relative" ref={dropdownRef}>
               <button
-                type="button"
+ type="button"
                 className="mt-1 relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm hover:border-gray-400 transition-colors"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >

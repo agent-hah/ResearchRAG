@@ -3,6 +3,15 @@ import { Send, Loader2, Sparkles, History } from 'lucide-react'
 import { refinementService } from '../../services/refinementService'
 import type { ChartConfig } from '../../services/visualizationService'
 
+const exampleCommands = [
+  'Change to bar chart',
+  'Hide the legend',
+  'Update title to Sales Data',
+  'Change x axis to Month',
+  'Show grid lines',
+  'Filter out outliers'
+]
+
 interface RefinementPanelProps {
   config: ChartConfig
   onConfigChange: (config: ChartConfig) => void
@@ -15,11 +24,29 @@ interface RefinementHistoryItem {
 }
 
 export function RefinementPanel({ config, onConfigChange }: RefinementPanelProps) {
-  const [command, setCommand] = useState('')
-  const [isRefining, setIsRefining] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [history, setHistory] = useState<RefinementHistoryItem[]>([])
-  const [showHistory, setShowHistory] = useState(false)
+  interface RefinementPanelState {
+    command: string
+    isRefining: boolean
+    error: string | null
+    history: RefinementHistoryItem[]
+    showHistory: boolean
+  }
+
+  const [state, setState] = useState<RefinementPanelState>({
+    command: '',
+    isRefining: false,
+    error: null,
+    history: [],
+    showHistory: false
+  })
+
+  const { command, isRefining, error, history, showHistory } = state
+
+  const setCommand = (val: string | ((p: string) => string)) => setState(s => ({ ...s, command: typeof val === 'function' ? val(s.command) : val }))
+  const setIsRefining = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, isRefining: typeof val === 'function' ? val(s.isRefining) : val }))
+  const setError = (val: string | null | ((p: string | null) => string | null)) => setState(s => ({ ...s, error: typeof val === 'function' ? val(s.error) : val }))
+  const setHistory = (val: RefinementHistoryItem[] | ((p: RefinementHistoryItem[]) => RefinementHistoryItem[])) => setState(s => ({ ...s, history: typeof val === 'function' ? val(s.history) : val }))
+  const setShowHistory = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, showHistory: typeof val === 'function' ? val(s.showHistory) : val }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,15 +83,6 @@ export function RefinementPanel({ config, onConfigChange }: RefinementPanelProps
     setCommand(suggestion)
   }
 
-  const exampleCommands = [
-    'Change to bar chart',
-    'Hide the legend',
-    'Update title to Sales Data',
-    'Change x axis to Month',
-    'Show grid lines',
-    'Filter out outliers'
-  ]
-
   return (
     <div className="space-y-4">
       {/* Refinement Input */}
@@ -84,7 +102,7 @@ export function RefinementPanel({ config, onConfigChange }: RefinementPanelProps
             disabled={isRefining}
           />
           <button
-            type="submit"
+ type="submit"
             disabled={!command.trim() || isRefining}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Apply refinement"
@@ -109,9 +127,9 @@ export function RefinementPanel({ config, onConfigChange }: RefinementPanelProps
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2">Example commands:</p>
         <div className="flex flex-wrap gap-2">
-          {exampleCommands.map((example, index) => (
-            <button
-              key={index}
+          {exampleCommands.map((example) => (
+            <button type="button"
+              key={example}
               onClick={() => handleSuggestionClick(example)}
               disabled={isRefining}
               className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -125,7 +143,7 @@ export function RefinementPanel({ config, onConfigChange }: RefinementPanelProps
       {/* Refinement History */}
       {history.length > 0 && (
         <div>
-          <button
+          <button type="button"
             onClick={() => setShowHistory(!showHistory)}
             className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
           >
@@ -137,7 +155,7 @@ export function RefinementPanel({ config, onConfigChange }: RefinementPanelProps
             <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
               {history.map((item, index) => (
                 <div
-                  key={index}
+                  key={typeof item.timestamp === 'string' ? item.timestamp : (item.timestamp?.toISOString ? item.timestamp.toISOString() : index)}
                   className="p-3 bg-gray-50 rounded-lg border border-gray-200"
                 >
                   <div className="flex items-start justify-between gap-2">

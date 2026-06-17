@@ -116,7 +116,7 @@ export function NotesPanel({ queryId, datasetId, literatureId }: NotesPanelProps
             {notes.length}
           </span>
         </div>
-        <button
+        <button type="button"
           onClick={() => setShowEditor(!showEditor)}
           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
         >
@@ -149,7 +149,7 @@ export function NotesPanel({ queryId, datasetId, literatureId }: NotesPanelProps
               </div>
               <div className="flex flex-wrap gap-2">
                 {allTags.map(tag => (
-                  <button
+                  <button type="button"
                     key={tag}
                     onClick={() => handleToggleTag(tag)}
                     className={`px-3 py-1 rounded-full text-sm transition-colors ${
@@ -222,7 +222,7 @@ export function NotesPanel({ queryId, datasetId, literatureId }: NotesPanelProps
                 : 'Create your first note to get started'}
             </p>
             {!showEditor && (
-              <button
+              <button type="button"
                 onClick={() => setShowEditor(true)}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >

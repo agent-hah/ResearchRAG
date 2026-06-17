@@ -20,22 +20,33 @@ export function NoteEditor({
   onCancel,
   isLoading = false
 }: NoteEditorProps) {
-  const [title, setTitle] = useState(initialTitle)
-  const [content, setContent] = useState(initialContent)
-  const [tags, setTags] = useState<string[]>(initialTags)
-  const [tagInput, setTagInput] = useState('')
-  const [availableTags, setAvailableTags] = useState<string[]>([])
-  const [showTagSuggestions, setShowTagSuggestions] = useState(false)
+  
+  const [state, setState] = useState({
+    title: initialTitle,
+    content: initialContent,
+    tags: initialTags,
+    tagInput: '',
+    availableTags: [] as string[],
+    showTagSuggestions: false
+  })
 
-  const filteredTags = availableTags.filter(tag => 
-    tag.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(tag)
+  const updateState = <K extends keyof typeof state>(key: K, value: any) => {
+    setState(prev => ({
+      ...prev,
+      [key]: typeof value === 'function' ? value(prev[key]) : value
+    }))
+  }
+
+
+  const filteredTags = state.availableTags.filter(tag => 
+    tag.toLowerCase().includes(state.tagInput.toLowerCase()) && !state.tags.includes(tag)
   )
 
   useEffect(() => {
     const fetchTags = async () => {
       try {
         const tags = await notesService.getTags()
-        setAvailableTags(tags)
+        updateState('availableTags', tags)
       } catch (error) {
         console.error('Failed to fetch tags:', error)
       }
@@ -44,15 +55,15 @@ export function NoteEditor({
   }, [])
 
   const handleAddTag = () => {
-    const trimmed = tagInput.trim()
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags([...tags, trimmed])
-      setTagInput('')
+    const trimmed = state.tagInput.trim()
+    if (trimmed && !state.tags.includes(trimmed)) {
+      updateState('tags', [...state.tags, trimmed])
+      updateState('tagInput', '')
     }
   }
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove))
+    updateState('tags', state.tags.filter(tag => tag !== tagToRemove))
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -63,8 +74,8 @@ export function NoteEditor({
   }
 
   const handleSave = () => {
-    if (content.trim()) {
-      onSave(title.trim() || 'Untitled Note', content.trim(), tags)
+    if (state.content.trim()) {
+      onSave(state.title.trim() || 'Untitled Note', state.content.trim(), state.tags)
     }
   }
 
@@ -78,8 +89,8 @@ export function NoteEditor({
         <input
           id="note-title"
           type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={state.title}
+          onChange={(e) => updateState('title', e.target.value)}
           placeholder="Note title"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           disabled={isLoading}
@@ -92,8 +103,8 @@ export function NoteEditor({
           Note Content
         </label>
         <RichTextEditor
-          initialContent={content}
-          onChange={setContent}
+          initialContent={state.content}
+          onChange={(val) => updateState('content', val)}
           placeholder="Write your note here..."
           disabled={isLoading}
           minHeight="200px"
@@ -111,15 +122,15 @@ export function NoteEditor({
             <input
               id="tag-input"
               type="text"
-              value={tagInput}
+              value={state.tagInput}
               onChange={(e) => {
-                setTagInput(e.target.value)
-                setShowTagSuggestions(true)
+                updateState('tagInput', e.target.value)
+                updateState('showTagSuggestions', true)
               }}
-              onFocus={() => setShowTagSuggestions(true)}
+              onFocus={() => updateState('showTagSuggestions', true)}
               onBlur={() => {
                 // Short delay to allow click on suggestion to register before hiding
-                setTimeout(() => setShowTagSuggestions(false), 200)
+                setTimeout(() => updateState('showTagSuggestions', false), 200)
               }}
               onKeyDown={handleKeyDown}
               placeholder="Add a tag..."
@@ -127,7 +138,7 @@ export function NoteEditor({
               disabled={isLoading}
               autoComplete="off"
             />
-            {showTagSuggestions && filteredTags.length > 0 && (
+            {state.showTagSuggestions && filteredTags.length > 0 && (
               <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
                 {filteredTags.map((tag) => (
                   <li
@@ -135,11 +146,11 @@ export function NoteEditor({
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700"
                     onMouseDown={(e) => {
                       e.preventDefault()
-                      if (!tags.includes(tag)) {
-                        setTags([...tags, tag])
+                      if (!state.tags.includes(tag)) {
+                        updateState('tags', [...state.tags, tag])
                       }
-                      setTagInput('')
-                      setShowTagSuggestions(false)
+                      updateState('tagInput', '')
+                      updateState('showTagSuggestions', false)
                     }}
                   >
                     {tag}
@@ -148,23 +159,23 @@ export function NoteEditor({
               </ul>
             )}
           </div>
-          <button
+          <button type="button"
             onClick={handleAddTag}
-            disabled={!tagInput.trim() || isLoading}
+            disabled={!state.tagInput.trim() || isLoading}
             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Add
           </button>
         </div>
-        {tags.length > 0 && (
+        {state.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {tags.map((tag, index) => (
+            {state.tags.map((tag) => (
               <span
-                key={index}
+                key={tag}
                 className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm"
               >
                 {tag}
-                <button
+                <button type="button"
                   onClick={() => handleRemoveTag(tag)}
                   disabled={isLoading}
                   className="hover:text-primary-900 disabled:opacity-50"
@@ -180,16 +191,16 @@ export function NoteEditor({
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
-        <button
+        <button type="button"
           onClick={onCancel}
           disabled={isLoading}
           className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Cancel
         </button>
-        <button
+        <button type="button"
           onClick={handleSave}
-          disabled={!content.trim() || isLoading}
+          disabled={!state.content.trim() || isLoading}
           className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
           <Save className="w-4 h-4" />

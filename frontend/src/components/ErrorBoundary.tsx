@@ -54,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
 
             <div className="space-y-3">
-              <button
+              <button type="button"
                 onClick={this.handleReset}
                 className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
               >
@@ -62,7 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Try Again
               </button>
               
-              <button
+              <button type="button"
                 onClick={this.handleReload}
                 className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >

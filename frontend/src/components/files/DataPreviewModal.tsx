@@ -50,7 +50,7 @@ export function DataPreviewModal({ datasetId, onClose }: DataPreviewModalProps) 
               )}
             </div>
             
-            <button
+            <button type="button"
               onClick={onClose}
               className="btn btn-ghost btn-sm"
             >
@@ -61,7 +61,7 @@ export function DataPreviewModal({ datasetId, onClose }: DataPreviewModalProps) 
           {/* Tabs */}
           <div className="border-b border-gray-200 px-6 pt-4">
             <div className="flex space-x-8">
-              <button
+              <button type="button"
                 onClick={() => setActiveTab('table')}
                 className={`pb-4 flex items-center space-x-2 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'table'
@@ -72,7 +72,7 @@ export function DataPreviewModal({ datasetId, onClose }: DataPreviewModalProps) 
                 <Table2 className="w-4 h-4" />
                 <span>Data Table</span>
               </button>
-              <button
+              <button type="button"
                 onClick={() => setActiveTab('chart')}
                 className={`pb-4 flex items-center space-x-2 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'chart'
@@ -138,7 +138,7 @@ export function DataPreviewModal({ datasetId, onClose }: DataPreviewModalProps) 
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
                             {preview.rows.map((row: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-gray-50">
+                              <tr key={row.id || Object.values(row).join("-").substring(0,20) || idx} className="hover:bg-gray-50">
                                 {preview.schema.map((col: any) => (
                                   <td
                                     key={col.name}
@@ -184,7 +184,7 @@ export function DataPreviewModal({ datasetId, onClose }: DataPreviewModalProps) 
           {/* Footer */}
           <div className="flex items-center justify-between p-6 border-t border-gray-200">
             <div className="flex items-center space-x-3 ml-auto">
-              <button
+              <button type="button"
                 onClick={onClose}
                 className="btn btn-outline"
               >

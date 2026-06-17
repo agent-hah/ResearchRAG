@@ -64,27 +64,27 @@ function CheckboxDropdown({ options = [], value = '', onChange, placeholder = 'S
   )
 }
 
-export function ChartControls({ config, columns = [], onConfigChange, onExport }: ChartControlsProps) {
-  const chartTypes: { value: ChartType; label: string }[] = [
-    { value: 'line', label: 'Line Chart' },
-    { value: 'bar', label: 'Bar Chart' },
-    { value: 'scatter', label: 'Scatter Plot' },
-    { value: 'area', label: 'Area Chart' },
-    { value: 'pie', label: 'Pie Chart' },
-    { value: 'heatmap', label: 'Heat Map' },
-  ]
+const chartTypes: { value: ChartType; label: string }[] = [
+  { value: 'line', label: 'Line Chart' },
+  { value: 'bar', label: 'Bar Chart' },
+  { value: 'scatter', label: 'Scatter Plot' },
+  { value: 'area', label: 'Area Chart' },
+  { value: 'pie', label: 'Pie Chart' },
+  { value: 'heatmap', label: 'Heat Map' },
+]
 
+export function ChartControls({ config, columns = [], onConfigChange, onExport }: ChartControlsProps) {
   return (
     <div className="space-y-4">
       {/* Chart Type Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="block text-sm font-medium text-gray-700 mb-2">
           <Settings className="w-4 h-4 inline mr-1" />
           Chart Type
-        </label>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {chartTypes.map((type) => (
-            <button
+            <button type="button"
               key={type.value}
               onClick={() => onConfigChange({ type: type.value })}
               className={`px-3 py-2 text-sm rounded-md border transition-colors ${
@@ -187,8 +187,9 @@ export function ChartControls({ config, columns = [], onConfigChange, onExport }
                 { id: 'inferno', gradient: 'linear-gradient(to bottom right, #000004 0%, #bb3754 50%, #fcffa4 100%)', solid: '#bb3754', name: 'Inferno' },
                 { id: 'black', gradient: 'linear-gradient(to bottom right, #4b5563 0%, #000000 100%)', solid: '#000000', name: 'Black' }
               ].map(scheme => (
-                <label key={scheme.id} className="relative cursor-pointer flex items-center justify-center" title={scheme.name}>
+                <label key={scheme.id} htmlFor={`color-scheme-${scheme.id}`} className="relative cursor-pointer flex items-center justify-center" title={scheme.name}>
                   <input
+                    id={`color-scheme-${scheme.id}`}
                     type="radio"
                     name="colorScheme"
                     value={scheme.id}
@@ -258,24 +259,24 @@ export function ChartControls({ config, columns = [], onConfigChange, onExport }
 
       {/* Export Options */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="block text-sm font-medium text-gray-700 mb-2">
           <Download className="w-4 h-4 inline mr-1" />
           Export Chart
-        </label>
+        </div>
         <div className="flex flex-wrap gap-2">
-          <button
+          <button type="button"
             onClick={() => onExport('png')}
             className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
           >
             Export as PNG
           </button>
-          <button
+          <button type="button"
             onClick={() => onExport('json')}
             className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
           >
             Export as JSON
           </button>
-          <button
+          <button type="button"
             onClick={() => onExport('csv')}
             className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
           >

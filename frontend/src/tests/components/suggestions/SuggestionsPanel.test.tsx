@@ -18,9 +18,9 @@ vi.mock('@/components/suggestions/SuggestionCard', () => ({
   SuggestionCard: ({ suggestion, onMarkRelevant, onMarkIrrelevant, onDismiss }: any) => (
     <div data-testid="suggestion-card">
       {suggestion.title}
-      <button onClick={() => onMarkRelevant(suggestion.id)}>Relevant</button>
-      <button onClick={() => onMarkIrrelevant(suggestion.id)}>Irrelevant</button>
-      <button onClick={() => onDismiss(suggestion.id)}>Dismiss</button>
+      <button type="button" onClick={() => onMarkRelevant(suggestion.id)}>Relevant</button>
+      <button type="button" onClick={() => onMarkIrrelevant(suggestion.id)}>Irrelevant</button>
+      <button type="button" onClick={() => onDismiss(suggestion.id)}>Dismiss</button>
     </div>
   )
 }));

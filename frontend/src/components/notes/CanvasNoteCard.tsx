@@ -8,17 +8,18 @@ interface CanvasNoteCardProps {
   onDelete: (noteId: number) => void
 }
 
+const cardColors = [
+  'bg-yellow-100 border-yellow-300',
+  'bg-blue-100 border-blue-300',
+  'bg-green-100 border-green-300',
+  'bg-pink-100 border-pink-300',
+  'bg-purple-100 border-purple-300',
+  'bg-orange-100 border-orange-300',
+]
+
 export function CanvasNoteCard({ note, onEdit, onDelete }: CanvasNoteCardProps) {
   // Generate a color based on note ID for visual variety
-  const colors = [
-    'bg-yellow-100 border-yellow-300',
-    'bg-blue-100 border-blue-300',
-    'bg-green-100 border-green-300',
-    'bg-pink-100 border-pink-300',
-    'bg-purple-100 border-purple-300',
-    'bg-orange-100 border-orange-300',
-  ]
-  const colorClass = colors[note.id % colors.length]
+  const colorClass = cardColors[note.id % cardColors.length]
 
   // Truncate content for display
   const displayContent = note.content.length > 150
@@ -39,7 +40,7 @@ export function CanvasNoteCard({ note, onEdit, onDelete }: CanvasNoteCardProps) 
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <button
+          <button type="button"
             onClick={(e) => {
               e.stopPropagation()
               onEdit(note)
@@ -49,7 +50,7 @@ export function CanvasNoteCard({ note, onEdit, onDelete }: CanvasNoteCardProps) 
           >
             <Edit2 className="w-4 h-4 text-gray-600" />
           </button>
-          <button
+          <button type="button"
             onClick={(e) => {
               e.stopPropagation()
               onDelete(note.id)
@@ -95,9 +96,9 @@ export function CanvasNoteCard({ note, onEdit, onDelete }: CanvasNoteCardProps) 
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-gray-300">
             <Tag className="w-3 h-3 text-gray-500 mt-1" />
-            {note.tags.map((tag, index) => (
+            {note.tags.map((tag) => (
               <span
-                key={index}
+                key={tag}
                 className="px-2 py-0.5 bg-white bg-opacity-70 text-gray-700 rounded-full text-xs font-medium"
               >
                 {tag}

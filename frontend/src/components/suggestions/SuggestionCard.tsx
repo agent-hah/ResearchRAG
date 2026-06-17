@@ -96,16 +96,16 @@ export function SuggestionCard({
         {/* Feedback Buttons */}
         {suggestion.is_relevant === null && (
           <>
-            <button
+            <button type="button"
               onClick={() => onMarkRelevant(suggestion.id)}
-              className="p-1.5 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+              className="p-1.5 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded transition-colors"
               title="Mark as relevant"
             >
               <ThumbsUp className="w-4 h-4" />
             </button>
-            <button
+            <button type="button"
               onClick={() => onMarkIrrelevant(suggestion.id)}
-              className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+              className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
               title="Mark as not relevant"
             >
               <ThumbsDown className="w-4 h-4" />
@@ -128,9 +128,9 @@ export function SuggestionCard({
         )}
 
         {/* Dismiss Button */}
-        <button
+        <button type="button"
           onClick={() => onDismiss(suggestion.id)}
-          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
           title="Dismiss this suggestion"
         >
           <X className="w-4 h-4" />

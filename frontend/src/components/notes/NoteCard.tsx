@@ -44,7 +44,7 @@ export function NoteCard({ note, onEdit, onDelete, onViewRelationships }: NoteCa
         </div>
         
         {note.content.length > 200 && (
-          <button
+          <button type="button"
             onClick={() => setShowFullContent(!showFullContent)}
             className="text-sm text-primary-600 hover:text-primary-700 mb-4"
           >
@@ -55,9 +55,9 @@ export function NoteCard({ note, onEdit, onDelete, onViewRelationships }: NoteCa
         {/* Tags */}
         {note.tags && note.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {note.tags.map((tag, index) => (
+            {note.tags.map((tag) => (
               <span
-                key={index}
+                key={tag}
                 className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"
               >
                 <Tag className="w-3 h-3" />
@@ -85,14 +85,14 @@ export function NoteCard({ note, onEdit, onDelete, onViewRelationships }: NoteCa
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
-          <button
+          <button type="button"
             onClick={() => onEdit(note)}
             className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
           >
             <Edit2 className="w-4 h-4" />
             Edit
           </button>
-          <button
+          <button type="button"
             onClick={handleDelete}
             className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
           >
@@ -100,7 +100,7 @@ export function NoteCard({ note, onEdit, onDelete, onViewRelationships }: NoteCa
             Delete
           </button>
           {onViewRelationships && (
-            <button
+            <button type="button"
               onClick={() => onViewRelationships(note.id)}
               className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-md transition-colors ml-auto"
             >

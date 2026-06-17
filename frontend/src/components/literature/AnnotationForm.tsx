@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Save } from 'lucide-react'
 import type { Annotation, AnnotationCreate } from '../../services/annotationsService'
 import { RichTextEditor } from '../common/RichTextEditor'
@@ -33,20 +33,32 @@ export function AnnotationForm({
   onSave,
   onCancel,
 }: AnnotationFormProps) {
-  const [annotationType, setAnnotationType] = useState(editingAnnotation?.annotation_type || 'highlight')
-  const [content, setContent] = useState(editingAnnotation?.content || '')
-  const [highlightedText, setHighlightedText] = useState(editingAnnotation?.highlighted_text || '')
-  const [color, setColor] = useState(editingAnnotation?.color || 'yellow')
-  const [rects, setRects] = useState<{x: number, y: number, width: number, height: number}[]>([])
+  interface AnnotationFormState {
+    annotationType: 'note' | 'highlight' | 'question'
+    content: string
+    highlightedText: string
+    color: string
+    rects: {x: number, y: number, width: number, height: number}[]
+  }
+
+  const [state, setState] = useState<AnnotationFormState>({
+    annotationType: (editingAnnotation?.annotation_type as 'note' | 'highlight' | 'question') || 'highlight',
+    content: editingAnnotation?.content || '',
+    highlightedText: editingAnnotation?.highlighted_text || '',
+    color: editingAnnotation?.color || 'yellow',
+    rects: []
+  })
+
+  const { annotationType, content, highlightedText, color, rects } = state
+
+  const setAnnotationType = (val: 'note' | 'highlight' | 'question' | ((p: 'note' | 'highlight' | 'question') => 'note' | 'highlight' | 'question')) => setState(s => ({ ...s, annotationType: typeof val === 'function' ? val(s.annotationType) : val }))
+  const setContent = (val: string | ((p: string) => string)) => setState(s => ({ ...s, content: typeof val === 'function' ? val(s.content) : val }))
+  const setHighlightedText = useCallback((val: string | ((p: string) => string)) => setState(s => ({ ...s, highlightedText: typeof val === 'function' ? val(s.highlightedText) : val })), [])
+  const setColor = (val: string | ((p: string) => string)) => setState(s => ({ ...s, color: typeof val === 'function' ? val(s.color) : val }))
+  const setRects = useCallback((val: {x: number, y: number, width: number, height: number}[] | ((p: {x: number, y: number, width: number, height: number}[]) => {x: number, y: number, width: number, height: number}[])) => setState(s => ({ ...s, rects: typeof val === 'function' ? val(s.rects) : val })), [])
 
   useEffect(() => {
-    if (editingAnnotation) {
-      setAnnotationType(editingAnnotation.annotation_type)
-      setContent(editingAnnotation.content || '')
-      setHighlightedText(editingAnnotation.highlighted_text || '')
-      setColor(editingAnnotation.color || 'yellow')
-      // Note: we don't load rects for editing since we just want to update content/color usually
-    } else {
+    if (!editingAnnotation) {
       // Try to get selected text from the document
       const selection = window.getSelection()
       if (selection && selection.toString().trim() && selection.rangeCount > 0) {
@@ -75,7 +87,7 @@ export function AnnotationForm({
         }
       }
     }
-  }, [editingAnnotation])
+  }, [editingAnnotation, setHighlightedText, setRects])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,7 +112,7 @@ export function AnnotationForm({
           <h3 className="text-lg font-semibold text-gray-900">
             {editingAnnotation ? 'Edit Annotation' : 'Add Annotation'}
           </h3>
-          <button
+          <button type="button"
             onClick={onCancel}
             className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
           >
@@ -116,7 +128,7 @@ export function AnnotationForm({
             <select
               id="annotation-type"
               value={annotationType}
-              onChange={(e) => setAnnotationType(e.target.value)}
+              onChange={(e) => setAnnotationType(e.target.value as 'note' | 'highlight' | 'question')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {ANNOTATION_TYPES.map((type) => (
@@ -155,9 +167,9 @@ export function AnnotationForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="block text-sm font-medium text-gray-700 mb-1">
               Color
-            </label>
+            </div>
             <div className="flex gap-2">
               {COLORS.map((c) => (
                 <button
@@ -178,14 +190,14 @@ export function AnnotationForm({
 
           <div className="flex gap-2 pt-2">
             <button
-              type="button"
+ type="button"
               onClick={onCancel}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
-              type="submit"
+ type="submit"
               className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
             >
               <Save className="w-4 h-4" />

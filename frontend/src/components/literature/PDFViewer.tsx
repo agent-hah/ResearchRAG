@@ -19,13 +19,35 @@ interface PDFViewerProps {
 }
 
 export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
-  const [numPages, setNumPages] = useState<number>(0)
-  const [pageNumber, setPageNumber] = useState<number>(1)
-  const [scale, setScale] = useState<number>(1.0)
-  const [showAnnotations, setShowAnnotations] = useState(true)
-  const [showAnnotationForm, setShowAnnotationForm] = useState(false)
-  const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(null)
-  const [annotationToDelete, setAnnotationToDelete] = useState<number | null>(null)
+  interface PDFViewerState {
+    numPages: number
+    pageNumber: number
+    scale: number
+    showAnnotations: boolean
+    showAnnotationForm: boolean
+    editingAnnotation: Annotation | null
+    annotationToDelete: number | null
+  }
+
+  const [state, setState] = useState<PDFViewerState>({
+    numPages: 0,
+    pageNumber: 1,
+    scale: 1.0,
+    showAnnotations: true,
+    showAnnotationForm: false,
+    editingAnnotation: null,
+    annotationToDelete: null
+  })
+
+  const { numPages, pageNumber, scale, showAnnotations, showAnnotationForm, editingAnnotation, annotationToDelete } = state
+
+  const setNumPages = (val: number | ((p: number) => number)) => setState(s => ({ ...s, numPages: typeof val === 'function' ? val(s.numPages) : val }))
+  const setPageNumber = (val: number | ((p: number) => number)) => setState(s => ({ ...s, pageNumber: typeof val === 'function' ? val(s.pageNumber) : val }))
+  const setScale = (val: number | ((p: number) => number)) => setState(s => ({ ...s, scale: typeof val === 'function' ? val(s.scale) : val }))
+  const setShowAnnotations = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, showAnnotations: typeof val === 'function' ? val(s.showAnnotations) : val }))
+  const setShowAnnotationForm = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, showAnnotationForm: typeof val === 'function' ? val(s.showAnnotationForm) : val }))
+  const setEditingAnnotation = (val: Annotation | null | ((p: Annotation | null) => Annotation | null)) => setState(s => ({ ...s, editingAnnotation: typeof val === 'function' ? val(s.editingAnnotation) : val }))
+  const setAnnotationToDelete = (val: number | null | ((p: number | null) => number | null)) => setState(s => ({ ...s, annotationToDelete: typeof val === 'function' ? val(s.annotationToDelete) : val }))
 
   const queryClient = useQueryClient()
 
@@ -140,7 +162,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
 
           <div className="flex items-center gap-2">
             {/* Navigation */}
-            <button
+            <button type="button"
               onClick={previousPage}
               disabled={pageNumber <= 1}
               className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -148,7 +170,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button
+            <button type="button"
               onClick={nextPage}
               disabled={pageNumber >= numPages}
               className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -159,7 +181,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
 
             {/* Zoom */}
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
-            <button
+            <button type="button"
               onClick={zoomOut}
               disabled={scale <= 0.5}
               className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -170,7 +192,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
             <span className="text-sm text-gray-600 min-w-[4rem] text-center">
               {Math.round(scale * 100)}%
             </span>
-            <button
+            <button type="button"
               onClick={zoomIn}
               disabled={scale >= 3.0}
               className="p-2 text-gray-700 hover:bg-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -181,7 +203,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
 
             {/* Annotate */}
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
-            <button
+            <button type="button"
               onClick={handleAnnotate}
               className="px-3 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors flex items-center gap-2"
               title="Add annotation"
@@ -191,7 +213,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
             </button>
 
             {/* Toggle Annotations Panel */}
-            <button
+            <button type="button"
               onClick={() => setShowAnnotations(!showAnnotations)}
               className={`p-2 rounded-md transition-colors ${showAnnotations
                   ? 'bg-primary-100 text-primary-700'
@@ -307,6 +329,7 @@ export function PDFViewer({ fileUrl, literatureId }: PDFViewerProps) {
       {/* Annotation Form Modal */}
       {showAnnotationForm && (
         <AnnotationForm
+          key={editingAnnotation?.id || 'new'}
           literatureId={literatureId}
           pageNumber={pageNumber}
           editingAnnotation={editingAnnotation}

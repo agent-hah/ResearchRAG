@@ -16,7 +16,7 @@ vi.mock('@/services/fileService', () => ({
 vi.mock('@/components/files/FileUpload', () => ({
   FileUpload: ({ type, onUploadComplete }: any) => (
     <div data-testid={`file-upload-${type}`}>
-      <button onClick={() => onUploadComplete()}>Upload {type}</button>
+      <button type="button" onClick={() => onUploadComplete()}>Upload {type}</button>
     </div>
   ),
 }))
@@ -24,8 +24,8 @@ vi.mock('@/components/files/FileUpload', () => ({
 vi.mock('@/components/files/FileList', () => ({
   FileList: ({ datasets, literature, onPreview }: any) => (
     <div data-testid="file-list">
-      <button onClick={() => onPreview(1, 'dataset')}>Preview Dataset</button>
-      <button onClick={() => onPreview(2, 'literature')}>Preview Literature</button>
+      <button type="button" onClick={() => onPreview(1, 'dataset')}>Preview Dataset</button>
+      <button type="button" onClick={() => onPreview(2, 'literature')}>Preview Literature</button>
       Datasets: {datasets.length} Lit: {literature.length}
     </div>
   ),
@@ -34,7 +34,7 @@ vi.mock('@/components/files/FileList', () => ({
 vi.mock('@/components/files/DataPreviewModal', () => ({
   DataPreviewModal: ({ onClose }: any) => (
     <div data-testid="data-preview-modal">
-      <button onClick={onClose}>Close Preview</button>
+      <button type="button" onClick={onClose}>Close Preview</button>
     </div>
   ),
 }))

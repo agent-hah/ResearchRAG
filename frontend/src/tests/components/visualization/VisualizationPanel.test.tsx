@@ -24,10 +24,10 @@ vi.mock('@/components/visualization/ChartRenderer', () => ({
 vi.mock('@/components/visualization/ChartControls', () => ({
   ChartControls: ({ onConfigChange, onExport }: any) => (
     <div data-testid="chart-controls">
-      <button onClick={() => onConfigChange({ title: 'Manual Update' })}>Update Config</button>
-      <button onClick={() => onExport('png')}>Export PNG</button>
-      <button onClick={() => onExport('json')}>Export JSON</button>
-      <button onClick={() => onExport('csv')}>Export CSV</button>
+      <button type="button" onClick={() => onConfigChange({ title: 'Manual Update' })}>Update Config</button>
+      <button type="button" onClick={() => onExport('png')}>Export PNG</button>
+      <button type="button" onClick={() => onExport('json')}>Export JSON</button>
+      <button type="button" onClick={() => onExport('csv')}>Export CSV</button>
     </div>
   )
 }));
@@ -35,7 +35,7 @@ vi.mock('@/components/visualization/ChartControls', () => ({
 vi.mock('@/components/visualization/RefinementPanel', () => ({
   RefinementPanel: ({ onConfigChange }: any) => (
     <div data-testid="refinement-panel">
-      <button onClick={() => onConfigChange({ type: 'bar', title: 'AI Update', showLegend: true })}>AI Update</button>
+      <button type="button" onClick={() => onConfigChange({ type: 'bar', title: 'AI Update', showLegend: true })}>AI Update</button>
     </div>
   )
 }));

@@ -43,7 +43,7 @@ export function QueryInput({ onSubmit, isLoading, disabled = false }: QueryInput
             disabled={isDisabled}
           />
           <button
-            type="submit"
+ type="submit"
             disabled={!question.trim() || isDisabled}
             className="absolute right-2 bottom-2 p-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Submit query (Enter)"
@@ -64,9 +64,9 @@ export function QueryInput({ onSubmit, isLoading, disabled = false }: QueryInput
       <div className="space-y-2">
         <p className="text-sm font-medium text-gray-700">Example queries:</p>
         <div className="flex flex-wrap gap-2">
-          {EXAMPLE_QUERIES.map((example, index) => (
+          {EXAMPLE_QUERIES.map((example) => (
             <button
-              key={index}
+              key={example}
               type="button"
               onClick={() => setQuestion(example)}
               disabled={isDisabled}

@@ -8,47 +8,78 @@ import { api } from '@/lib/api'
 import type { Dataset, Literature } from '@/types'
 
 export function ExportPage() {
-  const [exporting, setExporting] = useState(false)
-  const [pdfAnnotationsEnabled, setPdfAnnotationsEnabled] = useState<Record<number, boolean>>({})
-  const [selectedQueries, setSelectedQueries] = useState<number[]>([])
-
-  const [selectedNotes, setSelectedNotes] = useState<number[]>(() => {
-    try {
-      const saved = localStorage.getItem('selectedNotes')
-      return saved ? JSON.parse(saved) : []
-    } catch { return [] }
-  })
-
-  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('selectedTags')
-      return saved ? JSON.parse(saved) : []
-    } catch { return [] }
-  })
-
   type ExportMode = 'all' | 'tag' | 'custom'
-  const [exportMode, setExportMode] = useState<ExportMode>(() => {
-    try {
-      return (localStorage.getItem('noteExportMode') as ExportMode) || 'all'
-    } catch { return 'all' }
+
+  interface ExportState {
+    exporting: boolean
+    pdfAnnotationsEnabled: Record<number, boolean>
+    selectedQueries: number[]
+    selectedNotes: number[]
+    selectedTags: string[]
+    exportMode: ExportMode
+    showNotesModal: boolean
+    notesSearchQuery: string
+    showTagsModal: boolean
+    tagsSearchQuery: string
+  }
+
+  const [state, setState] = useState<ExportState>(() => {
+    let savedNotes: number[] = []
+    let savedTags: string[] = []
+    let savedMode: ExportMode = 'all'
+    if (typeof localStorage !== 'undefined') {
+      try { const n = localStorage.getItem('selectedNotes:v1'); if (n) savedNotes = JSON.parse(n) } catch {}
+      try { const t = localStorage.getItem('selectedTags:v1'); if (t) savedTags = JSON.parse(t) } catch {}
+      try { const m = localStorage.getItem('noteExportMode:v1'); if (m) savedMode = m as ExportMode } catch {}
+    }
+    return {
+      exporting: false,
+      pdfAnnotationsEnabled: {},
+      selectedQueries: [],
+      selectedNotes: savedNotes,
+      selectedTags: savedTags,
+      exportMode: savedMode,
+      showNotesModal: false,
+      notesSearchQuery: '',
+      showTagsModal: false,
+      tagsSearchQuery: ''
+    }
   })
 
-  const [showNotesModal, setShowNotesModal] = useState(false)
-  const [notesSearchQuery, setNotesSearchQuery] = useState('')
+  const {
+    exporting,
+    pdfAnnotationsEnabled,
+    selectedQueries,
+    selectedNotes,
+    selectedTags,
+    exportMode,
+    showNotesModal,
+    notesSearchQuery,
+    showTagsModal,
+    tagsSearchQuery
+  } = state
 
-  const [showTagsModal, setShowTagsModal] = useState(false)
-  const [tagsSearchQuery, setTagsSearchQuery] = useState('')
+  const setExporting = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, exporting: typeof val === 'function' ? val(s.exporting) : val }))
+  const setPdfAnnotationsEnabled = (val: Record<number, boolean> | ((p: Record<number, boolean>) => Record<number, boolean>)) => setState(s => ({ ...s, pdfAnnotationsEnabled: typeof val === 'function' ? val(s.pdfAnnotationsEnabled) : val }))
+  const setSelectedQueries = (val: number[] | ((p: number[]) => number[])) => setState(s => ({ ...s, selectedQueries: typeof val === 'function' ? val(s.selectedQueries) : val }))
+  const setSelectedNotes = (val: number[] | ((p: number[]) => number[])) => setState(s => ({ ...s, selectedNotes: typeof val === 'function' ? val(s.selectedNotes) : val }))
+  const setSelectedTags = (val: string[] | ((p: string[]) => string[])) => setState(s => ({ ...s, selectedTags: typeof val === 'function' ? val(s.selectedTags) : val }))
+  const setExportMode = (val: ExportMode | ((p: ExportMode) => ExportMode)) => setState(s => ({ ...s, exportMode: typeof val === 'function' ? val(s.exportMode) : val }))
+  const setShowNotesModal = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, showNotesModal: typeof val === 'function' ? val(s.showNotesModal) : val }))
+  const setNotesSearchQuery = (val: string | ((p: string) => string)) => setState(s => ({ ...s, notesSearchQuery: typeof val === 'function' ? val(s.notesSearchQuery) : val }))
+  const setShowTagsModal = (val: boolean | ((p: boolean) => boolean)) => setState(s => ({ ...s, showTagsModal: typeof val === 'function' ? val(s.showTagsModal) : val }))
+  const setTagsSearchQuery = (val: string | ((p: string) => string)) => setState(s => ({ ...s, tagsSearchQuery: typeof val === 'function' ? val(s.tagsSearchQuery) : val }))
 
   useEffect(() => {
-    try { localStorage.setItem('selectedNotes', JSON.stringify(selectedNotes)) } catch {}
+    try { localStorage.setItem('selectedNotes:v1', JSON.stringify(selectedNotes)) } catch {}
   }, [selectedNotes])
 
   useEffect(() => {
-    try { localStorage.setItem('selectedTags', JSON.stringify(selectedTags)) } catch {}
+    try { localStorage.setItem('selectedTags:v1', JSON.stringify(selectedTags)) } catch {}
   }, [selectedTags])
 
   useEffect(() => {
-    try { localStorage.setItem('noteExportMode', exportMode) } catch {}
+    try { localStorage.setItem('noteExportMode:v1', exportMode) } catch {}
   }, [exportMode])
 
   // Fetch datasets
@@ -295,14 +326,14 @@ export function ExportPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    <button
+                    <button type="button"
                       onClick={() => handleExportDataset(dataset.id, 'csv', dataset.filename)}
                       disabled={exporting}
                       className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
                     >
                       CSV
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => handleExportDataset(dataset.id, 'json', dataset.filename)}
                       disabled={exporting}
                       className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
@@ -375,14 +406,14 @@ export function ExportPage() {
                 )}
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
+                <button type="button"
                   onClick={() => handleExportQuery(selectedQueries, 'csv')}
                   disabled={exporting || selectedQueries.length === 0}
                   className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
                 >
                   Export Selected as CSV
                 </button>
-                <button
+                <button type="button"
                   onClick={() => handleExportQuery(selectedQueries, 'json')}
                   disabled={exporting || selectedQueries.length === 0}
                   className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
@@ -437,7 +468,7 @@ export function ExportPage() {
                     </div>
                     {exportMode === 'tag' && (
                       <div className="ml-4">
-                        <button
+                        <button type="button"
                           onClick={(e) => {
                             e.stopPropagation()
                             setShowTagsModal(true)
@@ -460,7 +491,7 @@ export function ExportPage() {
                     </div>
                     {exportMode === 'custom' && (
                       <div className="ml-4">
-                        <button
+                        <button type="button"
                           onClick={(e) => {
                             e.stopPropagation()
                             setShowNotesModal(true)
@@ -476,14 +507,14 @@ export function ExportPage() {
               </div>
 
               <div className="flex items-center gap-2 pt-4 border-t border-gray-100 mt-2">
-                <button
+                <button type="button"
                   onClick={() => handleExportNotes('csv')}
                   disabled={exporting}
                   className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
                 >
                   Export CSV
                 </button>
-                <button
+                <button type="button"
                   onClick={() => handleExportNotes('json')}
                   disabled={exporting}
                   className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
@@ -541,7 +572,7 @@ export function ExportPage() {
                     </label>
 
                     {/* Download Button */}
-                    <button
+                    <button type="button"
                       onClick={() => handleExportPDF(lit.id, pdfAnnotationsEnabled[lit.id] || false, lit.filename)}
                       disabled={exporting}
                       className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors flex items-center gap-2"
@@ -564,7 +595,7 @@ export function ExportPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Choose Notes</h2>
-              <button
+              <button type="button"
                 onClick={() => setShowNotesModal(false)}
                 className="text-gray-400 hover:text-gray-500 transition-colors"
               >
@@ -619,7 +650,7 @@ export function ExportPage() {
             </div>
 
             <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex justify-end">
-              <button
+              <button type="button"
                 onClick={() => setShowNotesModal(false)}
                 className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
               >
@@ -635,7 +666,7 @@ export function ExportPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Choose Tags</h2>
-              <button
+              <button type="button"
                 onClick={() => setShowTagsModal(false)}
                 className="text-gray-400 hover:text-gray-500 transition-colors"
               >
@@ -690,7 +721,7 @@ export function ExportPage() {
             </div>
 
             <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex justify-end">
-              <button
+              <button type="button"
                 onClick={() => setShowTagsModal(false)}
                 className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
               >

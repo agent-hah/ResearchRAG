@@ -12,6 +12,16 @@ import {
 
 import React from 'react'
 
+// Reduced left margin to center chart and balance with right margin.
+// Top margin reduced to close gap between title and chart.
+// Bottom margin increased to accommodate diagonal labels.
+const commonProps = {
+  margin: { top: 10, right: 40, left: 30, bottom: 80 }
+}
+
+// Common label styles
+const axisLabelStyle: any = { fill: '#333', fontSize: 16, fontWeight: 'bold', textAnchor: 'middle' };
+
 interface ChartRendererProps {
   data: ChartData
   config: ChartConfig
@@ -174,15 +184,6 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
   const xAxisType = isXNumeric ? 'number' : 'category'
   const isLargeData = chartData.length * data.datasets.length > 1000
 
-  // Reduced left margin to center chart and balance with right margin.
-  // Top margin reduced to close gap between title and chart.
-  // Bottom margin increased to accommodate diagonal labels.
-  const commonProps = {
-    margin: { top: 10, right: 40, left: 30, bottom: 80 }
-  }
-
-  // Common label styles
-  const axisLabelStyle: any = { fill: '#333', fontSize: 16, fontWeight: 'bold', textAnchor: 'middle' };
   const pieColors = getChartColors(config.colorScheme);
 
   const getTrendlineData = (datasetLabel: string) => {
@@ -233,9 +234,9 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             />
             <Tooltip />
             {config.showLegend && <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 20 }} />}
-            {data.datasets.map((dataset, idx) => (
+            {data.datasets.map((dataset) => (
               <Line
-                key={idx}
+                key={dataset.label}
                 type="monotone"
                 dataKey={dataset.label}
                 stroke={dataset.color}
@@ -264,9 +265,9 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             />
             <Tooltip />
             {config.showLegend && <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 20 }} />}
-            {data.datasets.map((dataset, idx) => (
+            {data.datasets.map((dataset) => (
               <Bar
-                key={idx}
+                key={dataset.label}
                 dataKey={dataset.label}
                 fill={dataset.color}
                 isAnimationActive={!isLargeData}
@@ -297,10 +298,10 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             />
             <Tooltip cursor={{ strokeDasharray: '3 3' }} />
             {config.showLegend && <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 20 }} />}
-            {data.datasets.map((dataset, idx) => {
+            {data.datasets.map((dataset) => {
               const trend = config.showTrendline ? getTrendlineData(dataset.label) : null;
               return (
-                <React.Fragment key={idx}>
+                <React.Fragment key={dataset.label}>
                   <Scatter
                     name={dataset.label}
                     dataKey={dataset.label}
@@ -337,9 +338,9 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
             />
             <Tooltip />
             {config.showLegend && <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 20 }} />}
-            {data.datasets.map((dataset, idx) => (
+            {data.datasets.map((dataset) => (
               <Area
-                key={idx}
+                key={dataset.label}
                 type="monotone"
                 dataKey={dataset.label}
                 stroke={dataset.color}
@@ -365,8 +366,8 @@ export function ChartRenderer({ data, config }: ChartRendererProps) {
               dataKey="value"
               isAnimationActive={!isLargeData}
             >
-              {pieData.map((_, idx) => (
-                <Cell key={`cell-${idx}`} fill={pieColors[idx % pieColors.length]} />
+              {pieData.map((entry, idx) => (
+                <Cell key={entry.name} fill={pieColors[idx % pieColors.length]} />
               ))}
             </Pie>
             <Tooltip />

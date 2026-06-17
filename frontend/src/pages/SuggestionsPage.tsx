@@ -67,7 +67,7 @@ export function SuggestionsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <button
+              <button type="button"
                 onClick={() => {
                   setIsGlobal(true)
                   setSelectedDatasetIds([])
@@ -100,7 +100,7 @@ export function SuggestionsPage() {
                   </div>
                 </div>
               </button>
-              <button
+              <button type="button"
                 onClick={() => setIsModalOpen(true)}
                 className={`p-4 border-2 rounded-lg text-left transition-all ${
                   !isGlobal && selectedDatasetIds.length > 0
@@ -149,7 +149,11 @@ export function SuggestionsPage() {
           <div className="card-content">
             <SuggestionsPanel
               datasetIds={selectedDatasetIds}
-              datasetNames={selectedDatasetIds.map(id => datasets.find(d => d.id === id)?.filename || '').filter(Boolean)}
+              // eslint-disable-next-line react-doctor/server-dedup-props
+              datasetNames={selectedDatasetIds.flatMap(id => {
+                const name = datasets.find(d => d.id === id)?.filename;
+                return name ? [name] : [];
+              })}
               isGlobal={false}
             />
           </div>
@@ -206,7 +210,7 @@ export function SuggestionsPage() {
                     Choose datasets to find relevant research articles
                   </p>
                 </div>
-                <button
+                <button type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="btn btn-ghost btn-sm"
                 >
@@ -217,7 +221,7 @@ export function SuggestionsPage() {
               <div className="flex-1 overflow-auto p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {datasets.map((dataset) => (
-                    <button
+                    <button type="button"
                       key={dataset.id}
                       onClick={() => {
                         setIsGlobal(false)
@@ -268,7 +272,7 @@ export function SuggestionsPage() {
                 <div className="text-sm text-gray-500">
                   {selectedDatasetIds.length} selected
                 </div>
-                <button
+                <button type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="btn btn-primary"
                 >

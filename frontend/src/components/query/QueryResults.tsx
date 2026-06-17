@@ -36,8 +36,8 @@ export function QueryResults({ result }: QueryResultsProps) {
               <div>
                 <h4 className="text-sm font-semibold text-gray-800 mb-2">Key Findings</h4>
                 <ul className="list-disc list-inside space-y-1">
-                  {result.synthesis.key_findings.map((finding, i) => (
-                    <li key={i} className="text-sm text-gray-700">{finding}</li>
+                  {result.synthesis.key_findings.map((finding) => (
+                    <li key={finding.substring(0, 50)} className="text-sm text-gray-700">{finding}</li>
                   ))}
                 </ul>
               </div>
@@ -48,8 +48,8 @@ export function QueryResults({ result }: QueryResultsProps) {
               <div>
                 <h4 className="text-sm font-semibold text-gray-800 mb-2">Data Insights</h4>
                 <ul className="list-disc list-inside space-y-1">
-                  {result.synthesis.data_insights.map((insight, i) => (
-                    <li key={i} className="text-sm text-gray-700">{insight}</li>
+                  {result.synthesis.data_insights.map((insight) => (
+                    <li key={insight.substring(0, 50)} className="text-sm text-gray-700">{insight}</li>
                   ))}
                 </ul>
               </div>
@@ -60,8 +60,8 @@ export function QueryResults({ result }: QueryResultsProps) {
               <div>
                 <h4 className="text-sm font-semibold text-gray-800 mb-2">Literature Insights</h4>
                 <ul className="list-disc list-inside space-y-1">
-                  {result.synthesis.literature_insights.map((insight, i) => (
-                    <li key={i} className="text-sm text-gray-700">{insight}</li>
+                  {result.synthesis.literature_insights.map((insight) => (
+                    <li key={insight.substring(0, 50)} className="text-sm text-gray-700">{insight}</li>
                   ))}
                 </ul>
               </div>
@@ -100,9 +100,9 @@ export function QueryResults({ result }: QueryResultsProps) {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {result.data_results.columns.map((column, index) => (
+                    {result.data_results.columns.map((column) => (
                       <th
-                        key={index}
+                        key={column}
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
                         {column}
@@ -144,7 +144,7 @@ export function QueryResults({ result }: QueryResultsProps) {
           <div className="card-content space-y-4">
             {result.literature_context.map((lit, index) => (
               <div
-                key={index}
+                key={lit.title || index}
                 className="p-4 bg-gray-50 rounded-lg border border-gray-200"
               >
                 <div className="flex items-start justify-between gap-4 mb-2">

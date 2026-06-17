@@ -31,7 +31,7 @@ export function LiteraturePage() {
     return (
       <div className="h-full flex flex-col">
         <div className="p-4 bg-white border-b border-gray-200">
-          <button
+          <button type="button"
             onClick={handleBack}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
@@ -93,7 +93,7 @@ export function LiteraturePage() {
           ) : (
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
               {files.map((file) => (
-                <button
+                <button type="button"
                   key={file.id}
                   onClick={() => handleSelectLiterature(file)}
                   className="w-full p-4 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all text-left"

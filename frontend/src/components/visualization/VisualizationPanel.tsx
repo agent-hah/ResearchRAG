@@ -139,7 +139,7 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary-600" />
             <h3 className="text-lg font-semibold text-gray-900">Visualization</h3>
-            <button
+            <button type="button"
               onClick={() => setIsFullscreen(!isFullscreen)}
               className="p-1 ml-1 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
               title={isFullscreen ? "Exit full screen" : "Full screen"}
@@ -149,7 +149,7 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
           </div>
           <div className="flex items-center gap-2">
             {onClose && (
-              <button
+              <button type="button"
                 onClick={onClose}
                 className="p-1 text-gray-400 hover:text-gray-600 rounded-md"
                 title="Close visualization"
@@ -175,7 +175,7 @@ export function VisualizationPanel({ columns, rows, question, onClose }: Visuali
               Adjust chart type, labels, and export options
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={() => setShowRefinement(!showRefinement)}
             className={`px-4 py-2 text-sm rounded-md border transition-colors flex items-center gap-2 ${
               showRefinement

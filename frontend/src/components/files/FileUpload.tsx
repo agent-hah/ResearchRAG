@@ -195,7 +195,7 @@ export function FileUpload({ type, onUploadComplete }: FileUploadProps) {
           </div>
           
           <button
-            type="button"
+ type="button"
             className="btn btn-primary mt-4"
             onClick={(e) => {
               e.preventDefault()
@@ -216,9 +216,9 @@ export function FileUpload({ type, onUploadComplete }: FileUploadProps) {
           </h4>
           
           <div className="space-y-2">
-            {uploadingFiles.map((item, index) => (
+            {uploadingFiles.map((item) => (
               <div
-                key={`${item.file.name}-${index}`}
+                key={item.file.name}
                 className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 border border-gray-200"
               >
                 <Icon className="h-5 w-5 text-gray-400 flex-shrink-0" />
@@ -254,7 +254,7 @@ export function FileUpload({ type, onUploadComplete }: FileUploadProps) {
                   )}
                   
                   {item.status !== 'uploading' && (
-                    <button
+                    <button type="button"
                       onClick={() => removeUploadingFile(item.file)}
                       className="p-1 hover:bg-gray-200 rounded"
                     >
