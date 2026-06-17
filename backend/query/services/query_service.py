@@ -93,8 +93,8 @@ class QueryService:
             )
             return response.text
         except errors.APIError as e:
-            if getattr(e, 'code', None) == 429 or "429" in str(e):
-                logger.warning(f"Rate limit hit on {self.model_name}, trying fallbacks")
+            if getattr(e, 'code', None) in [429, 503] or "429" in str(e) or "503" in str(e):
+                logger.warning(f"Rate limit or model unavailable hit on {self.model_name}, trying fallbacks")
                 for fallback_model in ["gemini-3.1-flash-lite", "gemma-4-26b-a4b-it"]:
                     try:
                         fallback_response = self.client.models.generate_content(
@@ -104,8 +104,8 @@ class QueryService:
                         )
                         return fallback_response.text
                     except errors.APIError as fallback_e:
-                        if getattr(fallback_e, 'code', None) == 429 or "429" in str(fallback_e):
-                            logger.warning(f"Rate limit hit on fallback {fallback_model}")
+                        if getattr(fallback_e, 'code', None) in [429, 503] or "429" in str(fallback_e) or "503" in str(fallback_e):
+                            logger.warning(f"Rate limit or model unavailable hit on fallback {fallback_model}")
                             continue
                         raise fallback_e
             raise
