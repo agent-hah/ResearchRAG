@@ -10,6 +10,7 @@ export type FileType = 'csv' | 'pdf'
 export type ProcessingStatus = 'pending' | 'processing' | 'completed' | 'indexed' | 'failed'
 
 export interface Dataset extends BaseEntity {
+  name?: string
   filename: string
   file_path: string
   file_size: number

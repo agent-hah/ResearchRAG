@@ -1,11 +1,13 @@
 import { Database, FileText, TrendingUp } from 'lucide-react'
 import type { QueryResult } from '../../services/queryService'
+import type { Dataset } from '@/types'
 
 interface QueryResultsProps {
   result: QueryResult
+  datasets?: Dataset[]
 }
 
-export function QueryResults({ result }: QueryResultsProps) {
+export function QueryResults({ result, datasets }: QueryResultsProps) {
   return (
     <div className="space-y-6">
       {/* Question */}
@@ -100,24 +102,41 @@ export function QueryResults({ result }: QueryResultsProps) {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {result.data_results.columns.map((column) => (
-                      <th
-                        key={column}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        {column}
-                      </th>
-                    ))}
+                    {result.data_results.columns.map((column) => {
+                      const isDatasetId = column.toLowerCase().replace('_', ' ') === 'dataset id';
+                      return (
+                        <th
+                          key={column}
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          {isDatasetId ? 'DATASET' : column}
+                        </th>
+                      )
+                    })}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {result.data_results.rows.slice(0, 10).map((row, rowIndex) => (
                     <tr key={rowIndex} className="hover:bg-gray-50">
-                      {row.map((cell, cellIndex) => (
-                        <td key={cellIndex} className="px-4 py-3 text-sm text-gray-900">
-                          {cell !== null && cell !== undefined ? String(cell) : '-'}
-                        </td>
-                      ))}
+                      {row.map((cell, cellIndex) => {
+                        const columnName = result.data_results.columns[cellIndex];
+                        const isDatasetId = columnName.toLowerCase().replace('_', ' ') === 'dataset id';
+                        let displayValue = cell !== null && cell !== undefined ? String(cell) : '-';
+
+                        if (isDatasetId && datasets && cell !== null && cell !== undefined) {
+                          const datasetId = Number(cell);
+                          const dataset = datasets.find(d => d.id === datasetId);
+                          if (dataset) {
+                            displayValue = dataset.name || dataset.filename || displayValue;
+                          }
+                        }
+
+                        return (
+                          <td key={cellIndex} className="px-4 py-3 text-sm text-gray-900">
+                            {displayValue}
+                          </td>
+                        )
+                      })}
                     </tr>
                   ))}
                 </tbody>

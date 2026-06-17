@@ -234,7 +234,7 @@ export function QueryPage() {
 
           {/* Query Results */}
           {currentResult && !isLoading && !showVisualization && (
-            <QueryResults result={currentResult} />
+            <QueryResults result={currentResult} datasets={filesData?.datasets} />
           )}
 
           {/* Empty State */}
@@ -270,6 +270,10 @@ export function QueryPage() {
                 onDeleteQuery={(id) => {
                   queryService.deleteQueryHistory(id).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['queryHistory'] })
+                    if (currentResult?.query_id === id.toString()) {
+                      setCurrentResult(null)
+                      setShowVisualization(false)
+                    }
                   })
                 }}
                 isLoading={historyLoading}
