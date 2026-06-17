@@ -154,6 +154,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://research-rag-ashmit-hs-projects.vercel.app",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://research-rag-two.vercel.app",
+    "https://research-rag-ashmit-hs-projects.vercel.app",
+]
+
 from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "range",

@@ -23,8 +23,9 @@ jobs:
       - name: Setup Conda Environment
         uses: conda-incubator/setup-miniconda@v3
         with:
-          environment-file: ./environment.yml
-          auto-activate-base: false
+          environment-file: ./backend/environment.yml
+          auto-activate: true
+          activate-environment: RAG
           # Miniforge uses mamba under the hood, making dependency resolution much faster
           miniforge-version: latest 
 
@@ -34,7 +35,7 @@ jobs:
         run: pytest
 
   # ==========================================
-  # FRONTEND: Vitest & Playwright Job (Unchanged)
+  # FRONTEND: Vitest & Playwright Job
   # ==========================================
   frontend-tests:
     runs-on: ubuntu-latest
