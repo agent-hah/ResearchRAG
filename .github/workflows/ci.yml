@@ -37,6 +37,7 @@ jobs:
         # The '-el {0}' flag is strictly required for the runner to recognize the activated conda environment
         shell: bash -el {0}
         env:
+          SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: pytest
 
