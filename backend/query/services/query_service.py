@@ -219,7 +219,7 @@ RESPONSE FORMAT (JSON ONLY):
                 logger.error(f"Failed to parse SQL generation response: {str(e)}")
                 return {
                     "sql_query": "",
-                    "explanation": f"Failed to generate SQL: {str(e)}",
+                    "explanation": "Failed to generate SQL due to a parsing error.",
                     "tables_used": [],
                     "columns_used": [],
                     "confidence": 0.0
@@ -228,7 +228,7 @@ RESPONSE FORMAT (JSON ONLY):
             logger.error(f"Error generating SQL: {str(e)}")
             return {
                 "sql_query": "",
-                "explanation": f"Error generating SQL: {str(e)}",
+                "explanation": "Error generating SQL due to an internal error.",
                 "tables_used": [],
                 "columns_used": [],
                 "confidence": 0.0

@@ -188,16 +188,7 @@ class QueryExecutionView(views.APIView):
         synthesis = query_service.synthesize_results(query, sql_result, literature_context)
         logger.info("Synthesis complete.")
         
-        history = query_service.save_query_history(
-            query=query,
-            row_count=sql_result.get("row_count", 0),
-            processing_time_ms=sql_result.get("execution_time_ms", 0),
-            data_results=sql_result,
-            literature_context=literature_context,
-            synthesis=synthesis
-        )
-        
-        # Sanitize error to prevent stack trace exposure
+        # Sanitize error to prevent stack trace exposure before saving to db
         safe_sql_result = {
             "rows": sql_result.get("rows", []),
             "row_count": sql_result.get("row_count", 0),
@@ -206,6 +197,15 @@ class QueryExecutionView(views.APIView):
         }
         if "error" in sql_result:
             safe_sql_result["error"] = "Database execution failed due to an invalid query."
+        
+        history = query_service.save_query_history(
+            query=query,
+            row_count=sql_result.get("row_count", 0),
+            processing_time_ms=sql_result.get("execution_time_ms", 0),
+            data_results=safe_sql_result,
+            literature_context=literature_context,
+            synthesis=synthesis
+        )
         
         return Response({
             "query_id": str(history.id),

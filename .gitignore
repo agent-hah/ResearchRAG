@@ -96,3 +96,4 @@ rd_report.json
 *.sarif
 scan.sh
 .codeql-config.yml
+frontend/coverage/
