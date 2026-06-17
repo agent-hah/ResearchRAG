@@ -11,7 +11,7 @@ import {
   ListOrdered, 
   Quote 
 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface RichTextEditorProps {
   initialContent: string
@@ -29,6 +29,23 @@ const preventFocusLoss = (e: React.MouseEvent) => {
 }
 
 const MenuBar = ({ editor, disabled }: { editor: any, disabled?: boolean }) => {
+  const [, forceUpdate] = useState({})
+
+  useEffect(() => {
+    if (!editor) return
+
+    const handleUpdate = () => forceUpdate({})
+    
+    // Subscribe to both transaction and selectionUpdate to ensure UI updates immediately
+    editor.on('transaction', handleUpdate)
+    editor.on('selectionUpdate', handleUpdate)
+    
+    return () => {
+      editor.off('transaction', handleUpdate)
+      editor.off('selectionUpdate', handleUpdate)
+    }
+  }, [editor])
+
   if (!editor) {
     return null
   }
