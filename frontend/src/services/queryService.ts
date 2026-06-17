@@ -15,8 +15,6 @@ export interface QueryRequest {
 export interface QueryResult {
   query_id: string
   question: string
-  sql_query: string
-  sql_confidence: number
   data_results: {
     columns: string[]
     rows: any[][]
@@ -47,7 +45,6 @@ export interface QueryHistory {
   query_id: string
   question: string
   created_at: string
-  sql_query: string
   row_count: number
 }
 
@@ -94,17 +91,6 @@ export const queryService = {
     return response.data
   },
 
-  /**
-   * Execute raw SQL query (SELECT only)
-   */
-  async executeRawSQL(sql: string): Promise<{
-    columns: string[]
-    rows: any[][]
-    row_count: number
-  }> {
-    const response = await api.post('/query/sql/execute/', { sql })
-    return response.data
-  },
 
   /**
    * Delete a query history item

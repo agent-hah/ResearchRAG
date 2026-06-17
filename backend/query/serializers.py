@@ -9,7 +9,7 @@ class QueryHistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QueryHistory
-        fields = ['id', 'query', 'sql_query', 'row_count', 'processing_time_ms', 'literature_count', 'created_at', 'sql_confidence', 'data_results', 'literature_context', 'synthesis']
+        fields = ['id', 'query', 'row_count', 'processing_time_ms', 'literature_count', 'created_at', 'data_results', 'literature_context', 'synthesis']
 
     def get_literature_count(self, obj):
         if not obj.literature_context:

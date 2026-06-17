@@ -188,7 +188,7 @@ def test_synthesize_results_json_error(query_service):
 
 @pytest.mark.django_db
 def test_save_and_get_query_history(query_service):
-    query_service.save_query_history("query text", "SELECT 1", 1, 10.0)
+    query_service.save_query_history("query text", 1, 10.0)
     queries, total = query_service.get_query_history(page=1, page_size=10)
     assert total == 1
     assert len(queries) == 1

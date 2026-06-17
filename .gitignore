@@ -93,6 +93,6 @@ rd_report.json
 
 # codeql scans
 .codeql-db
-vulnerabilities.sarif
+*.sarif
 scan.sh
 .codeql-config.yml

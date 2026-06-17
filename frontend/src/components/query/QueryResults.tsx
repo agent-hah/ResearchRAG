@@ -1,4 +1,4 @@
-import { Database, FileText, TrendingUp, Code } from 'lucide-react'
+import { Database, FileText, TrendingUp } from 'lucide-react'
 import type { QueryResult } from '../../services/queryService'
 
 interface QueryResultsProps {
@@ -160,23 +160,7 @@ export function QueryResults({ result }: QueryResultsProps) {
         </div>
       )}
 
-      {/* SQL Query */}
-      {result.sql_query && result.sql_query.trim().length > 0 && (
-        <div className="card">
-          <div className="card-header flex items-center gap-2">
-            <Code className="w-5 h-5 text-primary-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Generated SQL</h3>
-            <span className="ml-auto px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
-              {Math.round(result.sql_confidence * 100)}% confidence
-            </span>
-          </div>
-          <div className="card-content">
-            <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-sm">
-              <code>{result.sql_query}</code>
-            </pre>
-          </div>
-        </div>
-      )}
+
 
       {/* Metadata */}
       <div className="text-sm text-gray-500 text-center">

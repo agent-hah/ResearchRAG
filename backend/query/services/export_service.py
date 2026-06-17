@@ -153,7 +153,7 @@ class ExportService:
             writer = csv.writer(output)
             
             # Write header
-            writer.writerow(['ID', 'Question', 'SQL Query', 'Created At', 'Result Count', 'Synthesis Summary'])
+            writer.writerow(['ID', 'Question', 'Created At', 'Result Count', 'Synthesis Summary'])
             
             for index, q in enumerate(queries, 1):
                 synthesis_summary = ""
@@ -162,7 +162,6 @@ class ExportService:
                 writer.writerow([
                     index,
                     q.query_text,
-                    q.sql_query or '',
                     q.created_at.isoformat(),
                     q.result_count or 0,
                     synthesis_summary
@@ -207,7 +206,6 @@ class ExportService:
                 export_data = {
                     "id": index,
                     "question": q.query_text,
-                    "sql_query": q.sql_query,
                     "created_at": q.created_at.isoformat(),
                     "result_count": q.result_count,
                     "results": q.data_results,

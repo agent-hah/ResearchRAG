@@ -246,8 +246,6 @@ class TestQueryExecutionViewResponseContract:
         required_keys = {
             "query_id",
             "question",
-            "sql_query",
-            "sql_confidence",
             "data_results",
             "literature_context",
             "synthesis",
@@ -376,72 +374,7 @@ class TestQueryExecutionViewResponseContract:
         assert call_args[4] == "no such column: ranking"
 
 
-# ===========================================================================
-# ExecuteSQLView (/query/sql/execute/) – response contract tests
-# ===========================================================================
 
-class TestExecuteSQLViewResponseContract:
-    """
-    Validate that POST /query/sql/execute/ returns rows as lists.
-    The frontend's executeRawSQL also expects `rows: any[][]`.
-    """
-
-    @pytest.mark.django_db
-    @patch("query.views.get_query_service")
-    def test_raw_sql_rows_are_lists_not_dicts(self, mock_get_svc, api_client):
-        mock_svc = _make_mock_query_service()
-        mock_get_svc.return_value = mock_svc
-
-        resp = api_client.post(
-            "/api/v1/query/sql/execute/",
-            {"sql": "SELECT id, name FROM dataset_1"},
-            format="json",
-        )
-
-        assert resp.status_code == 200
-        data = resp.json()
-
-        rows = data["rows"]
-        assert isinstance(rows, list)
-        for i, row in enumerate(rows):
-            assert isinstance(row, list), (
-                f"rows[{i}] must be a list (array), got {type(row).__name__}: {row!r}"
-            )
-
-    @pytest.mark.django_db
-    @patch("query.views.get_query_service")
-    def test_raw_sql_missing_query_returns_400(self, mock_get_svc, api_client):
-        resp = api_client.post(
-            "/api/v1/query/sql/execute/",
-            {},
-            format="json",
-        )
-        assert resp.status_code == 400
-
-    @pytest.mark.django_db
-    @patch("query.views.get_query_service")
-    def test_raw_sql_error_response_still_has_rows_list(self, mock_get_svc, api_client):
-        """Even on SQL error, rows should be an empty list."""
-        mock_svc = _make_mock_query_service()
-        mock_svc.execute_sql.return_value = {
-            "rows": [],
-            "row_count": 0,
-            "columns": [],
-            "execution_time_ms": 0.0,
-            "error": "no such table: dataset_99",
-        }
-        mock_get_svc.return_value = mock_svc
-
-        resp = api_client.post(
-            "/api/v1/query/sql/execute/",
-            {"sql": "SELECT * FROM dataset_99"},
-            format="json",
-        )
-
-        assert resp.status_code == 200
-        data = resp.json()
-        assert isinstance(data["rows"], list)
-        assert data["rows"] == []
 
 
 # ===========================================================================
@@ -460,10 +393,8 @@ class TestQueryHistoryResponseContract:
         # Create a history entry with the correct (array) format
         QueryHistory.objects.create(
             query_text="Test query",
-            sql_query="SELECT id, name FROM dataset_1",
             result_count=2,
             execution_time_ms=10,
-            sql_confidence=0.9,
             data_results={
                 "columns": ["id", "name"],
                 "rows": [[1, "Alice"], [2, "Bob"]],
@@ -504,10 +435,8 @@ class TestQueryHistoryResponseContract:
         """
         QueryHistory.objects.create(
             query_text="Buggy query",
-            sql_query="SELECT id, name FROM dataset_1",
             result_count=1,
             execution_time_ms=5,
-            sql_confidence=0.8,
             data_results={
                 "columns": ["id", "name"],
                 "rows": [{"id": 1, "name": "Alice"}],  # BUG: dict rows

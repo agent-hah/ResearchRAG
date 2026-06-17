@@ -121,8 +121,6 @@ export function QueryPage() {
         setCurrentResult({
           query_id: query.id.toString(),
           question: query.query,
-          sql_query: query.sql_query,
-          sql_confidence: query.sql_confidence || 0,
           data_results: query.data_results as any,
           literature_context: query.literature_context as any || [],
           synthesis: query.synthesis as any,

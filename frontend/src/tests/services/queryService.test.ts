@@ -47,14 +47,5 @@ describe('queryService', () => {
     expect(result).toEqual(mockSchema);
   });
 
-  it('executeRawSQL calls POST /query/sql/execute/', async () => {
-    const mockResult: any = { columns: [], rows: [], row_count: 0 };
-    vi.mocked(api.post).mockResolvedValueOnce({ data: mockResult });
 
-    const sql = 'SELECT * FROM test';
-    const result = await queryService.executeRawSQL(sql);
-
-    expect(api.post).toHaveBeenCalledWith('/query/sql/execute/', { sql });
-    expect(result).toEqual(mockResult);
-  });
 });

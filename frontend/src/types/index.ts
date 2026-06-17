@@ -140,11 +140,9 @@ export interface QueryResponse {
 
 export interface QueryHistoryItem extends BaseEntity {
   query: string
-  sql_query: string
   row_count: number
   literature_count: number
   processing_time_ms: number
-  sql_confidence?: number
   data_results?: DataResult
   literature_context?: LiteratureContext[]
   synthesis?: QuerySynthesis

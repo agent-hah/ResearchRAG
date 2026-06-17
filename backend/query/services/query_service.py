@@ -396,15 +396,13 @@ Respond with valid JSON only:
                 "limitations": None
             }
     
-    def save_query_history(self, query: str, sql_query: str, row_count: int, processing_time_ms: float, sql_confidence: float = None, data_results: dict = None, literature_context: list = None, synthesis: dict = None) -> QueryHistory:
+    def save_query_history(self, query: str, row_count: int, processing_time_ms: float, data_results: dict = None, literature_context: list = None, synthesis: dict = None) -> QueryHistory:
         try:
             history = QueryHistory.objects.create(
                 user_id=self.user_id,
                 query_text=query,
-                sql_query=sql_query,
                 result_count=row_count,
                 execution_time_ms=processing_time_ms,
-                sql_confidence=sql_confidence,
                 data_results=data_results,
                 literature_context=literature_context,
                 synthesis=synthesis

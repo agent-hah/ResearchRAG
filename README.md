@@ -8,9 +8,8 @@ An AI-driven data engineering platform for researchers to analyze datasets along
 - **File Management**: Upload and manage CSV datasets and PDF research papers
 - **Natural Language Queries**: Ask questions in plain English, get AI-synthesized answers
 - **RAG Integration**: Semantic search across literature with automatic citation
-- **Interactive Visualizations**: 5 chart types with auto-detection and AI-powered refinement
-- **Geographic Visualization**: Interactive maps for spatial data
-- **Research Notes**: Markdown-supported notes with graph relationships
+- **Interactive Visualizations**: 5 chart types with auto-detection and robust AI-powered refinement (with multi-model fallback)
+- **Research Notes**: Real-time markdown-supported notes with immediate formatting and graph relationships
 - **PDF Annotations**: Highlight and annotate research papers
 - **Document Suggestions**: AI-powered discovery of relevant research articles
 - **Comprehensive Export**: Export data, results, and notes in multiple formats
@@ -18,23 +17,22 @@ An AI-driven data engineering platform for researchers to analyze datasets along
 ### Technology Stack
 
 **Backend**:
-- FastAPI 0.104.1 (Python web framework)
-- SQLAlchemy 2.0.23 (ORM)
-- SQLite (Database)
-- ChromaDB 0.4.18 (Vector store)
-- Google Gemini Pro (LLM)
-- LangChain 0.1.0 (RAG pipeline)
-- Pandas 2.1.3 (Data processing)
+- Django 5.2.15 & DRF 3.17.1 (Python web framework)
+- Neon PostgreSQL (Relational Database)
+- Pinecone (Vector store)
+- Cloudflare (File uploads)
+- Google Gemini 3.5, 3.1 Flash Lite, Gemma 4 (LLMs with fallback mechanism)
+- LangChain (RAG pipeline)
+- Pandas 2.2.0 (Data processing)
 
 **Frontend**:
-- React 18.3.1 (UI framework)
-- TypeScript 5.4.5 (Type safety)
-- Vite 5.2.10 (Build tool)
-- Tailwind CSS 3.4.3 (Styling)
-- React Query 5.8.4 (State management)
-- Recharts 2.8.0 (Charts)
-- Leaflet 1.9.4 (Maps)
-- React PDF 7.7.0 (PDF viewing)
+- React 19.2.7 (UI framework)
+- TypeScript 6.0.3 (Type safety)
+- Vite 8.0.16 (Build tool)
+- Tailwind CSS 4.3.0 (Styling)
+- React Query 5.100.14 (State management)
+- Recharts 3.8.1 (Charts)
+- React PDF 10.4.1 (PDF viewing)
 
 ## 🚀 Quick Start
 
@@ -67,8 +65,9 @@ cp .env.example .env
 Or **manual setup**:
 
 ```bash
-# Install backend dependencies
-pip install -r requirements.txt
+# Install backend dependencies (using Conda)
+conda env create -f backend/environment.yml
+conda activate RAG
 
 # Install frontend dependencies
 cd frontend
@@ -76,12 +75,15 @@ npm install
 cd ..
 
 # Initialize database
-alembic upgrade head
+cd backend
+python manage.py migrate
+cd ..
 ```
 
 4. **Start the backend**
 ```bash
-uvicorn backend.main:app --reload --port 8000
+cd backend
+python manage.py runserver
 ```
 
 5. **Start the frontend** (in another terminal)
@@ -108,7 +110,6 @@ cd frontend
 npm test
 ```
 
-See [TESTING_README.md](TESTING_README.md) for detailed testing guide.
 
 ## 🧪 Testing
 
@@ -144,11 +145,10 @@ npm run test:coverage
 - Backend: 15+ test cases covering API endpoints, file management, queries, and search integration
 - Frontend: 10+ test cases covering components, user interactions, and rendering
 
-See [TESTING_README.md](TESTING_README.md) for complete testing documentation.
 
 ## 🔍 Search API Integration
 
-The application supports multiple search APIs for finding academic articles:
+The application supports OpenAlex for finding academic articles:
 
 ### Supported Providers
 
@@ -159,22 +159,11 @@ The application supports multiple search APIs for finding academic articles:
    - Excellent metadata and coverage
    - Generous rate limits
 
-2. **Semantic Scholar** - Free
-   - No API key required
-   - Good coverage of academic papers
-   - Includes citations and metadata
-   - Works out of the box
-
-3. **CrossRef** - Free
-   - No API key required
-   - Comprehensive metadata
-   - DOI information
-   - Works out of the box
-
-4. **Gemini Fallback**
+2. **Gemini Fallback**
    - Uses existing GOOGLE_API_KEY
    - Generates realistic mock results
    - Always available for testing
+   - Multi-model fallback (Gemini 3.5 -> 3.1 Flash Lite -> Gemma 4) for resilience
 
 ### Configuration
 
@@ -188,15 +177,6 @@ OPENALEX_API_KEY=your_openalex_api_key
 ```
 
 The app automatically uses the best available provider with graceful fallback.
-
-## 📖 Documentation
-
-- **[User Guide](USER_GUIDE.md)**: Complete guide for using the application
-- **[API Documentation](API_DOCUMENTATION.md)**: REST API reference
-- **[Testing Guide](TESTING_README.md)**: Testing procedures and setup
-- **[Testing Guide (Manual)](TESTING_GUIDE.md)**: Manual test cases
-- **[Quick Start](QUICKSTART.md)**: Quick setup guide
-- **[Enhancements Summary](ENHANCEMENTS_SUMMARY.md)**: Recent enhancements and features
 
 ## 🎯 Key Workflows
 
@@ -225,23 +205,21 @@ The app automatically uses the best available provider with graceful fallback.
 
 ```
 research-workspace/
-├── backend/                 # FastAPI backend
-│   ├── api/                # REST API endpoints
-│   ├── models/             # SQLAlchemy models
-│   ├── services/           # Business logic
-│   ├── schemas/            # Pydantic schemas
-│   └── utils/              # Utilities
+├── backend/                 # Django backend
+│   ├── core/               # Django settings and core configs
+│   ├── files/              # File management app
+│   ├── literature/         # Document search app
+│   ├── rag/                # RAG and Pinecone integration
+│   ├── query/              # NLQ execution app
+│   └── refinement/         # AI fallback refinement app
 ├── frontend/               # React frontend
 │   └── src/
 │       ├── components/     # React components
 │       ├── pages/          # Page components
 │       ├── services/       # API clients
 │       └── layouts/        # Layout components
-├── alembic/                # Database migrations
 ├── data/                   # Data storage
-│   ├── chroma_db/         # Vector store
 │   └── uploads/           # Uploaded files
-└── aidlc-docs/            # Development documentation
 ```
 
 ## 📊 API Endpoints
@@ -260,11 +238,6 @@ research-workspace/
 
 ## 🧪 Testing
 
-Run manual tests:
-```bash
-# See TESTING_GUIDE.md for comprehensive test cases
-```
-
 Run automated tests (when implemented):
 ```bash
 # Backend tests
@@ -280,11 +253,11 @@ npm run test:e2e
 
 ## 🔒 Security
 
-- SQL injection prevention (parameterized queries)
+- SQL injection prevention (Django ORM)
 - XSS protection (React escaping)
-- File upload validation
-- Input sanitization
-- Local-only storage (no external data transmission except AI API)
+- File upload validation & input sanitization
+- GitHub CodeQL Scanning for continuous vulnerability detection
+- External data transmission limited to AI APIs, Pinecone (Vector DB), Neon (PostgreSQL), and Cloudflare (Uploads)
 
 ## 📈 Performance
 
@@ -292,35 +265,26 @@ npm run test:e2e
 - CSV processing: ~2-5 seconds per 10K rows
 - PDF processing: ~3-10 seconds per document
 - RAG indexing: ~5-15 seconds per PDF
-- Query execution: ~4-6 seconds end-to-end
+- Query execution: ~15 seconds end-to-end
 - Chart rendering: < 500ms
 
 ## 🤝 Contributing
 
 This is a research project. For issues or suggestions:
-1. Check existing documentation
-2. Review test cases
-3. Submit detailed bug reports
-4. Include reproduction steps
-
-## 📝 License
-
-[Your License Here]
+1. Submit detailed bug reports
+2. Include reproduction steps
 
 ## 🙏 Acknowledgments
 
-- Google Gemini Pro for AI capabilities
+- Google Gemini models for AI capabilities
 - LangChain for RAG pipeline
-- FastAPI and React communities
+- Django and React communities
 - All open-source dependencies
 
 ## 📞 Support
 
 For issues:
-1. Check [User Guide](USER_GUIDE.md)
-2. Review [API Documentation](API_DOCUMENTATION.md)
-3. See [Testing Guide](TESTING_GUIDE.md)
-4. Check application logs
+1. Check application logs
 
 ## 🗺️ Roadmap
 
@@ -329,21 +293,12 @@ For issues:
 - RAG pipeline with semantic search
 - Natural language queries
 - Interactive visualizations
-- Geographic visualization
-- AI-powered chart refinement
-- Notes with graph relationships
+- AI-powered chart refinement with multi-model fallback
+- Notes with immediate formatting and graph relationships
 - PDF annotations
 - Document suggestions
 - Comprehensive export
-
-### Future Enhancements 🔮
-- User authentication
-- Multi-user collaboration
-- Real-time updates
-- Advanced analytics
-- Custom visualizations
-- API integrations (real Google Scholar, Semantic Scholar)
-- Mobile app
+- GitHub CodeQL Security Scanning
 - Cloud deployment
 
 ## 📊 Project Stats
@@ -376,14 +331,14 @@ For issues:
 Key environment variables:
 ```bash
 GOOGLE_API_KEY=your_api_key_here
-DATABASE_URL=sqlite:///./research_workspace.db
-CHROMA_DB_PATH=./data/chroma_db
+PINECONE_API_KEY=your_pinecone_api_key_here
+DATABASE_URL=your_neon_postgres_url_here
 UPLOAD_DIR=./data/uploads
 ```
 
 ## 📦 Dependencies
 
-See `requirements.txt` (backend) and `package.json` (frontend) for complete dependency lists.
+See `environment.yml` (backend) and `package.json` (frontend) for complete dependency lists.
 
 ## 🌐 Browser Support
 
@@ -402,7 +357,7 @@ Responsive design supports:
 ---
 
 **Version**: 1.0  
-**Last Updated**: 2026-04-12  
+**Last Updated**: 2026-06-17  
 **Status**: Production-Ready
 
 Built with ❤️ for researchers

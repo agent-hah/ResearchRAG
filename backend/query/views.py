@@ -113,26 +113,6 @@ class DatabaseSchemaView(views.APIView):
         schemas = query_service.get_database_schema()
         return Response(schemas)
 
-class ExecuteSQLView(views.APIView):
-    def post(self, request):
-        sql = request.data.get('sql')
-        if not sql:
-            return Response({"error": "No SQL query provided"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        query_service = get_query_service(request.user_id)
-        result = query_service.execute_sql(sql)
-        
-        # Sanitize error to prevent stack trace exposure
-        safe_result = {
-            "rows": result.get("rows", []),
-            "row_count": result.get("row_count", 0),
-            "columns": result.get("columns", []),
-            "execution_time_ms": result.get("execution_time_ms", 0.0),
-        }
-        if "error" in result:
-            safe_result["error"] = "Database execution failed due to an invalid query."
-            
-        return Response(safe_result)
 
 class QueryHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = QueryHistorySerializer
@@ -210,10 +190,8 @@ class QueryExecutionView(views.APIView):
         
         history = query_service.save_query_history(
             query=query,
-            sql_query=sql_query,
             row_count=sql_result.get("row_count", 0),
             processing_time_ms=sql_result.get("execution_time_ms", 0),
-            sql_confidence=sql_generation.get("confidence", 0.0),
             data_results=sql_result,
             literature_context=literature_context,
             synthesis=synthesis
@@ -232,8 +210,6 @@ class QueryExecutionView(views.APIView):
         return Response({
             "query_id": str(history.id),
             "question": query,
-            "sql_query": sql_query,
-            "sql_confidence": sql_generation.get("confidence", 0.0),
             "data_results": safe_sql_result,
             "literature_context": literature_context,
             "synthesis": synthesis,

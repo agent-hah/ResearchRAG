@@ -40,7 +40,6 @@ def note_fixture(db, dataset, lit_fixture, query_history):
 def query_history(db):
     return QueryHistory.objects.create(
         query_text="Test query",
-        sql_query="SELECT * FROM test",
         data_results={"data": [{"col1": "val1", "col2": "val2"}, {"col1": "val3", "col2": "val4"}]}
     )
 
@@ -107,10 +106,9 @@ def test_export_dataset_json_not_found(export_service):
 @pytest.mark.django_db
 def test_export_query_results_csv(export_service, query_history):
     csv_str = export_service.export_query_results_csv([query_history.id])
-    assert "ID,Question,SQL Query,Created At,Result Count,Synthesis Summary" in csv_str
+    assert "ID,Question,Created At,Result Count,Synthesis Summary" in csv_str
     assert "\n1,Test query" in csv_str or "\r\n1,Test query" in csv_str
     assert "Test query" in csv_str
-    assert "SELECT * FROM test" in csv_str
 
 @pytest.mark.django_db
 def test_export_query_results_csv_not_found(export_service):

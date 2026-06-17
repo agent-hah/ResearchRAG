@@ -4,12 +4,10 @@ from literature.models import TimeStampedModel
 class QueryHistory(TimeStampedModel):
     user_id = models.CharField(max_length=255, default='default', db_index=True)
     query_text = models.TextField()
-    sql_query = models.TextField(null=True, blank=True)
     result_count = models.IntegerField(null=True, blank=True)
     dataset = models.ForeignKey('rag.Dataset', on_delete=models.SET_NULL, null=True, blank=True, related_name='queries')
     execution_time_ms = models.IntegerField(null=True, blank=True)
     error_message = models.TextField(null=True, blank=True)
-    sql_confidence = models.FloatField(null=True, blank=True)
     data_results = models.JSONField(null=True, blank=True)
     literature_context = models.JSONField(null=True, blank=True)
     synthesis = models.JSONField(null=True, blank=True)

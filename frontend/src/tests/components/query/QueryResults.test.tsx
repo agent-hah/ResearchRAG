@@ -29,9 +29,7 @@ describe('QueryResults', () => {
         excerpt: 'Test excerpt',
         relevance_score: 0.85
       }
-    ],
-    sql_query: 'SELECT * FROM test',
-    sql_confidence: 0.95
+    ]
   };
 
   it('renders question and basic metadata', () => {
@@ -87,12 +85,6 @@ describe('QueryResults', () => {
     expect(screen.getByText('85% relevant')).toBeInTheDocument();
   });
 
-  it('renders Generated SQL correctly', () => {
-    render(<QueryResults result={fullResult} />);
-    expect(screen.getByText('Generated SQL')).toBeInTheDocument();
-    expect(screen.getByText('SELECT * FROM test')).toBeInTheDocument();
-    expect(screen.getByText('95% confidence')).toBeInTheDocument();
-  });
 
   it('handles partial or empty result gracefully', () => {
     const minimalResult = {
@@ -102,15 +94,12 @@ describe('QueryResults', () => {
       created_at: '2023-01-01T12:00:00Z',
       synthesis: { summary: '', key_findings: [], data_insights: [], literature_insights: [], methodology_notes: '', limitations: '' },
       data_results: { columns: [], rows: [], row_count: 0 },
-      literature_context: [],
-      sql_query: '',
-      sql_confidence: 0
+      literature_context: []
     };
     render(<QueryResults result={minimalResult} />);
     expect(screen.getByText('Minimal question')).toBeInTheDocument();
     expect(screen.queryByText('Key Findings')).not.toBeInTheDocument();
     expect(screen.queryByText('Data Results')).not.toBeInTheDocument();
     expect(screen.queryByText('Related Literature')).not.toBeInTheDocument();
-    expect(screen.queryByText('Generated SQL')).not.toBeInTheDocument();
   });
 });
