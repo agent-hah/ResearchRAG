@@ -31,6 +31,8 @@ class RAGIndexView(views.APIView):
             literature = Literature.objects.get(id=literature_id, user_id=request.user_id)
         except Literature.DoesNotExist:
             return Response({"error": "Literature not found"}, status=status.HTTP_404_NOT_FOUND)
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid literature ID"}, status=status.HTTP_400_BAD_REQUEST)
             
         if literature.processing_status == ProcessingStatus.INDEXED and not force_reindex:
             return Response({"status": "already_indexed", "message": "Already indexed"}, status=status.HTTP_200_OK)

@@ -29,9 +29,15 @@ jobs:
           # Miniforge uses mamba under the hood, making dependency resolution much faster
           miniforge-version: latest 
 
+      - name: Run Database Migrations
+        shell: bash -el {0}
+        run: python manage.py migrate
+
       - name: Run Pytest
         # The '-el {0}' flag is strictly required for the runner to recognize the activated conda environment
-        shell: bash -el {0} 
+        shell: bash -el {0}
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: pytest
 
   # ==========================================
