@@ -23,7 +23,7 @@ export const getUserId = (): string => {
   }
   
   if (!userId) {
-    userId = crypto.randomUUID ? crypto.randomUUID() : 'user_' + Math.random().toString(36).substring(2, 15);
+    userId = crypto.randomUUID ? crypto.randomUUID() : 'user_' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
     if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.setItem === 'function') {
       window.localStorage.setItem('user_id', userId);
     }

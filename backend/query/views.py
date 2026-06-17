@@ -9,6 +9,9 @@ from query.services.query_service import get_query_service
 from files.services.file_service import FileService
 from query.services.csv_processor import CSVProcessor
 import threading
+import logging
+
+logger = logging.getLogger(__name__)
 
 def process_csv_background(dataset_id, file_path):
     dataset = Dataset.objects.get(id=dataset_id)
@@ -100,7 +103,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
             data = VizService.get_viz_data(dataset, limit)
             return Response(data)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(str(e))
+            return Response({"error": "An internal error occurred."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DatabaseSchemaView(views.APIView):
@@ -117,7 +121,18 @@ class ExecuteSQLView(views.APIView):
         
         query_service = get_query_service(request.user_id)
         result = query_service.execute_sql(sql)
-        return Response(result)
+        
+        # Sanitize error to prevent stack trace exposure
+        safe_result = {
+            "rows": result.get("rows", []),
+            "row_count": result.get("row_count", 0),
+            "columns": result.get("columns", []),
+            "execution_time_ms": result.get("execution_time_ms", 0.0),
+        }
+        if "error" in result:
+            safe_result["error"] = "Database execution failed due to an invalid query."
+            
+        return Response(safe_result)
 
 class QueryHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = QueryHistorySerializer
@@ -204,12 +219,22 @@ class QueryExecutionView(views.APIView):
             synthesis=synthesis
         )
         
+        # Sanitize error to prevent stack trace exposure
+        safe_sql_result = {
+            "rows": sql_result.get("rows", []),
+            "row_count": sql_result.get("row_count", 0),
+            "columns": sql_result.get("columns", []),
+            "execution_time_ms": sql_result.get("execution_time_ms", 0.0),
+        }
+        if "error" in sql_result:
+            safe_sql_result["error"] = "Database execution failed due to an invalid query."
+        
         return Response({
             "query_id": str(history.id),
             "question": query,
             "sql_query": sql_query,
             "sql_confidence": sql_generation.get("confidence", 0.0),
-            "data_results": sql_result,
+            "data_results": safe_sql_result,
             "literature_context": literature_context,
             "synthesis": synthesis,
             "created_at": history.created_at.isoformat() if history.created_at else None

@@ -30,7 +30,7 @@ def test_refine_view_exception(api_client, mocker):
     url = reverse('refine')
     response = api_client.post(url, {'command': 'test', 'current_config': {}}, format='json')
     assert response.status_code == 500
-    assert response.data['error'] == "Test Error"
+    assert response.data['error'] == "An internal error occurred."
 
 def test_suggestions_view_success(api_client, mocker):
     mock_service = mocker.patch('refinement.views.get_refinement_service').return_value
@@ -50,4 +50,4 @@ def test_suggestions_view_exception(api_client, mocker):
     response = api_client.post(url, {'chart_type': 'bar', 'data_summary': {}}, format='json')
     
     assert response.status_code == 500
-    assert response.data['error'] == "Test Error"
+    assert response.data['error'] == "An internal error occurred."

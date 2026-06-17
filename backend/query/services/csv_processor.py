@@ -117,7 +117,8 @@ class CSVProcessor:
                 if not table_name.isidentifier():
                     raise ValueError("Invalid table name")
                 
-                cursor.execute(f"SELECT * FROM {table_name} LIMIT %s", [limit])
+                safe_table_name = connection.ops.quote_name(table_name)
+                cursor.execute(f"SELECT * FROM {safe_table_name} LIMIT %s", [limit])
                 columns = [col[0] for col in cursor.description]
                 rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
                 return rows
@@ -133,7 +134,8 @@ class CSVProcessor:
                     raise ValueError("Invalid table name")
                 
                 if connection.vendor == 'sqlite':
-                    cursor.execute(f"PRAGMA table_info({table_name})")
+                    safe_table_name = connection.ops.quote_name(table_name)
+                    cursor.execute(f"PRAGMA table_info({safe_table_name})")
                     columns = cursor.fetchall()
                     return [
                         {
@@ -171,7 +173,8 @@ class CSVProcessor:
             with connection.cursor() as cursor:
                 if not table_name.isidentifier():
                     raise ValueError("Invalid table name")
-                cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+                safe_table_name = connection.ops.quote_name(table_name)
+                cursor.execute(f"DROP TABLE IF EXISTS {safe_table_name}")
             logger.info(f"Dropped table: {table_name}")
         except Exception as e:
             logger.error(f"Error dropping table {table_name}: {str(e)}")

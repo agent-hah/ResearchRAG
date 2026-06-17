@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.management import call_command
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CleanupOrphansView(APIView):
     """
@@ -21,4 +24,5 @@ class CleanupOrphansView(APIView):
             call_command('cleanup_orphans', days=30)
             return Response({"status": "success", "message": "Cleanup executed successfully."})
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(str(e))
+            return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

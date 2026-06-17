@@ -2,6 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from refinement.services import get_refinement_service
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RefineView(APIView):
     def post(self, request):
@@ -22,7 +25,8 @@ class RefineView(APIView):
                 'explanation': f'Applied refinement based on command: {command}'
             })
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(str(e))
+            return Response({'error': 'An internal error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class SuggestionsView(APIView):
     def post(self, request):
@@ -37,4 +41,5 @@ class SuggestionsView(APIView):
                 'suggestions': suggestions
             })
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(str(e))
+            return Response({'error': 'An internal error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

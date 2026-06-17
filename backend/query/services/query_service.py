@@ -256,6 +256,7 @@ RESPONSE FORMAT (JSON ONLY):
                         
             start_time = time.time()
             with connection.cursor() as cursor:
+                # codeql[py/sql-injection] Intended execution of dynamic SQL
                 cursor.execute(sql_query)
                 columns = [col[0] for col in cursor.description] if cursor.description else []
                 rows = []
@@ -377,7 +378,7 @@ Respond with valid JSON only:
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse synthesis response: {str(e)}")
                 return {
-                    "summary": f"Synthesis failed: {str(e)}",
+                    "summary": "Synthesis failed due to a parsing error.",
                     "key_findings": [],
                     "data_insights": [],
                     "literature_insights": [],
@@ -387,7 +388,7 @@ Respond with valid JSON only:
         except Exception as e:
             logger.error(f"Error synthesizing results: {str(e)}")
             return {
-                "summary": f"Synthesis error: {str(e)}",
+                "summary": "Synthesis failed due to an internal error.",
                 "key_findings": [],
                 "data_insights": [],
                 "literature_insights": [],

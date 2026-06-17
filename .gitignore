@@ -90,3 +90,9 @@ test_reportlab.pdf
 # Doctor outputs
 *doc*
 rd_report.json
+
+# codeql scans
+.codeql-db
+vulnerabilities.sarif
+scan.sh
+.codeql-config.yml

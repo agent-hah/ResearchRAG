@@ -53,8 +53,11 @@ class ExportService:
             
             # Query data from dynamic table
             from django.db import connection
+            if not table_name.isidentifier():
+                raise ValueError("Invalid table name")
             with connection.cursor() as cursor:
-                cursor.execute(f"SELECT * FROM {table_name}")
+                safe_table_name = connection.ops.quote_name(table_name)
+                cursor.execute(f"SELECT * FROM {safe_table_name}")
                 columns = [col[0] for col in cursor.description]
                 rows = cursor.fetchall()
             
@@ -100,8 +103,11 @@ class ExportService:
             
             # Query data from dynamic table
             from django.db import connection
+            if not table_name.isidentifier():
+                raise ValueError("Invalid table name")
             with connection.cursor() as cursor:
-                cursor.execute(f"SELECT * FROM {table_name}")
+                safe_table_name = connection.ops.quote_name(table_name)
+                cursor.execute(f"SELECT * FROM {safe_table_name}")
                 columns = [col[0] for col in cursor.description]
                 rows = cursor.fetchall()
             

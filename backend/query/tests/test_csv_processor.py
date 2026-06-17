@@ -136,7 +136,9 @@ def test_get_table_preview(mock_fetchall, mock_execute):
         assert len(result) == 2
         assert result[0] == {"id": 1, "name": "A"}
         assert result[1] == {"id": 2, "name": "B"}
-        mock_cursor.execute.assert_called_once_with("SELECT * FROM test_table LIMIT %s", [2])
+        from django.db import connection
+        safe_table_name = connection.ops.quote_name("test_table")
+        mock_cursor.execute.assert_called_once_with(f"SELECT * FROM {safe_table_name} LIMIT %s", [2])
 
 @pytest.mark.django_db
 @patch('django.db.connection.cursor')
@@ -161,7 +163,9 @@ def test_get_table_schema(mock_cursor_ctx):
     assert len(result) == 2
     assert result[0] == {"name": "id", "type": "INTEGER", "nullable": False}
     assert result[1] == {"name": "name", "type": "TEXT", "nullable": True}
-    mock_cursor.execute.assert_called_once_with("PRAGMA table_info(test_table)")
+    from django.db import connection
+    safe_table_name = connection.ops.quote_name("test_table")
+    mock_cursor.execute.assert_called_once_with(f"PRAGMA table_info({safe_table_name})")
 
 @pytest.mark.django_db
 @patch('django.db.connection.cursor')
@@ -178,7 +182,9 @@ def test_drop_table(mock_cursor_ctx):
     mock_cursor = mock_cursor_ctx.return_value.__enter__.return_value
     
     CSVProcessor.drop_table("test_table")
-    mock_cursor.execute.assert_called_once_with("DROP TABLE IF EXISTS test_table")
+    from django.db import connection
+    safe_table_name = connection.ops.quote_name("test_table")
+    mock_cursor.execute.assert_called_once_with(f"DROP TABLE IF EXISTS {safe_table_name}")
 
 @pytest.mark.django_db
 @patch('django.db.connection.cursor')

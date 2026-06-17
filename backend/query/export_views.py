@@ -4,6 +4,9 @@ from rest_framework import status
 from django.http import HttpResponse
 from .services.export_service import ExportService
 from rag.models import Dataset
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ExportDatasetView(APIView):
     def post(self, request):
@@ -38,7 +41,8 @@ class ExportDatasetView(APIView):
             else:
                 return Response({"error": "Invalid format. Use 'csv' or 'json'."}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(str(e))
+            return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ExportQueryView(APIView):
     def post(self, request):
@@ -63,7 +67,8 @@ class ExportQueryView(APIView):
             else:
                 return Response({"error": "Invalid format. Use 'json' or 'csv'."}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(str(e))
+            return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ExportNotesView(APIView):
     def post(self, request):
@@ -90,7 +95,8 @@ class ExportNotesView(APIView):
             else:
                 return Response({"error": "Invalid format. Use 'markdown', 'json' or 'csv'."}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(str(e))
+            return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ExportLiteraturePDFView(APIView):
     def post(self, request):
@@ -107,4 +113,5 @@ class ExportLiteraturePDFView(APIView):
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(str(e))
+            return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
