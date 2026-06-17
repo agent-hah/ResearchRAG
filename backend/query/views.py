@@ -176,7 +176,7 @@ class QueryExecutionView(views.APIView):
                 break
             except Exception as e:
                 err_str = str(e)
-                if any(err in err_str.lower() for err in ["no such column", "no such table", "syntax error", "operationalerror"]):
+                if any(err in err_str.lower() for err in ["no such column", "no such table", "syntax error", "operationalerror", "does not exist"]):
                     logger.warning(f"SQL error: {err_str}")
                     previous_query = sql_query
                     previous_error = err_str

@@ -122,6 +122,7 @@ class QueryService:
                     
                     schemas.append({
                         "table_name": dataset.table_name,
+                        "dataset_name": dataset.name,
                         "original_filename": dataset.filename,
                         "columns": schema,
                         "row_count": dataset.row_count or 0,
@@ -168,7 +169,7 @@ You are an expert SQL query generator. Convert the natural language query to SQL
 CRITICAL RULES FOR SQL GENERATION:
 1. YOU MUST USE EXACTLY THE COLUMN NAMES PROVIDED IN THE SCHEMA. DO NOT GUESS OR INVENT COLUMN NAMES (e.g. if the schema has "rank", do NOT use "ranking").
 2. YOU MUST USE EXACTLY THE TABLE NAMES PROVIDED IN THE SCHEMA.
-3. If a column name has spaces or special characters, you MUST quote it properly (e.g. "ranking-institution-title").
+3. If a column name contains uppercase letters, spaces, or special characters, you MUST quote it properly (e.g. "Title" or "ranking-institution-title").
 4. If a column is missing from the schema, do not select it. 
 
 DATABASE SCHEMA:
@@ -415,7 +416,7 @@ Respond with valid JSON only:
     def _build_schema_context(self, schemas: List[Dict[str, Any]]) -> str:
         context = ""
         for schema in schemas:
-            context += f"\nTable: {schema['table_name']} (from file: {schema['original_filename']})\n"
+            context += f"\nTable: {schema['table_name']} (Dataset Name: {schema.get('dataset_name', 'Unknown')}, File: {schema['original_filename']})\n"
             context += f"Rows: {schema['row_count']}\n"
             context += "Columns:\n"
             for col in schema['columns']:
