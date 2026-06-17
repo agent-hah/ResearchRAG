@@ -39,7 +39,7 @@ export function ConfirmDialog({
     // eslint-disable-next-line react-doctor/no-noninteractive-element-interactions, react-doctor/click-events-have-key-events
     <dialog
       ref={dialogRef}
-      className="p-0 rounded-lg shadow-xl border border-gray-200 backdrop:bg-black backdrop:bg-opacity-50 w-full max-w-lg"
+      className="m-auto p-0 rounded-lg shadow-xl border border-gray-200 backdrop:bg-black backdrop:bg-opacity-50 w-full max-w-lg"
       aria-labelledby="modal-title"
       onClick={(e) => {
         if (e.target === dialogRef.current) {
