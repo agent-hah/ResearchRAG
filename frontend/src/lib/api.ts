@@ -32,6 +32,14 @@ export const getUserId = (): string => {
   return userId;
 }
 
+let firstConnectionErrorTime: number | null = null;
+let connectionToastId: string | undefined = undefined;
+let connectionErrorTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+
+let activeGetRequestsCount = 0;
+let pendingRequestTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+let isStartingUp = false;
+
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
@@ -55,7 +63,36 @@ api.interceptors.request.use(
       }
     }
     
-    // Add any auth headers here if needed in the future
+    // Track slow GET requests for Render cold-starts
+    if (config.method?.toLowerCase() === 'get') {
+      activeGetRequestsCount++;
+      if (activeGetRequestsCount === 1 && !isStartingUp && !firstConnectionErrorTime) {
+        pendingRequestTimer = setTimeout(() => {
+          isStartingUp = true;
+          if (!connectionToastId) {
+            connectionToastId = toast.loading('Please wait...', { id: 'network-error-loading', duration: Infinity });
+          }
+          
+          if (!firstConnectionErrorTime) {
+            firstConnectionErrorTime = Date.now();
+          }
+          if (connectionErrorTimeout) {
+            clearTimeout(connectionErrorTimeout);
+          }
+          // Set the 1-minute timeout to show the error if it still hasn't connected
+          connectionErrorTimeout = setTimeout(() => {
+            if (firstConnectionErrorTime !== null || isStartingUp) {
+              if (connectionToastId) {
+                toast.dismiss(connectionToastId);
+                connectionToastId = undefined;
+              }
+              toast.error('Something has gone wrong', { id: 'network-error-timeout', duration: Infinity });
+            }
+          }, 60 * 1000);
+        }, 5000); // wait 5 seconds before showing "Please wait..."
+      }
+    }
+    
     return config
   },
   (error) => {
@@ -63,16 +100,27 @@ api.interceptors.request.use(
   }
 )
 
-let firstConnectionErrorTime: number | null = null;
-let connectionToastId: string | undefined = undefined;
-let connectionErrorTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+const handleRequestComplete = (config?: any) => {
+  if (config?.method?.toLowerCase() === 'get') {
+    activeGetRequestsCount = Math.max(0, activeGetRequestsCount - 1);
+    if (activeGetRequestsCount === 0) {
+      if (pendingRequestTimer) {
+        clearTimeout(pendingRequestTimer);
+        pendingRequestTimer = undefined;
+      }
+    }
+  }
+};
 
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
+    handleRequestComplete(response.config);
+    
     // Reset connection error state on successful request
-    if (firstConnectionErrorTime) {
+    if (firstConnectionErrorTime !== null || isStartingUp) {
       firstConnectionErrorTime = null;
+      isStartingUp = false;
       if (connectionErrorTimeout) {
         clearTimeout(connectionErrorTimeout);
         connectionErrorTimeout = undefined;
@@ -86,6 +134,8 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    handleRequestComplete(error.config);
+    
     // Check if it's a network error (e.g., backend down / connection refused)
     const isNetworkError = 
       (!error.response && error.isAxiosError) || 
@@ -99,16 +149,19 @@ api.interceptors.response.use(
       const now = Date.now();
       if (!firstConnectionErrorTime) {
         firstConnectionErrorTime = now;
-        connectionToastId = toast.loading('Please wait...', { id: 'network-error-loading', duration: Infinity });
+        if (!connectionToastId) {
+          connectionToastId = toast.loading('Please wait...', { id: 'network-error-loading', duration: Infinity });
+        }
         
         // Setup timeout to change to error message after 1 minute
+        if (connectionErrorTimeout) clearTimeout(connectionErrorTimeout);
         connectionErrorTimeout = setTimeout(() => {
-          if (firstConnectionErrorTime !== null) {
+          if (firstConnectionErrorTime !== null || isStartingUp) {
             if (connectionToastId) {
               toast.dismiss(connectionToastId);
               connectionToastId = undefined;
             }
-            toast.error('Something has gone wrong', { id: 'network-error-timeout' });
+            toast.error('Something has gone wrong', { id: 'network-error-timeout', duration: Infinity });
           }
         }, 60 * 1000);
       } else {
@@ -120,7 +173,7 @@ api.interceptors.response.use(
             toast.dismiss(connectionToastId);
             connectionToastId = undefined;
           }
-          toast.error('Something has gone wrong', { id: 'network-error-timeout' });
+          toast.error('Something has gone wrong', { id: 'network-error-timeout', duration: Infinity });
         }
       }
     } else {
