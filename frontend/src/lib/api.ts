@@ -1,4 +1,5 @@
 import axios from 'axios'
+import toast from 'react-hot-toast'
 
 // 1. Check if we are in production (Vercel) and have the env variable.
 // If so, use the full Render URL. If not, use the local relative path for Vite's proxy.
@@ -62,19 +63,75 @@ api.interceptors.request.use(
   }
 )
 
+let firstConnectionErrorTime: number | null = null;
+let connectionToastId: string | undefined = undefined;
+let connectionErrorTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
+    // Reset connection error state on successful request
+    if (firstConnectionErrorTime) {
+      firstConnectionErrorTime = null;
+      if (connectionErrorTimeout) {
+        clearTimeout(connectionErrorTimeout);
+        connectionErrorTimeout = undefined;
+      }
+      if (connectionToastId) {
+        toast.dismiss(connectionToastId);
+        connectionToastId = undefined;
+      }
+      toast.success('Connected successfully!', { id: 'network-success' });
+    }
     return response
   },
   (error) => {
-    // Handle common errors
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      console.error('Unauthorized access')
-    } else if (error.response?.status >= 500) {
-      // Handle server errors
-      console.error('Server error:', error.response.data)
+    // Check if it's a network error (e.g., backend down / connection refused)
+    const isNetworkError = 
+      (!error.response && error.isAxiosError) || 
+      error.code === 'ECONNREFUSED' || 
+      error.code === 'ERR_NETWORK' ||
+      (error.message && error.message.includes('ECONNREFUSED')) ||
+      error.response?.status === 502 || 
+      error.response?.status === 504;
+
+    if (isNetworkError) {
+      const now = Date.now();
+      if (!firstConnectionErrorTime) {
+        firstConnectionErrorTime = now;
+        connectionToastId = toast.loading('Please wait...', { id: 'network-error-loading', duration: Infinity });
+        
+        // Setup timeout to change to error message after 1 minute
+        connectionErrorTimeout = setTimeout(() => {
+          if (firstConnectionErrorTime !== null) {
+            if (connectionToastId) {
+              toast.dismiss(connectionToastId);
+              connectionToastId = undefined;
+            }
+            toast.error('Something has gone wrong', { id: 'network-error-timeout' });
+          }
+        }, 60 * 1000);
+      } else {
+        const timeElapsed = now - firstConnectionErrorTime;
+        const oneMinute = 60 * 1000;
+        
+        if (timeElapsed > oneMinute) {
+          if (connectionToastId) {
+            toast.dismiss(connectionToastId);
+            connectionToastId = undefined;
+          }
+          toast.error('Something has gone wrong', { id: 'network-error-timeout' });
+        }
+      }
+    } else {
+      // Handle common errors
+      if (error.response?.status === 401) {
+        // Handle unauthorized access
+        console.error('Unauthorized access')
+      } else if (error.response?.status >= 500) {
+        // Handle server errors
+        console.error('Server error:', error.response.data)
+      }
     }
     
     return Promise.reject(error)
