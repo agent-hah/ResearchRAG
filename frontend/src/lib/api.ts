@@ -79,7 +79,7 @@ api.interceptors.request.use(
           if (connectionErrorTimeout) {
             clearTimeout(connectionErrorTimeout);
           }
-          // Set the 1-minute timeout to show the error if it still hasn't connected
+          // Set the 1.5-minute timeout to show the error if it still hasn't connected
           connectionErrorTimeout = setTimeout(() => {
             if (firstConnectionErrorTime !== null || isStartingUp) {
               if (connectionToastId) {
@@ -88,7 +88,7 @@ api.interceptors.request.use(
               }
               toast.error('Something has gone wrong', { id: 'network-error-timeout', duration: Infinity });
             }
-          }, 60 * 1000);
+          }, 90 * 1000);
         }, 5000); // wait 5 seconds before showing "Please wait..."
       }
     }
@@ -153,7 +153,7 @@ api.interceptors.response.use(
           connectionToastId = toast.loading('Please wait...', { id: 'network-error-loading', duration: Infinity });
         }
         
-        // Setup timeout to change to error message after 1 minute
+        // Setup timeout to change to error message after 1.5 minutes
         if (connectionErrorTimeout) clearTimeout(connectionErrorTimeout);
         connectionErrorTimeout = setTimeout(() => {
           if (firstConnectionErrorTime !== null || isStartingUp) {
@@ -163,12 +163,12 @@ api.interceptors.response.use(
             }
             toast.error('Something has gone wrong', { id: 'network-error-timeout', duration: Infinity });
           }
-        }, 60 * 1000);
+        }, 90 * 1000);
       } else {
         const timeElapsed = now - firstConnectionErrorTime;
-        const oneMinute = 60 * 1000;
+        const timeoutDuration = 90 * 1000;
         
-        if (timeElapsed > oneMinute) {
+        if (timeElapsed > timeoutDuration) {
           if (connectionToastId) {
             toast.dismiss(connectionToastId);
             connectionToastId = undefined;
